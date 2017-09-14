@@ -3,6 +3,7 @@
 #include "march.h"
 #include "tssl.h"
 #include "compose.h"
+#include "flod.h"
 // #include <iostream>
 
 using v8::FunctionCallbackInfo;
@@ -231,16 +232,39 @@ void Tssl(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(result);
 }
 
+void Flod(const FunctionCallbackInfo<Value>& args) {
+  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
+  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+
+  Local<ArrayBuffer> etherBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
+  unsigned int etherByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<Array> shiftArg = Local<Array>::Cast(args[1]);
+  Local<ArrayBuffer> peekBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
+  unsigned int peekByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
+
+  float *ether = (float *)((char *)etherBuffer->GetContents().Data() + etherByteOffset);
+  int shift[3] = {
+    shiftArg->Get(0)->Int32Value(),
+    shiftArg->Get(1)->Int32Value(),
+    shiftArg->Get(2)->Int32Value()
+  };
+  unsigned char *peeks = (unsigned char *)((char *)peekBuffer->GetContents().Data() + peekByteOffset);
+
+  flod(ether, shift, peeks);
+}
+
 void InitAll(Local<Object> exports, Local<Object> module) {
   Isolate *isolate = Isolate::GetCurrent();
 
   FastNoiseObject::Init(isolate);
+  initFlod();
 
   Local<Object> result = Object::New(isolate);
   NODE_SET_METHOD(result, "fastNoise", CreateFastNoise);
   NODE_SET_METHOD(result, "marchingCubes", MarchCubes);
   NODE_SET_METHOD(result, "compose", Compose);
   NODE_SET_METHOD(result, "tesselate", Tssl);
+  NODE_SET_METHOD(result, "flood", Flod);
   module->Set(String::NewFromUtf8(isolate, "exports"), result);
 }
 
