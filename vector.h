@@ -1,3 +1,6 @@
+#ifndef VECTOR_H
+#define VECTOR_H
+
 #include <cmath>
 #include <algorithm>
 
@@ -217,3 +220,5 @@ class Quat {
       w = q.w;
     }
 };
+
+#endif
