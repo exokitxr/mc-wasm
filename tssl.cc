@@ -1,6 +1,7 @@
 #include "tssl.h"
 #include <node.h>
 #include <string.h>
+#include <memory>
 #include <limits>
 #include "vector.h"
 // #include <iostream>
@@ -107,13 +108,13 @@ void generateMesh(unsigned int *colors, bool *mask, int d, int u, int v, int dim
 void getMeshData(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *verticesResult, unsigned int &vertexIndexResult, unsigned int *facesResult, unsigned int &faceIndexResult) {
   Local<String> indexString = String::NewFromUtf8(Isolate::GetCurrent(), "index");
 
-  float vertices[NUM_POSITIONS_CHUNK];
+  std::unique_ptr<float[]> vertices(new float[NUM_POSITIONS_CHUNK]);
   unsigned int vertexIndex = 0;
-  unsigned int faces[NUM_POSITIONS_CHUNK];
+  std::unique_ptr<unsigned int[]> faces(new unsigned int[NUM_POSITIONS_CHUNK]);
   unsigned int faceIndex = 0;
-  float tVertices[NUM_POSITIONS_CHUNK];
+  std::unique_ptr<float[]> tVertices(new float[NUM_POSITIONS_CHUNK]);
   unsigned int tVertexIndex = 0;
-  unsigned int tFaces[NUM_POSITIONS_CHUNK];
+  std::unique_ptr<unsigned int[]> tFaces(new unsigned int[NUM_POSITIONS_CHUNK]);
   unsigned int tFaceIndex = 0;
 
   const int dimsX = dims[0];
@@ -212,15 +213,15 @@ void getMeshData(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], u
 
       ++x[d];
 
-      generateMesh(colors, mask, d, u, v, dimsU, dimsV, x, vertices, vertexIndex, faces, faceIndex, tVertices, tVertexIndex, tFaces, tFaceIndex, true);
-      generateMesh(invColors, invMask, d, u, v, dimsU, dimsV, x, vertices, vertexIndex, faces, faceIndex, tVertices, tVertexIndex, tFaces, tFaceIndex, false);
+      generateMesh(colors, mask, d, u, v, dimsU, dimsV, x, vertices.get(), vertexIndex, faces.get(), faceIndex, tVertices.get(), tVertexIndex, tFaces.get(), tFaceIndex, true);
+      generateMesh(invColors, invMask, d, u, v, dimsU, dimsV, x, vertices.get(), vertexIndex, faces.get(), faceIndex, tVertices.get(), tVertexIndex, tFaces.get(), tFaceIndex, false);
     }
   }
 
-  memcpy(verticesResult, vertices, vertexIndex * 4);
-  memcpy(verticesResult + vertexIndex, tVertices, tVertexIndex * 4);
-  memcpy(facesResult, faces, faceIndex * 4);
-  memcpy(facesResult + faceIndex, tFaces, tFaceIndex * 4);
+  memcpy(verticesResult, vertices.get(), vertexIndex * 4);
+  memcpy(verticesResult + vertexIndex, tVertices.get(), tVertexIndex * 4);
+  memcpy(facesResult, faces.get(), faceIndex * 4);
+  memcpy(facesResult + faceIndex, tFaces.get(), tFaceIndex * 4);
 
   vertexIndexResult = vertexIndex + tVertexIndex;
   faceIndexResult = faceIndex + tFaceIndex;
@@ -539,20 +540,21 @@ void shiftPositions(float *positions, unsigned int numPositions, float *shift) {
 }
 
 void tesselate(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift, float *positions, float *uvs, unsigned char *ssaos, unsigned int &positionIndex, unsigned int &uvIndex, unsigned int &ssaoIndex) {
-  float vertices[NUM_POSITIONS_CHUNK];
-  unsigned int vertexIndex;
-  unsigned int faces[NUM_POSITIONS_CHUNK];
-  unsigned int facesIndex;
-  getMeshData(voxels, blockTypes, dims, transparentVoxels, translucentVoxels, vertices, vertexIndex, faces, facesIndex);
 
-  getPositions(vertices, vertexIndex, positions, positionIndex);
+  std::unique_ptr<float[]> vertices(new float[NUM_POSITIONS_CHUNK]);
+  unsigned int vertexIndex;
+  std::unique_ptr<unsigned int[]> faces(new unsigned int[NUM_POSITIONS_CHUNK]);
+  unsigned int facesIndex;
+  getMeshData(voxels, blockTypes, dims, transparentVoxels, translucentVoxels, vertices.get(), vertexIndex, faces.get(), facesIndex);
+
+  getPositions(vertices.get(), vertexIndex, positions, positionIndex);
 
   float normals[NUM_POSITIONS_CHUNK];
   unsigned int numNormals;
   getNormals(positions, positionIndex, normals, numNormals);
 
-  getUvs(faces, facesIndex, normals, numNormals, faceUvs, uvs, uvIndex);
-  getSsaos(vertices, vertexIndex, voxels, ssaos, ssaoIndex);
+  getUvs(faces.get(), facesIndex, normals, numNormals, faceUvs, uvs, uvIndex);
+  getSsaos(vertices.get(), vertexIndex, voxels, ssaos, ssaoIndex);
 
   shiftPositions(positions, positionIndex, shift);
   // return {positions, /*normals, */uvs, ssaos};

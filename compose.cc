@@ -3,6 +3,7 @@
 #include <string.h>
 #include <cmath>
 #include <algorithm>
+#include <memory>
 #include "vector.h"
 // #include <iostream>
 
@@ -220,10 +221,10 @@ void compose(void *src, void *geometries, Local<Object> &geometryIndex, float **
   std::cout << "failed to look up geometry " << n << "\n";
 } */
       const int chunkIndex = (int)std::floor(std::min<float>(std::max<float>(position.y, 0), (float)(NUM_CELLS_HEIGHT - 1)) / (float)NUM_CELLS);
-      Geometry geometry((char *)geometries + geometryIndex->Get(n)->Uint32Value(), i, positionIndex[chunkIndex], uvIndex[chunkIndex], ssaoIndex[chunkIndex], frameIndex[chunkIndex], objectIndexIndex[chunkIndex], indexIndex[chunkIndex], objectIndex[chunkIndex]);
-      geometry.applyRotation(rotation);
-      geometry.applyTranslation(position);
-      geometry.write(positions[chunkIndex], uvs[chunkIndex], ssaos[chunkIndex], frames[chunkIndex], objectIndices[chunkIndex], indices[chunkIndex], objects[chunkIndex], positionIndex[chunkIndex], uvIndex[chunkIndex], ssaoIndex[chunkIndex], frameIndex[chunkIndex], objectIndexIndex[chunkIndex], indexIndex[chunkIndex], objectIndex[chunkIndex]);
+      std::unique_ptr<Geometry> geometry(new Geometry((char *)geometries + geometryIndex->Get(n)->Uint32Value(), i, positionIndex[chunkIndex], uvIndex[chunkIndex], ssaoIndex[chunkIndex], frameIndex[chunkIndex], objectIndexIndex[chunkIndex], indexIndex[chunkIndex], objectIndex[chunkIndex]));
+      geometry->applyRotation(rotation);
+      geometry->applyTranslation(position);
+      geometry->write(positions[chunkIndex], uvs[chunkIndex], ssaos[chunkIndex], frames[chunkIndex], objectIndices[chunkIndex], indices[chunkIndex], objects[chunkIndex], positionIndex[chunkIndex], uvIndex[chunkIndex], ssaoIndex[chunkIndex], frameIndex[chunkIndex], objectIndexIndex[chunkIndex], indexIndex[chunkIndex], objectIndex[chunkIndex]);
 
       // std::cout << "write 3 " << positionIndex[i] << "\n";
     } else {

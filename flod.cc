@@ -1,4 +1,5 @@
 #include "flod.h"
+#include <memory>
 // #include <iostream>
 
 const int NUM_CELLS = 16;
@@ -36,7 +37,7 @@ inline int _getEtherIndex(int x, int y, int z) {
 }
 
 inline void _floodFill(int x, int y, int z, int startFace, float *ether, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, unsigned char *peeks, unsigned char *seenPeeks) {
-  int queue[NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN * 4];
+  std::unique_ptr<int[]> queue(new int[NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN * 4]);
   unsigned int queueEnd = 0;
 
   const int index = _getEtherIndex(x, y, z);
