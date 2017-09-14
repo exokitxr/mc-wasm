@@ -1,6 +1,7 @@
 #include <node.h>
 #include "tssl.h"
 #include "compose.h"
+#include "fastNoiseObject.h"
 // #include <iostream>
 
 using v8::FunctionCallbackInfo;
@@ -182,12 +183,19 @@ void Tssl(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(result);
 }
 
+void CreateFastNoise(const FunctionCallbackInfo<Value>& args) {
+  FastNoiseObject::NewInstance(args);
+}
+
 void InitAll(Local<Object> exports, Local<Object> module) {
   Isolate *isolate = Isolate::GetCurrent();
+
+  FastNoiseObject::Init(isolate);
 
   Local<Object> result = Object::New(isolate);
   NODE_SET_METHOD(result, "compose", Compose);
   NODE_SET_METHOD(result, "tesselate", Tssl);
+  NODE_SET_METHOD(result, "fastNoise", CreateFastNoise);
   module->Set(String::NewFromUtf8(isolate, "exports"), result);
 }
 
