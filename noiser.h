@@ -55,6 +55,8 @@ class Noiser : public node::ObjectWrap {
     void fillBiomes(int ox, int oz, unsigned char *biomes);
     static void FillElevations(const FunctionCallbackInfo<Value>& args);
     void fillElevations(int ox, int oz, float *elevations);
+    static void FillEther(const FunctionCallbackInfo<Value>& args);
+    void fillEther(float *elevations, float *ether);
 };
 
 #endif

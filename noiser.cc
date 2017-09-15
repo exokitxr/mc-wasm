@@ -5,6 +5,7 @@
 #include <node.h>
 #include <cmath>
 #include <random>
+#include <algorithm>
 #include <unordered_map>
 #include <vector>
 // #include <iostream>
@@ -24,7 +25,10 @@ using v8::Exception;
 using v8::ArrayBuffer;
 
 const int NUM_CELLS = 16;
-const int NUM_CELLS_OVERSCAN = NUM_CELLS + 1;
+const int OVERSCAN = 1;
+const int NUM_CELLS_OVERSCAN = NUM_CELLS + OVERSCAN;
+const int NUM_CELLS_HEIGHT = 128;
+const int NUM_CELLS_OVERSCAN_Y = NUM_CELLS_HEIGHT + OVERSCAN;
 
 Persistent<Function> Noiser::constructor;
 void Noiser::Init(Isolate* isolate) {
@@ -40,6 +44,7 @@ void Noiser::Init(Isolate* isolate) {
   NODE_SET_PROTOTYPE_METHOD(tpl, "getTemperature", GetTemperature);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillBiomes", FillBiomes);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillElevations", FillElevations);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "fillEther", FillEther);
 
   constructor.Reset(isolate, tpl->GetFunction());
 }
@@ -336,6 +341,49 @@ void Noiser::fillElevations(int ox, int oz, float *elevations) {
   for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
     for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
       elevations[index++] = getElevation((ox * NUM_CELLS) + x, (oz * NUM_CELLS) + z);
+    }
+  }
+}
+
+void Noiser::FillEther(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  // Check the number of arguments passed.
+  if (args.Length() < 2) {
+    // Throw an Error that is passed back to JavaScript
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    return;
+  }
+
+  // Check the argument types
+  if (!args[0]->IsFloat32Array() || !args[1]->IsFloat32Array()) {
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Wrong arguments")));
+    return;
+  }
+
+  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
+  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  Local<ArrayBuffer> elevationsBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
+  unsigned int elevationsByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *elevations = (float *)((char *)elevationsBuffer->GetContents().Data() + elevationsByteOffset);
+  Local<ArrayBuffer> ethersBuffer = Local<ArrayBuffer>::Cast(args[1]->ToObject()->Get(bufferString));
+  unsigned int ethersByteOffset = args[1]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *ethers = (float *)((char *)ethersBuffer->GetContents().Data() + ethersByteOffset);
+
+  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  obj->fillEther(elevations, ethers);
+}
+
+void Noiser::fillEther(float *elevations, float *ether) {
+  unsigned int index = 0;
+  for (int y = 0; y < NUM_CELLS_OVERSCAN_Y; y++) {
+    for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
+      for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
+        const float elevation = elevations[x + z * NUM_CELLS_OVERSCAN];
+        ether[index++] = std::min<float>(std::max<float>((float)y - elevation, -1.0), 1.0);
+      }
     }
   }
 }
