@@ -40,10 +40,11 @@ void MarchCubes(const FunctionCallbackInfo<Value>& args) {
   Local<ArrayBuffer> potentialBuffer = Local<ArrayBuffer>::Cast(args[1]->ToObject()->Get(bufferString));
   unsigned int potentialByteOffset = args[1]->ToObject()->Get(byteOffsetString)->Uint32Value();
   Local<Array> shiftArg = Local<Array>::Cast(args[2]);
-  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[3]->ToObject()->Get(bufferString));
-  unsigned int positionsByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
-  Local<ArrayBuffer> facesBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
-  unsigned int facesByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<Value> indexOffsetArg = args[3];
+  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
+  unsigned int positionsByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> facesBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(bufferString));
+  unsigned int facesByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
 
   int dims[3] = {
     dimsArg->Get(0)->Int32Value(),
@@ -55,6 +56,7 @@ void MarchCubes(const FunctionCallbackInfo<Value>& args) {
     Local<Array>::Cast(shiftArg->Get(0))->Get(1)->Int32Value(),
     Local<Array>::Cast(shiftArg->Get(0))->Get(2)->Int32Value()
   };
+  int indexOffset = indexOffsetArg->Int32Value();
 
   float *potential = (float *)((char *)potentialBuffer->GetContents().Data() + potentialByteOffset);
   float *positions = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
@@ -62,7 +64,7 @@ void MarchCubes(const FunctionCallbackInfo<Value>& args) {
 
   // std::cout << "got init " << potential[99] << ":" << potential[100] << ":" << shift[0] << ":" << shift[1] << ":" << shift[2] << "\n";
 
-  marchingCubes(dims, potential, shift, positions, faces, positionIndex, faceIndex);
+  marchingCubes(dims, potential, shift, indexOffset, positions, faces, positionIndex, faceIndex);
 
   Local<Object> result = Object::New(args.GetIsolate());
   result->Set(positionsString, Float32Array::New(positionsBuffer, positionsByteOffset, positionIndex));

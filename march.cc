@@ -317,7 +317,7 @@ int edgeIndex[12][2] = {
   {3,7}
 };
 
-void marchingCubes(int dims[3], float *potential, int shift[3], float *positions, unsigned int *faces, unsigned int &positionIndex, unsigned int &faceIndex) {
+void marchingCubes(int dims[3], float *potential, int shift[3], int indexOffset, float *positions, unsigned int *faces, unsigned int &positionIndex, unsigned int &faceIndex) {
   /* if(!bounds) {
     bounds = [[0,0,0], dims];
   }
@@ -371,10 +371,7 @@ void marchingCubes(int dims[3], float *potential, int shift[3], float *positions
       float a = grid[e[0]];
       float b = grid[e[1]];
       float d = a - b;
-      float t = 0;
-      // if(abs(d) > 1e-6) {
-        t = a / d;
-      // }
+      float t = a / d;
       for(int j=0; j<3; ++j) {
         positions[positionIndex + j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) + shift[j];
       }
@@ -383,9 +380,9 @@ void marchingCubes(int dims[3], float *potential, int shift[3], float *positions
     //Add faces
     int *f = triTable[cube_index];
     for(int i=0;f[i]!=-1;i+=3) {
-      faces[faceIndex] = edges[f[i]];
-      faces[faceIndex + 1] = edges[f[i+1]];
-      faces[faceIndex + 2] = edges[f[i+2]];
+      faces[faceIndex] = edges[f[i]] + indexOffset;
+      faces[faceIndex + 1] = edges[f[i+1]] + indexOffset;
+      faces[faceIndex + 2] = edges[f[i+2]] + indexOffset;
       faceIndex += 3;
     }
   }
