@@ -1,5 +1,5 @@
-#ifndef NOISER_H
-#define NOISER_H
+#ifndef CACHED_FAST_NOISE_OBJECT_H
+#define CACHED_FAST_NOISE_OBJECT_H
 
 #include "fastNoiseObject.h"
 #include "MurmurHash3.h"

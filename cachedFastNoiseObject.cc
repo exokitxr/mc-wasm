@@ -1,4 +1,4 @@
-#include "noiser.h"
+#include "cachedFastNoiseObject.h"
 #include "fastNoiseObject.h"
 #include "MurmurHash3.h"
 #include <node.h>

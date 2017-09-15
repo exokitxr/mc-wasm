@@ -1,6 +1,6 @@
 #include <node.h>
 #include "fastNoiseObject.h"
-#include "noiser.h"
+#include "cachedFastNoiseObject.h"
 #include "march.h"
 #include "tssl.h"
 #include "compose.h"
