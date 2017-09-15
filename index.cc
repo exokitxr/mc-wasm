@@ -116,31 +116,31 @@ void Compose(const FunctionCallbackInfo<Value>& args) {
 
   for (unsigned int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
     Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(opts->Get(positionsString)->ToObject()->Get(i)->ToObject()->Get(bufferString));
-    unsigned int positionsByteOffset = opts->Get(positionsString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    unsigned int positionsByteOffset = opts->Get(positionsString)->ToObject()->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
     positions[i] = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
 
     Local<ArrayBuffer> uvsBuffer = Local<ArrayBuffer>::Cast(opts->Get(uvsString)->ToObject()->Get(i)->ToObject()->Get(bufferString));
-    unsigned int uvsByteOffset = opts->Get(uvsString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    unsigned int uvsByteOffset = opts->Get(uvsString)->ToObject()->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
     uvs[i] = (float *)((char *)uvsBuffer->GetContents().Data() + uvsByteOffset);
 
     Local<ArrayBuffer> ssaosBuffer = Local<ArrayBuffer>::Cast(opts->Get(ssaosString)->ToObject()->Get(i)->ToObject()->Get(bufferString));
-    unsigned int ssaosByteOffset = opts->Get(ssaosString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    unsigned int ssaosByteOffset = opts->Get(ssaosString)->ToObject()->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
     ssaos[i] = (unsigned char *)((char *)ssaosBuffer->GetContents().Data() + ssaosByteOffset);
 
     Local<ArrayBuffer> framesBuffer = Local<ArrayBuffer>::Cast(opts->Get(framesString)->ToObject()->Get(i)->ToObject()->Get(bufferString));
-    unsigned int framesByteOffset = opts->Get(framesString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    unsigned int framesByteOffset = opts->Get(framesString)->ToObject()->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
     frames[i] = (float *)((char *)framesBuffer->GetContents().Data() + framesByteOffset);
 
     Local<ArrayBuffer> objectIndicesBuffer = Local<ArrayBuffer>::Cast(opts->Get(objectIndicesString)->ToObject()->Get(i)->ToObject()->Get(bufferString));
-    unsigned int objectIndicesByteOffset = opts->Get(objectIndicesString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    unsigned int objectIndicesByteOffset = opts->Get(objectIndicesString)->ToObject()->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
     objectIndices[i] = (float *)((char *)objectIndicesBuffer->GetContents().Data() + objectIndicesByteOffset);
 
     Local<ArrayBuffer> indicesBuffer = Local<ArrayBuffer>::Cast(opts->Get(indicesString)->ToObject()->Get(i)->ToObject()->Get(bufferString));
-    unsigned int indicesByteOffset = opts->Get(indicesString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    unsigned int indicesByteOffset = opts->Get(indicesString)->ToObject()->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
     indices[i] = (unsigned int *)((char *)indicesBuffer->GetContents().Data() + indicesByteOffset);
 
     Local<ArrayBuffer> objectsBuffer = Local<ArrayBuffer>::Cast(opts->Get(objectsString)->ToObject()->Get(i)->ToObject()->Get(bufferString));
-    unsigned int objectsByteOffset = opts->Get(objectsString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    unsigned int objectsByteOffset = opts->Get(objectsString)->ToObject()->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
     objects[i] = (unsigned int *)((char *)objectsBuffer->GetContents().Data() + objectsByteOffset);
   }
 
