@@ -170,21 +170,6 @@ class Vec {
           z = std::max<float>(z, o.z);
           return *this;
         }
-
-        static Vec normal(const Vec &a, const Vec &b, const Vec &c) {
-          Vec result(c);
-          result -= b;
-          Vec v0(a);
-          v0 -= b;
-          result ^= v0;
-
-          float resultLengthSq = result.magnitude_sqr();
-          if (resultLengthSq > 0) {
-            result *= 1.0 / sqrt(resultLengthSq);
-            return result;
-          }
-          return Vec(0, 0, 0);
-        }
 };
 
 class Quat {
@@ -218,6 +203,37 @@ class Quat {
       y = q.y;
       z = q.z;
       w = q.w;
+    }
+};
+
+class Tri {
+  public:
+    Vec a;
+    Vec b;
+    Vec c;
+
+    Tri() {
+    }
+
+    Tri(const Vec &a, const Vec &b, const Vec &c) : a(a), b(b), c(c) {
+    }
+
+    Tri(const Tri &t) : a(t.a), b(t.b), c(t.c) {
+    }
+
+    Vec normal() const {
+      Vec result(c);
+      result -= b;
+      Vec v0(a);
+      v0 -= b;
+      result ^= v0;
+
+      float resultLengthSq = result.magnitude_sqr();
+      if (resultLengthSq > 0) {
+        result *= 1.0 / sqrt(resultLengthSq);
+        return result;
+      }
+      return Vec(0, 0, 0);
     }
 };
 

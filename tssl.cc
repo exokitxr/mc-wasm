@@ -435,7 +435,7 @@ void getSsaos(float *vertices, unsigned int numVertices, unsigned int *voxels, u
         c = faceVertex;
       }
     }
-    const Vec normal = Vec::normal(a, b, c);
+    const Vec normal = Tri(a, b, c).normal();
 
     unsigned int normalAxis;
     unsigned int normalSign;

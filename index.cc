@@ -4,6 +4,7 @@
 #include "tssl.h"
 #include "compose.h"
 #include "flod.h"
+#include "heightfield.h"
 // #include <iostream>
 
 using v8::FunctionCallbackInfo;
@@ -255,6 +256,25 @@ void Flod(const FunctionCallbackInfo<Value>& args) {
   flod(ether, shift, peeks);
 }
 
+void GenHeightfield(const FunctionCallbackInfo<Value>& args) {
+  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
+  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+
+  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
+  unsigned int positionsByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned int numPositions = args[1]->Uint32Value();
+  Local<ArrayBuffer> heightfieldBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
+  unsigned int heightfieldByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> staticHeightfieldBuffer = Local<ArrayBuffer>::Cast(args[3]->ToObject()->Get(bufferString));
+  unsigned int staticHeightfieldByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
+
+  float *positions = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
+  float *heightfield = (float *)((char *)heightfieldBuffer->GetContents().Data() + heightfieldByteOffset);
+  float *staticHeightfield = (float *)((char *)staticHeightfieldBuffer->GetContents().Data() + staticHeightfieldByteOffset);
+
+  genHeightfield(positions, numPositions, heightfield, staticHeightfield);
+}
+
 void InitAll(Local<Object> exports, Local<Object> module) {
   Isolate *isolate = Isolate::GetCurrent();
 
@@ -267,6 +287,7 @@ void InitAll(Local<Object> exports, Local<Object> module) {
   NODE_SET_METHOD(result, "compose", Compose);
   NODE_SET_METHOD(result, "tesselate", Tssl);
   NODE_SET_METHOD(result, "flood", Flod);
+  NODE_SET_METHOD(result, "genHeightfield", GenHeightfield);
   module->Set(String::NewFromUtf8(isolate, "exports"), result);
 }
 
