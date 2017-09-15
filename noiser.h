@@ -57,6 +57,8 @@ class Noiser : public node::ObjectWrap {
     void fillElevations(int ox, int oz, float *elevations);
     static void FillEther(const FunctionCallbackInfo<Value>& args);
     void fillEther(float *elevations, float *ether);
+    static void FillLiquid(const FunctionCallbackInfo<Value>& args);
+    void fillLiquid(int ox, int oz, float *ether, float *elevations, float *water, float *lava);
 };
 
 #endif

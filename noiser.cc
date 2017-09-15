@@ -30,6 +30,10 @@ const int NUM_CELLS_OVERSCAN = NUM_CELLS + OVERSCAN;
 const int NUM_CELLS_HEIGHT = 128;
 const int NUM_CELLS_OVERSCAN_Y = NUM_CELLS_HEIGHT + OVERSCAN;
 
+int getEtherIndex(int x, int y, int z) {
+  return x + (z * NUM_CELLS_OVERSCAN) + (y * NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN);
+}
+
 Persistent<Function> Noiser::constructor;
 void Noiser::Init(Isolate* isolate) {
   // Prepare constructor template
@@ -45,6 +49,7 @@ void Noiser::Init(Isolate* isolate) {
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillBiomes", FillBiomes);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillElevations", FillElevations);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillEther", FillEther);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "fillLiquid", FillLiquid);
 
   constructor.Reset(isolate, tpl->GetFunction());
 }
@@ -383,6 +388,115 @@ void Noiser::fillEther(float *elevations, float *ether) {
       for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
         const float elevation = elevations[x + z * NUM_CELLS_OVERSCAN];
         ether[index++] = std::min<float>(std::max<float>((float)y - elevation, -1.0), 1.0);
+      }
+    }
+  }
+}
+
+void Noiser::FillLiquid(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  // Check the number of arguments passed.
+  if (args.Length() < 2) {
+    // Throw an Error that is passed back to JavaScript
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    return;
+  }
+
+  // Check the argument types
+  if (!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsFloat32Array() || !args[3]->IsFloat32Array() || !args[4]->IsFloat32Array() || !args[5]->IsFloat32Array()) {
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Wrong arguments")));
+    return;
+  }
+
+  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
+  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  int ox = args[0]->Int32Value();
+  int oz = args[1]->Int32Value();
+  Local<ArrayBuffer> etherBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
+  unsigned int etherByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *ether = (float *)((char *)etherBuffer->GetContents().Data() + etherByteOffset);
+  Local<ArrayBuffer> elevationsBuffer = Local<ArrayBuffer>::Cast(args[3]->ToObject()->Get(bufferString));
+  unsigned int elevationsByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *elevations = (float *)((char *)elevationsBuffer->GetContents().Data() + elevationsByteOffset);
+  Local<ArrayBuffer> waterBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
+  unsigned int waterByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *water = (float *)((char *)waterBuffer->GetContents().Data() + waterByteOffset);
+  Local<ArrayBuffer> lavaBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(bufferString));
+  unsigned int lavaByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *lava = (float *)((char *)lavaBuffer->GetContents().Data() + lavaByteOffset);
+
+  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  obj->fillLiquid(ox, oz, ether, elevations, water, lava);
+}
+
+inline void setLiquid(int ox, int oz, int x, int y, int z, float *liquid) {
+  x -= ox * NUM_CELLS;
+  z -= oz * NUM_CELLS;
+
+  for (int dz = -1; dz <= 1; dz++) {
+    const int az = z + dz;
+    if (az >= 0 && az < (NUM_CELLS + 1)) {
+      for (int dx = -1; dx <= 1; dx++) {
+        const int ax = x + dx;
+        if (ax >= 0 && ax < (NUM_CELLS + 1)) {
+          for (int dy = -1; dy <= 1; dy++) {
+            const int ay = y + dy;
+            const int index = getEtherIndex(ax, ay, az);
+            // const oldLiquidValue = liquid[index];
+
+            // if (oldLiquidValue === 0 || oldLiquidValue === 0xFF || oldLiquidValue === 0xFE) {
+              if (ay >= 0 && ay < (NUM_CELLS_HEIGHT + 1)) {
+                liquid[index] = std::min<float>(-1.0 * (1.0 - (sqrt((float)dx*(float)dx + (float)dy*(float)dy + (float)dz*(float)dz) / (sqrt(3.0)*0.8))), liquid[index]);
+                /* if (dx === 0 && dy === 0 && dz === 0) {
+                  liquid[index] = -1;
+                } else if (liquid[index] === 0) {
+                  liquid[index] = (dy >= 0) ? 0xFF : (dx === 0 && dz === 0 ? 0xFE : 0);
+                } */
+              }
+            // }
+          }
+        }
+      }
+    }
+  }
+}
+
+void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *water, float *lava) {
+  for (unsigned int i = 0; i < (NUM_CELLS + 1) * (NUM_CELLS_HEIGHT + 1) * (NUM_CELLS + 1); i++) {
+    water[i] = 1.0;
+    lava[i] = 1.0;
+  }
+
+  // water
+  unsigned int index = 0;
+  for (int z = 0; z <= NUM_CELLS; z++) {
+    for (int x = 0; x <= NUM_CELLS; x++) {
+      const float elevation = elevations[index++];
+      for (int y = elevation; y < 64; y++) {
+        if (y < 64 && y >= elevation) {
+          const int index = getEtherIndex(x, y, z);
+          water[index] = ether[index] * -1;
+        }
+      }
+    }
+  }
+
+  // lava
+  index = 0;
+  for (int z = 0; z <= NUM_CELLS; z++) {
+    for (int x = 0; x <= NUM_CELLS; x++) {
+      const float elevation = elevations[index++];
+
+      if (elevation >= 80) {
+        const int ax = (ox * NUM_CELLS) + x;
+        const int az = (oz * NUM_CELLS) + z;
+
+        if (getTemperature(ax + 1000, az + 1000) < 0.235) {
+          setLiquid(ox, oz, ax, (int)std::floor(elevation + 1.0), az, lava);
+        }
       }
     }
   }
