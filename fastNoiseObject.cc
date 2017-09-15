@@ -24,6 +24,10 @@ FastNoiseObject::FastNoiseObject(int s, double frequency, int octaves) : fastNoi
 FastNoiseObject::~FastNoiseObject() {
 }
 
+double FastNoiseObject::in2D(double x, double y) {
+  return (1.0 + fastNoise.GetSimplexFractal(x, y)) / 2.0;
+}
+
 void FastNoiseObject::Init(Isolate* isolate) {
   // Prepare constructor template
   Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
@@ -31,7 +35,7 @@ void FastNoiseObject::Init(Isolate* isolate) {
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
   // Prototype
-  NODE_SET_PROTOTYPE_METHOD(tpl, "in2D", in2D);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "in2D", In2D);
 
   constructor.Reset(isolate, tpl->GetFunction());
 }
@@ -75,7 +79,7 @@ void FastNoiseObject::NewInstance(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(instance);
 }
 
-void FastNoiseObject::in2D(const FunctionCallbackInfo<Value>& args) {
+void FastNoiseObject::In2D(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   // Check the number of arguments passed.
@@ -94,7 +98,5 @@ void FastNoiseObject::in2D(const FunctionCallbackInfo<Value>& args) {
   }
 
   FastNoiseObject* obj = ObjectWrap::Unwrap<FastNoiseObject>(args.Holder());
-  double n = (1.0 + obj->fastNoise.GetSimplexFractal(args[0]->NumberValue(), args[1]->NumberValue())) / 2.0;
-
-  args.GetReturnValue().Set(Number::New(isolate, n));
+  args.GetReturnValue().Set(Number::New(isolate, obj->in2D(args[0]->NumberValue(), args[1]->NumberValue())));
 }
