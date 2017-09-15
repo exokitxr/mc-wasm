@@ -1,6 +1,7 @@
 #include <node.h>
 #include "fastNoiseObject.h"
 #include "cachedFastNoiseObject.h"
+#include "noiser.h"
 #include "march.h"
 #include "tssl.h"
 #include "compose.h"
@@ -31,6 +32,10 @@ void CreateFastNoise(const FunctionCallbackInfo<Value>& args) {
 
 void CreateCachedFastNoise(const FunctionCallbackInfo<Value>& args) {
   CachedFastNoiseObject::NewInstance(args);
+}
+
+void CreateNoiser(const FunctionCallbackInfo<Value>& args) {
+  Noiser::NewInstance(args);
 }
 
 void MarchCubes(const FunctionCallbackInfo<Value>& args) {
@@ -285,36 +290,18 @@ void InitAll(Local<Object> exports, Local<Object> module) {
 
   FastNoiseObject::Init(isolate);
   CachedFastNoiseObject::Init(isolate);
+  Noiser::Init(isolate);
   initFlod();
 
   Local<Object> result = Object::New(isolate);
   NODE_SET_METHOD(result, "fastNoise", CreateFastNoise);
   NODE_SET_METHOD(result, "cachedFastNoise", CreateCachedFastNoise);
+  NODE_SET_METHOD(result, "noiser", CreateNoiser);
   NODE_SET_METHOD(result, "marchingCubes", MarchCubes);
   NODE_SET_METHOD(result, "compose", Compose);
   NODE_SET_METHOD(result, "tesselate", Tssl);
   NODE_SET_METHOD(result, "flood", Flod);
   NODE_SET_METHOD(result, "genHeightfield", GenHeightfield);
-
-  /* Local<Object> noise = Object::New(isolate);
-CachedFastNoiseObject elevationNoise1(rng(), 2, 1);
-CachedFastNoiseObject elevationNoise2(rng(), 2, 1);
-CachedFastNoiseObject elevationNoise3(rng(), 2, 1);
-CachedFastNoiseObject wormNoise(rng(), 0.002, 4);
-CachedFastNoiseObject oceanNoise(rng(), 0.002, 4);
-CachedFastNoiseObject riverNoise(rng(), 0.002, 4);
-CachedFastNoiseObject temperatureNoise(rng(), 0.002, 4);
-CachedFastNoiseObject humidityNoise(rng(), 0.002, 4);
-
-  noise->Set(String::NewFromUtf8(args.GetIsolate(), "elevationNoise1"), elevationNoise1);
-  noise->Set(String::NewFromUtf8(args.GetIsolate(), "elevationNoise2"), elevationNoise2);
-  noise->Set(String::NewFromUtf8(args.GetIsolate(), "elevationNoise3"), elevationNoise3);
-CachedFastNoiseObject wormNoise(rng(), 0.002, 4);
-CachedFastNoiseObject oceanNoise(rng(), 0.002, 4);
-CachedFastNoiseObject riverNoise(rng(), 0.002, 4);
-CachedFastNoiseObject temperatureNoise(rng(), 0.002, 4);
-CachedFastNoiseObject humidityNoise(rng(), 0.002, 4);
-  result->Set(String::NewFromUtf8(args.GetIsolate(), "noise"), noise); */
 
   module->Set(String::NewFromUtf8(isolate, "exports"), result);
 }

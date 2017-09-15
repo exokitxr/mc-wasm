@@ -1,10 +1,10 @@
 #include "cachedFastNoiseObject.h"
 #include "fastNoiseObject.h"
-#include "MurmurHash3.h"
+// #include "MurmurHash3.h"
 #include <node.h>
 #include <cmath>
 #include <random>
-#include <map>
+#include <unordered_map>
 #include <vector>
 // #include <iostream>
 
@@ -21,14 +21,7 @@ using v8::String;
 using v8::Value;
 using v8::Exception;
 
-#define DEFAULT_SEED "a"
 const unsigned int NUM_CELLS = 16;
-
-unsigned int seed;
-void init() {
-  MurmurHash3_x86_32(DEFAULT_SEED, sizeof(DEFAULT_SEED) - 1, 0, &seed);
-}
-std::mt19937 rng(seed);
 
 Persistent<Function> CachedFastNoiseObject::constructor;
 void CachedFastNoiseObject::Init(Isolate* isolate) {
@@ -54,7 +47,8 @@ void CachedFastNoiseObject::NewInstance(const FunctionCallbackInfo<Value>& args)
   args.GetReturnValue().Set(instance);
 }
 
-CachedFastNoiseObject::CachedFastNoiseObject(int s, double frequency, int octaves) : FastNoiseObject(s, frequency, octaves) {}
+CachedFastNoiseObject::CachedFastNoiseObject(int s, double frequency, int octaves) : FastNoiseObject(s, frequency, octaves) {
+}
 
 void CachedFastNoiseObject::New(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
@@ -113,7 +107,7 @@ double CachedFastNoiseObject::in2D(double x, double z) {
   const int index = ax + az * NUM_CELLS;
 
   const std::pair<int, int> key(ox, oz);
-  std::map<std::pair<int, int>, std::vector<double>>::iterator entryIter = cache.find(key);
+  std::unordered_map<std::pair<int, int>, std::vector<double>>::iterator entryIter = cache.find(key);
 
   if (entryIter != cache.end()) {
     return entryIter->second[index];

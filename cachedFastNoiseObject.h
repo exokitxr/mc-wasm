@@ -3,9 +3,10 @@
 
 #include "fastNoiseObject.h"
 #include "MurmurHash3.h"
+#include "hash.h"
 #include <node.h>
 #include <random>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 using v8::Context;
@@ -27,7 +28,7 @@ class CachedFastNoiseObject : public FastNoiseObject {
     static void Init(Isolate* isolate);
     static void NewInstance(const FunctionCallbackInfo<Value>& args);
 
-    std::map<std::pair<int, int>, std::vector<double>> cache;
+    std::unordered_map<std::pair<int, int>, std::vector<double>> cache;
 
     explicit CachedFastNoiseObject(int s, double frequency, int octaves);
 
