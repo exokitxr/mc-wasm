@@ -590,16 +590,16 @@ void Noiser::postProcessGeometry(int ox, int oz, Local<Object> &range, float *po
   int waterStart = range->Get(waterStartString)->Int32Value();
   int waterCount = range->Get(waterCountString)->Int32Value();
   postProcessGeometryRange(ox, oz, waterStart, waterCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
-    r = fmod(abs(x) / 16.0 * 4.0 * 0.99, 1) * 0.5;
-    g = fmod(abs(z) / 16.0 * 4.0 / 16.0 * 0.99, 1);
+    r = 0.0;
+    g = 0.0;
     b = 1.0;
   });
 
   int lavaStart = range->Get(lavaStartString)->Int32Value();
   int lavaCount = range->Get(lavaCountString)->Int32Value();
   postProcessGeometryRange(ox, oz, lavaStart, lavaCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
-    r = 0.5 + fmod(abs(x) / 16.0 * 4.0 * 0.99, 1) * 0.5;
-    g = fmod(abs(z) / 16.0 * 4.0 / 16.0 * 0.99, 1);
+    r = 0.5;
+    g = 0.0;
     b = 2.0;
   });
 }
