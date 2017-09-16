@@ -19,6 +19,8 @@ using v8::Persistent;
 using v8::String;
 using v8::Value;
 using v8::Exception;
+using v8::Object;
+using v8::Array;
 
 class Noiser : public node::ObjectWrap {
   public:
@@ -59,6 +61,8 @@ class Noiser : public node::ObjectWrap {
     void fillEther(float *elevations, float *ether);
     static void FillLiquid(const FunctionCallbackInfo<Value>& args);
     void fillLiquid(int ox, int oz, float *ether, float *elevations, float *water, float *lava);
+    static void PostProcessGeometry(const FunctionCallbackInfo<Value>& args);
+    void postProcessGeometry(int ox, int oz, Local<Object> &range, float *positions, float *colors, unsigned char *biomes);
 };
 
 #endif

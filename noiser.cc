@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
+#include <functional>
 // #include <iostream>
 
 using v8::Context;
@@ -22,14 +23,19 @@ using v8::Persistent;
 using v8::String;
 using v8::Value;
 using v8::Exception;
+using v8::Array;
 using v8::ArrayBuffer;
 
 const int NUM_CELLS = 16;
 const int OVERSCAN = 1;
 const int NUM_CELLS_OVERSCAN = NUM_CELLS + OVERSCAN;
 const int NUM_CELLS_HEIGHT = 128;
+const int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS;
 const int NUM_CELLS_OVERSCAN_Y = NUM_CELLS_HEIGHT + OVERSCAN;
 
+int getCoordOverscanIndex(int x, int z) {
+  return x + z * NUM_CELLS_OVERSCAN;
+}
 int getEtherIndex(int x, int y, int z) {
   return x + (z * NUM_CELLS_OVERSCAN) + (y * NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN);
 }
@@ -50,6 +56,7 @@ void Noiser::Init(Isolate* isolate) {
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillElevations", FillElevations);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillEther", FillEther);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillLiquid", FillLiquid);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "postProcessGeometry", PostProcessGeometry);
 
   constructor.Reset(isolate, tpl->GetFunction());
 }
@@ -500,4 +507,99 @@ void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *
       }
     }
   }
+}
+
+inline void postProcessGeometryRange(int ox, int oz, int start, int count, float *positions, float *colors, const std::function<void(const float,const float,const float,const float,const float,float &,float &,float &)>& getColor) {
+  float *geometryPositions = positions + start;
+  float *geometryColors = colors + start;
+
+  unsigned int baseIndex = 0;
+  for (int i = 0; i < count / 3; i++) {
+    const float x = geometryPositions[baseIndex + 0];
+    const float y = geometryPositions[baseIndex + 1];
+    const float z = geometryPositions[baseIndex + 2];
+
+    const float ax = x + (ox * NUM_CELLS);
+    const float ay = y;
+    const float az = z + (oz * NUM_CELLS);
+
+    geometryPositions[baseIndex + 0] = ax;
+    geometryPositions[baseIndex + 2] = az;
+
+    getColor(ox, oz, ax, ay, az, geometryColors[baseIndex + 0], geometryColors[baseIndex + 1], geometryColors[baseIndex + 2]);
+
+    baseIndex += 3;
+  }
+};
+
+void Noiser::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  // Check the number of arguments passed.
+  if (args.Length() < 2) {
+    // Throw an Error that is passed back to JavaScript
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    return;
+  }
+
+  // Check the argument types
+  if (!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsObject() || !args[3]->IsFloat32Array() || !args[4]->IsFloat32Array() || !args[5]->IsUint8Array()) {
+    isolate->ThrowException(Exception::TypeError(
+        String::NewFromUtf8(isolate, "Wrong arguments")));
+    return;
+  }
+
+  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
+  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  int ox = args[0]->Int32Value();
+  int oz = args[1]->Int32Value();
+  Local<Object> range = args[2]->ToObject();
+  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[3]->ToObject()->Get(bufferString));
+  unsigned int positionsByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *positions = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
+  Local<ArrayBuffer> colorsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
+  unsigned int colorsByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *colors = (float *)((char *)colorsBuffer->GetContents().Data() + colorsByteOffset);
+  Local<ArrayBuffer> biomesBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(bufferString));
+  unsigned int biomesByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *biomes = (unsigned char *)((char *)biomesBuffer->GetContents().Data() + biomesByteOffset);
+
+  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  obj->postProcessGeometry(ox, oz, range, positions, colors, biomes);
+}
+
+void Noiser::postProcessGeometry(int ox, int oz, Local<Object> &range, float *positions, float *colors, unsigned char *biomes) {
+  Local<String> landStartString = String::NewFromUtf8(Isolate::GetCurrent(), "landStart");
+  Local<String> landCountString = String::NewFromUtf8(Isolate::GetCurrent(), "landCount");
+  Local<String> waterStartString = String::NewFromUtf8(Isolate::GetCurrent(), "waterStart");
+  Local<String> waterCountString = String::NewFromUtf8(Isolate::GetCurrent(), "waterCount");
+  Local<String> lavaStartString = String::NewFromUtf8(Isolate::GetCurrent(), "lavaStart");
+  Local<String> lavaCountString = String::NewFromUtf8(Isolate::GetCurrent(), "lavaCount");
+
+  int landStart = range->Get(landStartString)->Int32Value();
+  int landCount = range->Get(landCountString)->Int32Value();
+  postProcessGeometryRange(ox, oz, landStart, landCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
+    const Biome &biome = BIOMES[biomes[getCoordOverscanIndex((int)std::floor(x - ox * NUM_CELLS), (int)std::floor(z - oz * NUM_CELLS))]];
+    const unsigned int color = biome.color;
+    r = ((color >> (8 * 2)) & 0xFF) / 255.0;
+    g = ((color >> (8 * 1)) & 0xFF) / 255.0;
+    b = ((color >> (8 * 0)) & 0xFF) / 255.0;
+  });
+
+  int waterStart = range->Get(waterStartString)->Int32Value();
+  int waterCount = range->Get(waterCountString)->Int32Value();
+  postProcessGeometryRange(ox, oz, waterStart, waterCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
+    r = fmod(abs(x) / 16.0 * 4.0 * 0.99, 1) * 0.5;
+    g = fmod(abs(z) / 16.0 * 4.0 / 16.0 * 0.99, 1);
+    b = 1.0;
+  });
+
+  int lavaStart = range->Get(lavaStartString)->Int32Value();
+  int lavaCount = range->Get(lavaCountString)->Int32Value();
+  postProcessGeometryRange(ox, oz, lavaStart, lavaCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
+    r = 0.5 + fmod(abs(x) / 16.0 * 4.0 * 0.99, 1) * 0.5;
+    g = fmod(abs(z) / 16.0 * 4.0 / 16.0 * 0.99, 1);
+    b = 2.0;
+  });
 }
