@@ -445,25 +445,16 @@ inline void setLiquid(int ox, int oz, int x, int y, int z, float *liquid) {
 
   for (int dz = -1; dz <= 1; dz++) {
     const int az = z + dz;
-    if (az >= 0 && az < (NUM_CELLS + 1)) {
+    if (az >= 0 && az <= NUM_CELLS) {
       for (int dx = -1; dx <= 1; dx++) {
         const int ax = x + dx;
-        if (ax >= 0 && ax < (NUM_CELLS + 1)) {
+        if (ax >= 0 && ax <= NUM_CELLS) {
           for (int dy = -1; dy <= 1; dy++) {
             const int ay = y + dy;
-            const int index = getEtherIndex(ax, ay, az);
-            // const oldLiquidValue = liquid[index];
-
-            // if (oldLiquidValue === 0 || oldLiquidValue === 0xFF || oldLiquidValue === 0xFE) {
-              if (ay >= 0 && ay < (NUM_CELLS_HEIGHT + 1)) {
-                liquid[index] = std::min<float>(-1.0 * (1.0 - (sqrt((float)dx*(float)dx + (float)dy*(float)dy + (float)dz*(float)dz) / (sqrt(3.0)*0.8))), liquid[index]);
-                /* if (dx === 0 && dy === 0 && dz === 0) {
-                  liquid[index] = -1;
-                } else if (liquid[index] === 0) {
-                  liquid[index] = (dy >= 0) ? 0xFF : (dx === 0 && dz === 0 ? 0xFE : 0);
-                } */
-              }
-            // }
+            if (ay >= 0 && ay < (NUM_CELLS_HEIGHT + 1)) {
+              const int index = getEtherIndex(ax, ay, az);
+              liquid[index] = std::min<float>(-1.0 * (1.0 - (sqrt((float)dx*(float)dx + (float)dy*(float)dy + (float)dz*(float)dz) / (sqrt(3.0)*0.8))), liquid[index]);
+            }
           }
         }
       }
@@ -493,16 +484,17 @@ void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *
 
   // lava
   index = 0;
-  for (int z = 0; z <= NUM_CELLS; z++) {
-    for (int x = 0; x <= NUM_CELLS; x++) {
-      const float elevation = elevations[index++];
+  for (int doz = -1; doz <= 1; doz++) {
+    for (int dox = -1; dox <= 1; dox++) {
+      for (int z = 0; z <= NUM_CELLS; z++) {
+        for (int x = 0; x <= NUM_CELLS; x++) {
+          const int ax = ((ox + dox) * NUM_CELLS) + x;
+          const int az = ((oz + doz) * NUM_CELLS) + z;
+          const float elevation = getElevation(ax, az);
 
-      if (elevation >= 80) {
-        const int ax = (ox * NUM_CELLS) + x;
-        const int az = (oz * NUM_CELLS) + z;
-
-        if (getTemperature(ax + 1000, az + 1000) < 0.235) {
-          setLiquid(ox, oz, ax, (int)std::floor(elevation + 1.0), az, lava);
+          if (elevation >= 80 && getTemperature(ax + 1000, az + 1000) < 0.235) {
+            setLiquid(ox, oz, ax, (int)std::floor(elevation + 1.0), az, lava);
+          }
         }
       }
     }
