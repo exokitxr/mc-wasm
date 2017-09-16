@@ -139,26 +139,100 @@ void getLightSources(int ox, int oz, float **lavaArray, float **objectLightsArra
   }
 }
 
-void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, float **lavaArray, float **objectLightsArray, float **etherArray, unsigned int **blocksArray, unsigned char **lightsArray) {
+inline void setLight(int ox, int oz, int x, int y, int z, unsigned char v, unsigned char **lightsArray) {
+  const int lax = (int)std::floor(((float)x - ((float)ox - 1.0) * (float)NUM_CELLS) / (float)NUM_CELLS);
+  const int laz = (int)std::floor(((float)z - ((float)oz - 1.0) * (float)NUM_CELLS) / (float)NUM_CELLS);
+  const int lightsArrayIndex = getLightsArrayIndex(lax, laz);
+  unsigned char *lights = lightsArray[lightsArrayIndex];
+
+  const int lx = x - (int)std::floor((float)x / (float)NUM_CELLS) * NUM_CELLS;
+  const int ly = y;
+  const int lz = z - (int)std::floor((float)z / (float)NUM_CELLS) * NUM_CELLS;
+  const int lightsIndex = getLightsIndex(lx, ly, lz);
+  lights[lightsIndex] = v;
+}
+
+inline unsigned char getLight(int ox, int oz, int x, int y, int z, unsigned char **lightsArray) {
+  const int lax = (int)std::floor(((float)x - ((float)ox - 1.0) * (float)NUM_CELLS) / (float)NUM_CELLS);
+  const int laz = (int)std::floor(((float)z - ((float)oz - 1.0) * (float)NUM_CELLS) / (float)NUM_CELLS);
+  const int lightsArrayIndex = getLightsArrayIndex(lax, laz);
+  unsigned char *lights = lightsArray[lightsArrayIndex];
+
+  const int lx = x - (int)std::floor((float)x / (float)NUM_CELLS) * NUM_CELLS;
+  const int ly = y;
+  const int lz = z - (int)std::floor((float)z / (float)NUM_CELLS) * NUM_CELLS;
+  const int lightsIndex = getLightsIndex(lx, ly, lz);
+  return lights[lightsIndex];
+}
+
+void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, bool relight, float **lavaArray, float **objectLightsArray, float **etherArray, unsigned int **blocksArray, unsigned char **lightsArray) {
   for (int z = minZ; z < maxZ; z++) {
     for (int x = minX; x < maxX; x++) {
       for (int y = minY; y <= maxY; y++) {
-        const int lax = (int)std::floor(((float)x - ((float)ox - 1.0) * (float)NUM_CELLS) / (float)NUM_CELLS);
-        const int laz = (int)std::floor(((float)z - ((float)oz - 1.0) * (float)NUM_CELLS) / (float)NUM_CELLS);
-        const int lightsArrayIndex = getLightsArrayIndex(lax, laz);
-        unsigned char *lights = lightsArray[lightsArrayIndex];
-
-        const int lx = x - (int)std::floor((float)x / (float)NUM_CELLS) * NUM_CELLS;
-        const int ly = y;
-        const int lz = z - (int)std::floor((float)z / (float)NUM_CELLS) * NUM_CELLS;
-        const int lightsIndex = getLightsIndex(lx, ly, lz);
-        lights[lightsIndex] = 0;
+        setLight(ox, oz, x, y, z, 0, lightsArray);
       }
     }
   }
  
   std::vector<LightSource> lightSources;
   getLightSources(ox, oz, lavaArray, objectLightsArray, lightSources);
+  if (relight) {
+    int x, y, z;
+    // top
+    y = maxY + 1;
+    if (y <= NUM_CELLS_HEIGHT) {
+      for (int z = minZ; z < maxZ; z++) {
+        for (int x = minX; x < maxX; x++) {
+          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+        }
+      }
+    }
+    // bottom
+    y = minY - 1;
+    if (y >= 0) {
+      for (int z = minZ; z < maxZ; z++) {
+        for (int x = minX; x < maxX; x++) {
+          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+        }
+      }
+    }
+    // left
+    x = minX - 1;
+    if (x >= (ox - 1) * NUM_CELLS) {
+      for (int z = minZ; z < maxZ; z++) {
+        for (int y = minY; y <= maxY; y++) {
+          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+        }
+      }
+    }
+    // right
+    x = maxX;
+    if (x < (ox + 2) * NUM_CELLS) {
+      for (int z = minZ; z < maxZ; z++) {
+        for (int y = minY; y <= maxY; y++) {
+          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+        }
+      }
+    }
+    // back
+    z = minZ - 1;
+    if (z >= (oz - 1) * NUM_CELLS) {
+      for (int x = minX; x < maxX; x++) {
+        for (int y = minY; y <= maxY; y++) {
+          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+        }
+      }
+    }
+    // front
+    z = maxZ;
+    if (z < (oz + 2) * NUM_CELLS) {
+      for (int x = minX; x < maxX; x++) {
+        for (int y = minY; y <= maxY; y++) {
+          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+        }
+      }
+    }
+  }
   for (auto const &lightSource : lightSources) {
     fillLight(ox, oz, lightSource.x, lightSource.y, lightSource.z, lightSource.v, minX, maxX, minY, maxY, minZ, maxZ, etherArray, blocksArray, lightsArray);
   }

@@ -23,6 +23,7 @@ using v8::ArrayBuffer;
 using v8::Float32Array;
 using v8::Uint32Array;
 using v8::Uint8Array;
+using v8::Boolean;
 
 const unsigned int NUM_CELLS = 16;
 const unsigned int NUM_CELLS_HEIGHT = 128;
@@ -290,7 +291,7 @@ void GenHeightfield(const FunctionCallbackInfo<Value>& args) {
 void Light(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  if (args.Length() < 13) {
+  if (args.Length() < 14) {
     isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
@@ -303,11 +304,12 @@ void Light(const FunctionCallbackInfo<Value>& args) {
       !args[5]->IsNumber() ||
       !args[6]->IsNumber() ||
       !args[7]->IsNumber() ||
-      !args[8]->IsArray() ||
+      !args[8]->IsBoolean() ||
       !args[9]->IsArray() ||
       !args[10]->IsArray() ||
       !args[11]->IsArray() ||
-      !args[12]->IsArray()
+      !args[12]->IsArray() ||
+      !args[13]->IsArray()
   ) {
     isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
@@ -324,11 +326,12 @@ void Light(const FunctionCallbackInfo<Value>& args) {
   int maxY = args[5]->Int32Value();
   int minZ = args[6]->Int32Value();
   int maxZ = args[7]->Int32Value();
-  Local<Array> lava = Local<Array>::Cast(args[8]);
-  Local<Array> objectLights = Local<Array>::Cast(args[9]);
-  Local<Array> ethers = Local<Array>::Cast(args[10]);
-  Local<Array> blocks = Local<Array>::Cast(args[11]);
-  Local<Array> lights = Local<Array>::Cast(args[12]);
+  bool relight = args[8]->BooleanValue();
+  Local<Array> lava = Local<Array>::Cast(args[9]);
+  Local<Array> objectLights = Local<Array>::Cast(args[10]);
+  Local<Array> ethers = Local<Array>::Cast(args[11]);
+  Local<Array> blocks = Local<Array>::Cast(args[12]);
+  Local<Array> lights = Local<Array>::Cast(args[13]);
 
   float *lavaArray[9];
   float *objectLightsArray[9];
@@ -367,7 +370,7 @@ void Light(const FunctionCallbackInfo<Value>& args) {
   unsigned int biomesByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned char *biomes = (unsigned char *)((char *)biomesBuffer->GetContents().Data() + biomesByteOffset); */
 
-  light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
+  light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
 }
 
 void InitAll(Local<Object> exports, Local<Object> module) {
