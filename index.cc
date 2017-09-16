@@ -53,9 +53,9 @@ void MarchCubes(const FunctionCallbackInfo<Value>& args) {
   unsigned int potentialByteOffset = args[1]->ToObject()->Get(byteOffsetString)->Uint32Value();
   Local<Array> shiftArg = Local<Array>::Cast(args[2]);
   Local<Value> indexOffsetArg = args[3];
-  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(V8_STRINGS::buffer.Get(args.GetIsolate())));
+  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
   unsigned int positionsByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
-  Local<ArrayBuffer> facesBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(V8_STRINGS::buffer.Get(args.GetIsolate())));
+  Local<ArrayBuffer> facesBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(bufferString));
   unsigned int facesByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
 
   int dims[3] = {

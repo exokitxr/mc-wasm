@@ -37,7 +37,7 @@ namespace V8_STRINGS {
   Persistent<String> octaves(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "octaves"));
 
   Persistent<String> landStart(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "landStart"));
-  Persistent<String> landCount(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "landStart"));
+  Persistent<String> landCount(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "landCount"));
   Persistent<String> waterStart(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "waterStart"));
   Persistent<String> waterCount(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "waterCount"));
   Persistent<String> lavaStart(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "lavaStart"));
