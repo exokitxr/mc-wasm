@@ -1,5 +1,6 @@
 #include <node.h>
 #include "fastNoiseObject.h"
+#include "v8-strings.h"
 
 using v8::Context;
 using v8::Function;
@@ -31,7 +32,7 @@ double FastNoiseObject::in2D(double x, double y) {
 void FastNoiseObject::Init(Isolate* isolate) {
   // Prepare constructor template
   Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
-  tpl->SetClassName(String::NewFromUtf8(isolate, "FastNoiseObject"));
+  tpl->SetClassName(V8_STRINGS::FastNoiseObject.Get(isolate));
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
   // Prototype
@@ -44,15 +45,11 @@ void FastNoiseObject::New(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.IsConstructCall()) {
-    Local<String> seedString = String::NewFromUtf8(args.GetIsolate(), "seed");
-    Local<String> frequencyString = String::NewFromUtf8(args.GetIsolate(), "frequency");
-    Local<String> octavesString = String::NewFromUtf8(args.GetIsolate(), "octaves");
-
     Local<Object> opts = args[0]->ToObject();
 
-    int seed = opts->Get(seedString)->IntegerValue();
-    double frequency = opts->Get(frequencyString)->NumberValue();
-    int octaves = opts->Get(octavesString)->IntegerValue();
+    int seed = opts->Get(V8_STRINGS::seed.Get(isolate))->IntegerValue();
+    double frequency = opts->Get(V8_STRINGS::frequency.Get(isolate))->NumberValue();
+    int octaves = opts->Get(V8_STRINGS::octaves.Get(isolate))->IntegerValue();
 
     FastNoiseObject* obj = new FastNoiseObject(seed, frequency, octaves);
     obj->Wrap(args.This());
@@ -82,18 +79,12 @@ void FastNoiseObject::NewInstance(const FunctionCallbackInfo<Value>& args) {
 void FastNoiseObject::In2D(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 2) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
-
-  // Check the argument types
   if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 

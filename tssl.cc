@@ -1,4 +1,5 @@
 #include "tssl.h"
+#include "v8-strings.h"
 #include <node.h>
 #include <string.h>
 #include <memory>
@@ -106,7 +107,7 @@ void generateMesh(unsigned int *colors, bool *mask, int d, int u, int v, int dim
 }
 
 void getMeshData(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *verticesResult, unsigned int &vertexIndexResult, unsigned int *facesResult, unsigned int &faceIndexResult) {
-  Local<String> indexString = String::NewFromUtf8(Isolate::GetCurrent(), "index");
+  Local<String> indexString = V8_STRINGS::index.Get(Isolate::GetCurrent());
 
   std::unique_ptr<float[]> vertices(new float[NUM_POSITIONS_CHUNK]);
   unsigned int vertexIndex = 0;

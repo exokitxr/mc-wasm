@@ -1,4 +1,5 @@
 #include <node.h>
+#include "v8-strings.h"
 #include "fastNoiseObject.h"
 #include "cachedFastNoiseObject.h"
 #include "noiser.h"
@@ -42,19 +43,19 @@ void MarchCubes(const FunctionCallbackInfo<Value>& args) {
   unsigned int positionIndex;
   unsigned int faceIndex;
 
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
-  Local<String> positionsString = String::NewFromUtf8(args.GetIsolate(), "positions");
-  Local<String> indicesString = String::NewFromUtf8(args.GetIsolate(), "indices");
+  Local<String> bufferString = V8_STRINGS::buffer.Get(args.GetIsolate());
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(args.GetIsolate());
+  Local<String> positionsString = V8_STRINGS::positions.Get(args.GetIsolate());
+  Local<String> indicesString = V8_STRINGS::indices.Get(args.GetIsolate());
 
   Local<Array> dimsArg = Local<Array>::Cast(args[0]);
   Local<ArrayBuffer> potentialBuffer = Local<ArrayBuffer>::Cast(args[1]->ToObject()->Get(bufferString));
   unsigned int potentialByteOffset = args[1]->ToObject()->Get(byteOffsetString)->Uint32Value();
   Local<Array> shiftArg = Local<Array>::Cast(args[2]);
   Local<Value> indexOffsetArg = args[3];
-  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
+  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(V8_STRINGS::buffer.Get(args.GetIsolate())));
   unsigned int positionsByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
-  Local<ArrayBuffer> facesBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(bufferString));
+  Local<ArrayBuffer> facesBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(V8_STRINGS::buffer.Get(args.GetIsolate())));
   unsigned int facesByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
 
   int dims[3] = {
@@ -84,18 +85,18 @@ void MarchCubes(const FunctionCallbackInfo<Value>& args) {
 }
 
 void Compose(const FunctionCallbackInfo<Value>& args) {
-  Local<String> srcString = String::NewFromUtf8(args.GetIsolate(), "src");
-  Local<String> geometriesString = String::NewFromUtf8(args.GetIsolate(), "geometries");
-  Local<String> geometryIndexString = String::NewFromUtf8(args.GetIsolate(), "geometryIndex");
-  Local<String> positionsString = String::NewFromUtf8(args.GetIsolate(), "positions");
-  Local<String> uvsString = String::NewFromUtf8(args.GetIsolate(), "uvs");
-  Local<String> ssaosString = String::NewFromUtf8(args.GetIsolate(), "ssaos");
-  Local<String> framesString = String::NewFromUtf8(args.GetIsolate(), "frames");
-  Local<String> objectIndicesString = String::NewFromUtf8(args.GetIsolate(), "objectIndices");
-  Local<String> indicesString = String::NewFromUtf8(args.GetIsolate(), "indices");
-  Local<String> objectsString = String::NewFromUtf8(args.GetIsolate(), "objects");
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  Local<String> srcString = V8_STRINGS::src.Get(args.GetIsolate());
+  Local<String> geometriesString = V8_STRINGS::geometries.Get(args.GetIsolate());
+  Local<String> geometryIndexString = V8_STRINGS::geometryIndex.Get(args.GetIsolate());
+  Local<String> positionsString = V8_STRINGS::positions.Get(args.GetIsolate());
+  Local<String> uvsString = V8_STRINGS::uvs.Get(args.GetIsolate());
+  Local<String> ssaosString = V8_STRINGS::ssaos.Get(args.GetIsolate());
+  Local<String> framesString = V8_STRINGS::frames.Get(args.GetIsolate());
+  Local<String> objectIndicesString = V8_STRINGS::objectIndices.Get(args.GetIsolate());
+  Local<String> indicesString = V8_STRINGS::indices.Get(args.GetIsolate());
+  Local<String> objectsString = V8_STRINGS::objects.Get(args.GetIsolate());
+  Local<String> bufferString = V8_STRINGS::buffer.Get(args.GetIsolate());
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(args.GetIsolate());
 
   Local<Object> opts = args[0]->ToObject();
 
@@ -191,11 +192,11 @@ void Tssl(const FunctionCallbackInfo<Value>& args) {
   unsigned int uvIndex;
   unsigned int ssaoIndex;
 
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
-  Local<String> positionsString = String::NewFromUtf8(args.GetIsolate(), "positions");
-  Local<String> uvsString = String::NewFromUtf8(args.GetIsolate(), "uvs");
-  Local<String> ssaosString = String::NewFromUtf8(args.GetIsolate(), "ssaos");
+  Local<String> bufferString = V8_STRINGS::buffer.Get(args.GetIsolate());
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(args.GetIsolate());
+  Local<String> positionsString = V8_STRINGS::positions.Get(args.GetIsolate());
+  Local<String> uvsString = V8_STRINGS::uvs.Get(args.GetIsolate());
+  Local<String> ssaosString = V8_STRINGS::ssaos.Get(args.GetIsolate());
 
   Local<ArrayBuffer> voxelsBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
   unsigned int voxelsByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
@@ -246,8 +247,8 @@ void Tssl(const FunctionCallbackInfo<Value>& args) {
 }
 
 void Flod(const FunctionCallbackInfo<Value>& args) {
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  Local<String> bufferString = V8_STRINGS::buffer.Get(args.GetIsolate());
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(args.GetIsolate());
 
   Local<ArrayBuffer> etherBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
   unsigned int etherByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
@@ -267,8 +268,8 @@ void Flod(const FunctionCallbackInfo<Value>& args) {
 }
 
 void GenHeightfield(const FunctionCallbackInfo<Value>& args) {
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  Local<String> bufferString = V8_STRINGS::buffer.Get(args.GetIsolate());
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(args.GetIsolate());
 
   Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
   unsigned int positionsByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
@@ -303,7 +304,7 @@ void InitAll(Local<Object> exports, Local<Object> module) {
   NODE_SET_METHOD(result, "flood", Flod);
   NODE_SET_METHOD(result, "genHeightfield", GenHeightfield);
 
-  module->Set(String::NewFromUtf8(isolate, "exports"), result);
+  module->Set(V8_STRINGS::exports.Get(isolate), result);
 }
 
 NODE_MODULE(addon, InitAll)

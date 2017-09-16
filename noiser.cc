@@ -1,4 +1,5 @@
 #include "noiser.h"
+#include "v8-strings.h"
 #include "cachedFastNoiseObject.h"
 #include "fastNoiseObject.h"
 #include "biomes.h"
@@ -44,7 +45,7 @@ Persistent<Function> Noiser::constructor;
 void Noiser::Init(Isolate* isolate) {
   // Prepare constructor template
   Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
-  tpl->SetClassName(String::NewFromUtf8(isolate, "Noiser"));
+  tpl->SetClassName(V8_STRINGS::Noiser.Get(isolate));
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
   // Prototype
@@ -76,7 +77,7 @@ void Noiser::New(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.IsConstructCall()) {
-    Local<String> seedString = String::NewFromUtf8(args.GetIsolate(), "seed");
+    Local<String> seedString = V8_STRINGS::seed.Get(isolate);
 
     Local<Object> opts = args[0]->ToObject();
 
@@ -112,18 +113,12 @@ Noiser::Noiser(int seed) :
 void Noiser::GetBiome(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 2) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
-
-  // Check the argument types
   if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 
@@ -171,18 +166,14 @@ unsigned char Noiser::getBiome(int x, int z) {
 void Noiser::GetBiomeHeight(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 3) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
 
   // Check the argument types
   if (!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsNumber()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 
@@ -212,18 +203,12 @@ float Noiser::getBiomeHeight(unsigned char b, int x, int z) {
 void Noiser::GetElevation(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 2) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
-
-  // Check the argument types
   if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 
@@ -260,18 +245,12 @@ float Noiser::getElevation(int x, int z) {
 void Noiser::GetTemperature(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 2) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
-
-  // Check the argument types
   if (!args[0]->IsNumber() || !args[1]->IsNumber()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 
@@ -286,23 +265,19 @@ double Noiser::getTemperature(double x, double z) {
 void Noiser::FillBiomes(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 3) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
 
   // Check the argument types
   if (!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsUint8Array()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
   Local<ArrayBuffer> biomesBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
   unsigned int biomesByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned char *biomes = (unsigned char *)((char *)biomesBuffer->GetContents().Data() + biomesByteOffset);
@@ -323,23 +298,17 @@ void Noiser::fillBiomes(int ox, int oz, unsigned char *biomes) {
 void Noiser::FillElevations(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 3) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
-
-  // Check the argument types
   if (!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsFloat32Array()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
   Local<ArrayBuffer> elevationsBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
   unsigned int elevationsByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *elevations = (float *)((char *)elevationsBuffer->GetContents().Data() + elevationsByteOffset);
@@ -360,23 +329,17 @@ void Noiser::fillElevations(int ox, int oz, float *elevations) {
 void Noiser::FillEther(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 2) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
-
-  // Check the argument types
   if (!args[0]->IsFloat32Array() || !args[1]->IsFloat32Array()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
   Local<ArrayBuffer> elevationsBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
   unsigned int elevationsByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *elevations = (float *)((char *)elevationsBuffer->GetContents().Data() + elevationsByteOffset);
@@ -403,23 +366,17 @@ void Noiser::fillEther(float *elevations, float *ether) {
 void Noiser::FillLiquid(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 2) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
-
-  // Check the argument types
   if (!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsFloat32Array() || !args[3]->IsFloat32Array() || !args[4]->IsFloat32Array() || !args[5]->IsFloat32Array()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
   int ox = args[0]->Int32Value();
   int oz = args[1]->Int32Value();
   Local<ArrayBuffer> etherBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
@@ -527,23 +484,17 @@ inline void postProcessGeometryRange(int ox, int oz, int start, int count, float
 void Noiser::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  // Check the number of arguments passed.
   if (args.Length() < 2) {
-    // Throw an Error that is passed back to JavaScript
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong number of arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
-
-  // Check the argument types
   if (!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsObject() || !args[3]->IsFloat32Array() || !args[4]->IsFloat32Array() || !args[5]->IsUint8Array()) {
-    isolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(isolate, "Wrong arguments")));
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
   }
 
-  Local<String> bufferString = String::NewFromUtf8(args.GetIsolate(), "buffer");
-  Local<String> byteOffsetString = String::NewFromUtf8(args.GetIsolate(), "byteOffset");
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
   int ox = args[0]->Int32Value();
   int oz = args[1]->Int32Value();
   Local<Object> range = args[2]->ToObject();
@@ -562,12 +513,14 @@ void Noiser::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
 }
 
 void Noiser::postProcessGeometry(int ox, int oz, Local<Object> &range, float *positions, float *colors, unsigned char *biomes) {
-  Local<String> landStartString = String::NewFromUtf8(Isolate::GetCurrent(), "landStart");
-  Local<String> landCountString = String::NewFromUtf8(Isolate::GetCurrent(), "landCount");
-  Local<String> waterStartString = String::NewFromUtf8(Isolate::GetCurrent(), "waterStart");
-  Local<String> waterCountString = String::NewFromUtf8(Isolate::GetCurrent(), "waterCount");
-  Local<String> lavaStartString = String::NewFromUtf8(Isolate::GetCurrent(), "lavaStart");
-  Local<String> lavaCountString = String::NewFromUtf8(Isolate::GetCurrent(), "lavaCount");
+  Isolate* isolate = Isolate::GetCurrent();
+
+  Local<String> landStartString = V8_STRINGS::landStart.Get(isolate);
+  Local<String> landCountString = V8_STRINGS::landCount.Get(isolate);
+  Local<String> waterStartString = V8_STRINGS::waterStart.Get(isolate);
+  Local<String> waterCountString = V8_STRINGS::waterCount.Get(isolate);
+  Local<String> lavaStartString = V8_STRINGS::lavaStart.Get(isolate);
+  Local<String> lavaCountString = V8_STRINGS::lavaCount.Get(isolate);
 
   int landStart = range->Get(landStartString)->Int32Value();
   int landCount = range->Get(landCountString)->Int32Value();
