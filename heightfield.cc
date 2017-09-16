@@ -1,17 +1,7 @@
+#include "util.h"
 #include "vector.h"
 #include <cmath>
 // #include <iostream>
-
-const unsigned int NUM_CELLS = 16;
-const unsigned int NUM_CELLS_OVERSCAN = NUM_CELLS + 1;
-const int HEIGHTFIELD_DEPTH = 8;
-
-int _getTopHeightfieldIndex(int x, int z) {
-  return (x + (z * NUM_CELLS_OVERSCAN)) * HEIGHTFIELD_DEPTH;
-}
-int _getStaticHeightfieldIndex(int x, int z) {
-  return x + (z * NUM_CELLS_OVERSCAN);
-}
 
 void handleHeightfieldPoint(const Vec &point, float *heightfield, float *staticHeightfield) {
   const int x = (int)std::floor(point.x);
@@ -19,7 +9,7 @@ void handleHeightfieldPoint(const Vec &point, float *heightfield, float *staticH
   const int z = (int)std::floor(point.z);
 
   for (int layer = 0; layer < HEIGHTFIELD_DEPTH; layer++) {
-    const int heightfieldXYBaseIndex = _getTopHeightfieldIndex(x, z);
+    const int heightfieldXYBaseIndex = getTopHeightfieldIndex(x, z);
 // std::cout << "got point " << point.x << " : " << point.z << " : " << x << " : " << y << " : " << z << " : " << heightfieldXYBaseIndex << " : " << layer << "\n";
     const float oldY = heightfield[heightfieldXYBaseIndex + layer];
     if (y > oldY) {
@@ -35,7 +25,7 @@ void handleHeightfieldPoint(const Vec &point, float *heightfield, float *staticH
     }
   }
 
-  const unsigned int staticheightfieldIndex = _getStaticHeightfieldIndex(x, z);
+  const unsigned int staticheightfieldIndex = getStaticHeightfieldIndex(x, z);
   if (y > staticHeightfield[staticheightfieldIndex]) {
     staticHeightfield[staticheightfieldIndex] = y;
   }

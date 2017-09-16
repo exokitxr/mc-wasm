@@ -2,7 +2,7 @@
 #define CACHED_FAST_NOISE_OBJECT_H
 
 #include "fastNoiseObject.h"
-#include "MurmurHash3.h"
+// #include "MurmurHash3.h"
 #include "hash.h"
 #include <node.h>
 #include <random>

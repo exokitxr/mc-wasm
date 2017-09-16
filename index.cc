@@ -8,6 +8,7 @@
 #include "compose.h"
 #include "flod.h"
 #include "heightfield.h"
+#include "light.h"
 // #include <iostream>
 
 using v8::FunctionCallbackInfo;
@@ -286,6 +287,89 @@ void GenHeightfield(const FunctionCallbackInfo<Value>& args) {
   genHeightfield(positions, numPositions, heightfield, staticHeightfield);
 }
 
+void Light(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() < 13) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
+    return;
+  }
+  if (
+      !args[0]->IsNumber() ||
+      !args[1]->IsNumber() ||
+      !args[2]->IsNumber() ||
+      !args[3]->IsNumber() ||
+      !args[4]->IsNumber() ||
+      !args[5]->IsNumber() ||
+      !args[6]->IsNumber() ||
+      !args[7]->IsNumber() ||
+      !args[8]->IsArray() ||
+      !args[9]->IsArray() ||
+      !args[10]->IsArray() ||
+      !args[11]->IsArray() ||
+      !args[12]->IsArray()
+  ) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
+    return;
+  }
+
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
+
+  int ox = args[0]->Int32Value();
+  int oz = args[1]->Int32Value();
+  int minX = args[2]->Int32Value();
+  int maxX = args[3]->Int32Value();
+  int minY = args[4]->Int32Value();
+  int maxY = args[5]->Int32Value();
+  int minZ = args[6]->Int32Value();
+  int maxZ = args[7]->Int32Value();
+  Local<Array> lava = Local<Array>::Cast(args[8]);
+  Local<Array> objectLights = Local<Array>::Cast(args[9]);
+  Local<Array> ethers = Local<Array>::Cast(args[10]);
+  Local<Array> blocks = Local<Array>::Cast(args[11]);
+  Local<Array> lights = Local<Array>::Cast(args[12]);
+
+  float *lavaArray[9];
+  float *objectLightsArray[9];
+  float *etherArray[9];
+  unsigned int *blocksArray[9];
+  unsigned char *lightsArray[9];
+
+  for (unsigned int i = 0; i < 9; i++) {
+    Local<ArrayBuffer> lavaBuffer = Local<ArrayBuffer>::Cast(lava->Get(i)->ToObject()->Get(bufferString));
+    unsigned int lavaByteOffset = lava->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    lavaArray[i] = (float *)((char *)lavaBuffer->GetContents().Data() + lavaByteOffset);
+
+    Local<ArrayBuffer> objectLightsBuffer = Local<ArrayBuffer>::Cast(objectLights->Get(i)->ToObject()->Get(bufferString));
+    unsigned int objectLightsByteOffset = objectLights->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    objectLightsArray[i] = (float *)((char *)objectLightsBuffer->GetContents().Data() + objectLightsByteOffset);
+
+    Local<ArrayBuffer> ethersBuffer = Local<ArrayBuffer>::Cast(ethers->Get(i)->ToObject()->Get(bufferString));
+    unsigned int ethersByteOffset = ethers->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    etherArray[i] = (float *)((char *)ethersBuffer->GetContents().Data() + ethersByteOffset);
+
+    Local<ArrayBuffer> blocksBuffer = Local<ArrayBuffer>::Cast(blocks->Get(i)->ToObject()->Get(bufferString));
+    unsigned int blocksByteOffset = blocks->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    blocksArray[i] = (unsigned int *)((char *)blocksBuffer->GetContents().Data() + blocksByteOffset);
+
+    Local<ArrayBuffer> lightsBuffer = Local<ArrayBuffer>::Cast(lights->Get(i)->ToObject()->Get(bufferString));
+    unsigned int lightsByteOffset = lights->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
+    lightsArray[i] = (unsigned char *)((char *)lightsBuffer->GetContents().Data() + lightsByteOffset);
+  }
+  
+ /*  unsigned int positionsByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *positions = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
+  Local<ArrayBuffer> colorsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
+  unsigned int colorsByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *colors = (float *)((char *)colorsBuffer->GetContents().Data() + colorsByteOffset);
+  Local<ArrayBuffer> biomesBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(bufferString));
+  unsigned int biomesByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *biomes = (unsigned char *)((char *)biomesBuffer->GetContents().Data() + biomesByteOffset); */
+
+  light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
+}
+
 void InitAll(Local<Object> exports, Local<Object> module) {
   Isolate *isolate = Isolate::GetCurrent();
 
@@ -303,6 +387,7 @@ void InitAll(Local<Object> exports, Local<Object> module) {
   NODE_SET_METHOD(result, "tesselate", Tssl);
   NODE_SET_METHOD(result, "flood", Flod);
   NODE_SET_METHOD(result, "genHeightfield", GenHeightfield);
+  NODE_SET_METHOD(result, "light", Light);
 
   module->Set(V8_STRINGS::exports.Get(isolate), result);
 }

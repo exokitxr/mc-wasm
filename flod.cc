@@ -1,10 +1,7 @@
 #include "flod.h"
+#include "util.h"
 #include <memory>
 // #include <iostream>
-
-const int NUM_CELLS = 16;
-const int NUM_CELLS_OVERSCAN = NUM_CELLS + 1;
-const int NUM_CELLS_HEIGHT = 128;
 
 enum class PEEK_FACES : int {
   FRONT = 0,
@@ -32,15 +29,11 @@ void initFlod() {
   }
 }
 
-inline int _getEtherIndex(int x, int y, int z) {
-  return x + (z * NUM_CELLS_OVERSCAN) + (y * NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN);
-}
-
 inline void _floodFill(int x, int y, int z, int startFace, float *ether, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, unsigned char *peeks, unsigned char *seenPeeks) {
   std::unique_ptr<int[]> queue(new int[NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN * 4]);
   unsigned int queueEnd = 0;
 
-  const int index = _getEtherIndex(x, y, z);
+  const int index = getEtherIndex(x, y, z);
   queue[queueEnd * 4 + 0] = x;
   queue[queueEnd * 4 + 1] = y;
   queue[queueEnd * 4 + 2] = z;
@@ -83,7 +76,7 @@ inline void _floodFill(int x, int y, int z, int startFace, float *ether, int min
               for (int dy = -1; dy <= 1; dy++) {
                 const int ay = y + dy;
                 if (ay >= minY && ay <= maxY) {
-                  const int index = _getEtherIndex(ax, ay, az);
+                  const int index = getEtherIndex(ax, ay, az);
                   if (!seenPeeks[index]) {
                     queue[queueEnd * 4 + 0] = ax;
                     queue[queueEnd * 4 + 1] = ay;

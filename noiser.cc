@@ -1,4 +1,5 @@
 #include "noiser.h"
+#include "util.h"
 #include "v8-strings.h"
 #include "cachedFastNoiseObject.h"
 #include "fastNoiseObject.h"
@@ -26,20 +27,6 @@ using v8::Value;
 using v8::Exception;
 using v8::Array;
 using v8::ArrayBuffer;
-
-const int NUM_CELLS = 16;
-const int OVERSCAN = 1;
-const int NUM_CELLS_OVERSCAN = NUM_CELLS + OVERSCAN;
-const int NUM_CELLS_HEIGHT = 128;
-const int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS;
-const int NUM_CELLS_OVERSCAN_Y = NUM_CELLS_HEIGHT + OVERSCAN;
-
-int getCoordOverscanIndex(int x, int z) {
-  return x + z * NUM_CELLS_OVERSCAN;
-}
-int getEtherIndex(int x, int y, int z) {
-  return x + (z * NUM_CELLS_OVERSCAN) + (y * NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN);
-}
 
 Persistent<Function> Noiser::constructor;
 void Noiser::Init(Isolate* isolate) {
@@ -484,7 +471,7 @@ inline void postProcessGeometryRange(int ox, int oz, int start, int count, float
 void Noiser::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  if (args.Length() < 2) {
+  if (args.Length() < 6) {
     isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
@@ -495,6 +482,7 @@ void Noiser::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
 
   Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
   Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
+
   int ox = args[0]->Int32Value();
   int oz = args[1]->Int32Value();
   Local<Object> range = args[2]->ToObject();
