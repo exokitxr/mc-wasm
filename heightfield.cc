@@ -31,7 +31,7 @@ void handleHeightfieldPoint(const Vec &point, float *heightfield, float *staticH
   }
 }
 
-void genHeightfield(float *positions, unsigned int numPositions, float *heightfield, float *staticHeightfield) {
+void genHeightfield(float *positions, unsigned int *indices, unsigned int numIndices, float *heightfield, float *staticHeightfield) {
   for (unsigned int i = 0; i < NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN * HEIGHTFIELD_DEPTH; i++) {
     heightfield[i] = -1024.0f;
   }
@@ -39,11 +39,14 @@ void genHeightfield(float *positions, unsigned int numPositions, float *heightfi
     staticHeightfield[i] = -1024.0f;
   }
 
-  for (unsigned int baseIndex = 0; (baseIndex + 9) <= numPositions; baseIndex += 9) {
+  for (unsigned int baseIndex = 0; baseIndex < numIndices; baseIndex += 3) {
+    const unsigned int ia = indices[baseIndex + 0] * 3;
+    const unsigned int ib = indices[baseIndex + 1] * 3;
+    const unsigned int ic = indices[baseIndex + 2] * 3;
     Tri localTriangle(
-      Vec(positions[baseIndex + 0], positions[baseIndex + 1], positions[baseIndex + 2]),
-      Vec(positions[baseIndex + 3], positions[baseIndex + 4], positions[baseIndex + 5]),
-      Vec(positions[baseIndex + 6], positions[baseIndex + 7], positions[baseIndex + 8])
+      Vec(positions[ia + 0], positions[ia + 1], positions[ia + 2]),
+      Vec(positions[ib + 0], positions[ib + 1], positions[ib + 2]),
+      Vec(positions[ic + 0], positions[ic + 1], positions[ic + 2])
     );
     if (localTriangle.normal().y > 0) {
       handleHeightfieldPoint(localTriangle.a, heightfield, staticHeightfield);
