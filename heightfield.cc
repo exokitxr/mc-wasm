@@ -39,7 +39,7 @@ void genHeightfield(float *positions, unsigned int numPositions, float *heightfi
     staticHeightfield[i] = -1024.0f;
   }
 
-  for (unsigned int baseIndex = 0; baseIndex < numPositions; baseIndex += 9) {
+  for (unsigned int baseIndex = 0; (baseIndex + 9) <= numPositions; baseIndex += 9) {
     Tri localTriangle(
       Vec(positions[baseIndex + 0], positions[baseIndex + 1], positions[baseIndex + 2]),
       Vec(positions[baseIndex + 3], positions[baseIndex + 4], positions[baseIndex + 5]),
