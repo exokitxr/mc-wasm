@@ -540,7 +540,7 @@ void shiftPositions(float *positions, unsigned int numPositions, float *shift) {
   }
 }
 
-void tesselate(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift, float *positions, float *uvs, unsigned char *ssaos, unsigned int &positionIndex, unsigned int &uvIndex, unsigned int &ssaoIndex) {
+void tesselate(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift, unsigned int oldPositionIndex, float *positions, float *uvs, unsigned char *ssaos, float *frames, float *objectIndices, unsigned int *indices, unsigned int &positionIndex, unsigned int &uvIndex, unsigned int &ssaoIndex, unsigned int &frameIndex, unsigned int &objectIndexIndex, unsigned int &indexIndex) {
 
   std::unique_ptr<float[]> vertices(new float[NUM_POSITIONS_CHUNK]);
   unsigned int vertexIndex;
@@ -548,15 +548,36 @@ void tesselate(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], uns
   unsigned int facesIndex;
   getMeshData(voxels, blockTypes, dims, transparentVoxels, translucentVoxels, vertices.get(), vertexIndex, faces.get(), facesIndex);
 
-  getPositions(vertices.get(), vertexIndex, positions, positionIndex);
+  unsigned int numNewPositions;
+  getPositions(vertices.get(), vertexIndex, positions, numNewPositions);
+  positionIndex += numNewPositions;
 
   float normals[NUM_POSITIONS_CHUNK];
-  unsigned int numNormals;
-  getNormals(positions, positionIndex, normals, numNormals);
+  unsigned int numNewNormals;
+  getNormals(positions, numNewPositions, normals, numNewNormals);
 
-  getUvs(faces.get(), facesIndex, normals, numNormals, faceUvs, uvs, uvIndex);
-  getSsaos(vertices.get(), vertexIndex, voxels, ssaos, ssaoIndex);
+  unsigned int numNewUvs;
+  getUvs(faces.get(), facesIndex, normals, numNewNormals, faceUvs, uvs, numNewUvs);
+  uvIndex += numNewUvs;
 
-  shiftPositions(positions, positionIndex, shift);
-  // return {positions, /*normals, */uvs, ssaos};
+  unsigned int numNewSsaos;
+  getSsaos(vertices.get(), vertexIndex, voxels, ssaos, numNewSsaos);
+  ssaoIndex += numNewSsaos;
+
+  for (unsigned int i = 0; i < numNewPositions; i++) {
+    frames[i] = 0;
+  }
+  frameIndex += numNewPositions;
+
+  for (unsigned int i = 0; i < numNewPositions / 3; i++) {
+    objectIndices[i] = 0;
+  }
+  objectIndexIndex += numNewPositions / 3;
+
+  for (unsigned int i = 0; i < numNewPositions / 3; i++) {
+    indices[i] = (oldPositionIndex / 3) + i;
+  }
+  indexIndex += numNewPositions / 3;
+
+  shiftPositions(positions, numNewPositions, shift);
 }

@@ -34,6 +34,13 @@ namespace V8_STRINGS {
   extern Persistent<String> src;
   extern Persistent<String> geometries;
   extern Persistent<String> geometryIndex;
+  extern Persistent<String> blocks;
+  extern Persistent<String> blockTypes;
+  extern Persistent<String> dims;
+  extern Persistent<String> transparentVoxels;
+  extern Persistent<String> translucentVoxels;
+  extern Persistent<String> faceUvs;
+  extern Persistent<String> shift;
 
   extern Persistent<String> seed;
   extern Persistent<String> frequency;

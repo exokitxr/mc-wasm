@@ -32,6 +32,13 @@ namespace V8_STRINGS {
   Persistent<String> src(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "src"));
   Persistent<String> geometries(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "geometries"));
   Persistent<String> geometryIndex(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "geometryIndex"));
+  Persistent<String> blocks(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "blocks"));
+  Persistent<String> blockTypes(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "blockTypes"));
+  Persistent<String> dims(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "dims"));
+  Persistent<String> transparentVoxels(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "transparentVoxels"));
+  Persistent<String> translucentVoxels(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "translucentVoxels"));
+  Persistent<String> faceUvs(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "faceUvs"));
+  Persistent<String> shift(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "shift"));
   Persistent<String> seed(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "seed"));
   Persistent<String> frequency(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "frequency"));
   Persistent<String> octaves(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "octaves"));

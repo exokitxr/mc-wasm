@@ -1,4 +1,5 @@
 #include "compose.h"
+#include "tssl.h"
 #include <node.h>
 #include <string.h>
 #include <cmath>
@@ -23,6 +24,8 @@ using v8::Uint8Array;
 const unsigned int NUM_CELLS = 16;
 const unsigned int NUM_CELLS_HEIGHT = 128;
 const unsigned int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS;
+const unsigned int BLOCK_BUFFER_SIZE = 16 * 128 * 16 * 4;
+const unsigned int NUM_VOXELS_CHUNKS_HEIGHT = BLOCK_BUFFER_SIZE / 4 / NUM_CHUNKS_HEIGHT;
 const unsigned int OBJECT_SLOTS = 64 * 64;
 const unsigned int GEOMETRY_BUFFER_SIZE = 100 * 1024;
 
@@ -68,8 +71,6 @@ class Geometry {
     indexIndex(indexIndex),
     objectIndex(objectIndex)
   {
-// std::cout << "read 1 " << i << ":" << positionIndex << "\n";
-
     unsigned int byteOffset = 0;
 
     unsigned int *headerBuffer = (unsigned int *)geometries;
@@ -118,16 +119,6 @@ class Geometry {
     objects[0] = i;
     memcpy(objects + 1, boundingBoxBuffer, 6 * 4);
     byteOffset += 4 * 7;
-
-// std::cout << "geometry " << numPositions << ":" << numUvs << ":" << numSsaos << ":" << numFrames << ":" << numObjectIndices << ":" << numIndices << ":" << numObjects  << "\n";
-
-    /* positionIndex += numPositions;
-    uvIndex += numUvs;
-    ssaoIndex += numSsaos;
-    frameIndex += numFrames;
-    objectIndexIndex += numObjectIndices;
-    indexIndex += numIndices;
-    objectIndex += numObjects; */
   }
 
   void applyTranslation(const Vec &v) {
@@ -168,9 +159,7 @@ class Geometry {
     memcpy(indices + this->indexIndex, this->indices, this->numIndices * 4);
     memcpy(objects + this->objectIndex, this->objects, this->numObjects * 4);
 
-// std::cout << "write 1 " << positionIndex << ":" << this->positionIndex << "\n";
     positionIndex += this->numPositions;
-// std::cout << "write 2 " << positionIndex << ":" << this->positionIndex << "\n";
     uvIndex += this->numUvs;
     ssaoIndex += this->numSsaos;
     frameIndex += this->numFrames;
@@ -180,23 +169,55 @@ class Geometry {
   }
 };
 
-void compose(void *src, void *geometries, Local<Object> &geometryIndex, float **positions, float **uvs, unsigned char **ssaos, float **frames, float **objectIndices, unsigned int **indices, unsigned int **objects, unsigned int *positionIndex, unsigned int *uvIndex, unsigned int *ssaoIndex, unsigned int *frameIndex, unsigned int *objectIndexIndex, unsigned int *indexIndex, unsigned int *objectIndex) {
-  for (unsigned int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
-    positionIndex[i] = 0;
-    uvIndex[i] = 0;
-    ssaoIndex[i] = 0;
-    frameIndex[i] = 0;
-    objectIndexIndex[i] = 0;
-    indexIndex[i] = 0;
-    objectIndex[i] = 0;
-  }
+void compose(
+  void *src, void *geometries, Local<Object> &geometryIndex,
+  unsigned int *blocks, Local<Object> &blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift,
+  float *positions, float *uvs, unsigned char *ssaos, float *frames, float *objectIndices, unsigned int *indices, unsigned int *objects,
+  unsigned int *positionIndex, unsigned int *uvIndex, unsigned int *ssaoIndex, unsigned int *frameIndex, unsigned int *objectIndexIndex, unsigned int *indexIndex, unsigned int *objectIndex
+) {
 
+  std::vector<unsigned int> objectsArray[NUM_CHUNKS_HEIGHT];
   unsigned int offset = 0;
   for (unsigned int i = 0; i < OBJECT_SLOTS; i++) {
     const unsigned int n = *((unsigned int *)((char *)src + offset));
     offset += 4;
 
     if (n != 0) {
+      float *positionBuffer = (float *)((char *)src + offset);
+      const float y = positionBuffer[1];
+      const int chunkIndex = (int)std::floor(std::min<float>(std::max<float>(y, 0), (float)(NUM_CELLS_HEIGHT - 1)) / (float)NUM_CELLS);
+      objectsArray[chunkIndex].push_back(i);
+    }
+
+    offset += 4 * 11;
+  }
+
+  for (unsigned int chunkIndex = 0; chunkIndex < NUM_CHUNKS_HEIGHT; chunkIndex++) {
+    if (chunkIndex == 0) {
+      positionIndex[chunkIndex] = 0;
+      uvIndex[chunkIndex] = 0;
+      ssaoIndex[chunkIndex] = 0;
+      frameIndex[chunkIndex] = 0;
+      objectIndexIndex[chunkIndex] = 0;
+      indexIndex[chunkIndex] = 0;
+      objectIndex[chunkIndex] = 0;
+    } else {
+      positionIndex[chunkIndex] = positionIndex[chunkIndex - 1];
+      uvIndex[chunkIndex] = uvIndex[chunkIndex - 1];
+      ssaoIndex[chunkIndex] = ssaoIndex[chunkIndex - 1];
+      frameIndex[chunkIndex] = frameIndex[chunkIndex - 1];
+      objectIndexIndex[chunkIndex] = objectIndexIndex[chunkIndex - 1];
+      indexIndex[chunkIndex] = indexIndex[chunkIndex - 1];
+      objectIndex[chunkIndex] = objectIndex[chunkIndex - 1];
+    }
+
+    std::vector<unsigned int> &objectsVector = objectsArray[chunkIndex];
+    for (const unsigned int &i : objectsVector) {
+      unsigned int offset = i * 4 * 12;
+
+      const unsigned int n = *((unsigned int *)((char *)src + offset));
+      offset += 4;
+
       float *positionBuffer = (float *)((char *)src + offset);
       const Vec position(
         positionBuffer[0],
@@ -213,22 +234,64 @@ void compose(void *src, void *geometries, Local<Object> &geometryIndex, float **
         rotationBuffer[3]
       );
       offset += 4 * 4;
-      offset += 4 * 3; // scale
-      offset += 4 * 1; // value
 
-// std::cout << "geometry from index " << n << " : " << geometryIndex->Get(n)->Uint32Value() << "\n";
-/* if (geometryIndex->Get(n)->Uint32Value() == 0) {
-  std::cout << "failed to look up geometry " << n << "\n";
-} */
-      const int chunkIndex = (int)std::floor(std::min<float>(std::max<float>(position.y, 0), (float)(NUM_CELLS_HEIGHT - 1)) / (float)NUM_CELLS);
-      std::unique_ptr<Geometry> geometry(new Geometry((char *)geometries + geometryIndex->Get(n)->Uint32Value(), i, positionIndex[chunkIndex], uvIndex[chunkIndex], ssaoIndex[chunkIndex], frameIndex[chunkIndex], objectIndexIndex[chunkIndex], indexIndex[chunkIndex], objectIndex[chunkIndex]));
+      std::unique_ptr<Geometry> geometry(
+        new Geometry(
+          (char *)geometries + geometryIndex->Get(n)->Uint32Value(),
+          i,
+          positionIndex[chunkIndex],
+          uvIndex[chunkIndex],
+          ssaoIndex[chunkIndex],
+          frameIndex[chunkIndex],
+          objectIndexIndex[chunkIndex],
+          indexIndex[chunkIndex],
+          objectIndex[chunkIndex]
+        )
+      );
       geometry->applyRotation(rotation);
       geometry->applyTranslation(position);
-      geometry->write(positions[chunkIndex], uvs[chunkIndex], ssaos[chunkIndex], frames[chunkIndex], objectIndices[chunkIndex], indices[chunkIndex], objects[chunkIndex], positionIndex[chunkIndex], uvIndex[chunkIndex], ssaoIndex[chunkIndex], frameIndex[chunkIndex], objectIndexIndex[chunkIndex], indexIndex[chunkIndex], objectIndex[chunkIndex]);
-
-      // std::cout << "write 3 " << positionIndex[i] << "\n";
-    } else {
-      offset += 4 * 11;
+      geometry->write(
+        positions,
+        uvs,
+        ssaos,
+        frames,
+        objectIndices,
+        indices,
+        objects,
+        positionIndex[chunkIndex],
+        uvIndex[chunkIndex],
+        ssaoIndex[chunkIndex],
+        frameIndex[chunkIndex],
+        objectIndexIndex[chunkIndex],
+        indexIndex[chunkIndex],
+        objectIndex[chunkIndex]
+      );
     }
+
+    unsigned int *voxels = blocks + (chunkIndex * NUM_VOXELS_CHUNKS_HEIGHT);
+    shift[1] = chunkIndex * NUM_CELLS; // XXX clean this up
+    const unsigned int numPositions = positionIndex[chunkIndex];
+    tesselate(
+      voxels,
+      blockTypes,
+      dims,
+      transparentVoxels,
+      translucentVoxels,
+      faceUvs,
+      shift,
+      numPositions,
+      positions + positionIndex[chunkIndex],
+      uvs + uvIndex[chunkIndex],
+      ssaos + ssaoIndex[chunkIndex],
+      frames + frameIndex[chunkIndex],
+      objectIndices + objectIndexIndex[chunkIndex],
+      indices + indexIndex[chunkIndex],
+      positionIndex[chunkIndex],
+      uvIndex[chunkIndex],
+      ssaoIndex[chunkIndex],
+      frameIndex[chunkIndex],
+      objectIndexIndex[chunkIndex],
+      indexIndex[chunkIndex]
+    );
   }
 }
