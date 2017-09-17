@@ -8,6 +8,7 @@ const int NUM_CELLS_HEIGHT = 128;
 const int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS;
 const int NUM_CELLS_OVERSCAN_Y = NUM_CELLS_HEIGHT + OVERSCAN;
 const int HEIGHTFIELD_DEPTH = 8;
+const int HOLE_SIZE = 2;
 const int NUM_SLOTS = 64 * 64;
 const int BLOCK_BUFFER_SIZE = 16 * 128 * 16 * 4;
 

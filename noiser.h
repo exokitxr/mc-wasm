@@ -61,6 +61,8 @@ class Noiser : public node::ObjectWrap {
     void fillEther(float *elevations, float *ether);
     static void FillLiquid(const FunctionCallbackInfo<Value>& args);
     void fillLiquid(int ox, int oz, float *ether, float *elevations, float *water, float *lava);
+    static void ApplyEther(const FunctionCallbackInfo<Value>& args);
+    void applyEther(float *newEther, unsigned int numNewEthers, float *ether);
     static void PostProcessGeometry(const FunctionCallbackInfo<Value>& args);
     void postProcessGeometry(int ox, int oz, Local<Object> &range, float *positions, float *colors, unsigned char *biomes);
 };

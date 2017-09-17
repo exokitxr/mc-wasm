@@ -44,6 +44,7 @@ void Noiser::Init(Isolate* isolate) {
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillElevations", FillElevations);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillEther", FillEther);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillLiquid", FillLiquid);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "applyEther", ApplyEther);
   NODE_SET_PROTOTYPE_METHOD(tpl, "postProcessGeometry", PostProcessGeometry);
 
   constructor.Reset(isolate, tpl->GetFunction());
@@ -442,6 +443,62 @@ void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *
         }
       }
     }
+  }
+}
+
+void Noiser::ApplyEther(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() < 3) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
+    return;
+  }
+  if (!args[0]->IsFloat32Array() || !args[1]->IsNumber() || !args[2]->IsFloat32Array()) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
+    return;
+  }
+
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
+
+  Local<ArrayBuffer> newEtherBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
+  unsigned int newEtherByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *newEther = (float *)((char *)newEtherBuffer->GetContents().Data() + newEtherByteOffset);
+
+  unsigned int numNewEthers = args[1]->Uint32Value();
+
+  Local<ArrayBuffer> etherBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
+  unsigned int etherByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *ether = (float *)((char *)etherBuffer->GetContents().Data() + etherByteOffset);
+
+  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  obj->applyEther(newEther, numNewEthers, ether);
+}
+
+void Noiser::applyEther(float *newEther, unsigned int numNewEthers, float *ether) {
+  unsigned int baseIndex = 0;
+  for (unsigned int i = 0; i < numNewEthers; i++) {
+    const float x = newEther[baseIndex + 0];
+    const float y = newEther[baseIndex + 1];
+    const float z = newEther[baseIndex + 2];
+    const float v = newEther[baseIndex + 3];
+    for (int dz = -HOLE_SIZE; dz <= HOLE_SIZE; dz++) {
+      const int az = z + dz;
+      if (az >= 0 && az < (NUM_CELLS + 1)) {
+        for (int dx = -HOLE_SIZE; dx <= HOLE_SIZE; dx++) {
+          const int ax = x + dx;
+          if (ax >= 0 && ax < (NUM_CELLS + 1)) {
+            for (int dy = -HOLE_SIZE; dy <= HOLE_SIZE; dy++) {
+              const int ay = y + dy;
+              if (ay >= 0 && ay < (NUM_CELLS_HEIGHT + 1)) {
+                ether[getEtherIndex(ax, ay, az)] += v * std::max<float>((float)HOLE_SIZE - std::sqrt((float)dx * (float)dx + (float)dy * (float)dy + (float)dz * (float)dz), 0) / std::sqrt((float)HOLE_SIZE * (float)HOLE_SIZE * 3.0);
+              }
+            }
+          }
+        }
+      }
+    }
+    baseIndex += 4;
   }
 }
 
