@@ -353,7 +353,7 @@ void Noiser::fillEther(float *elevations, float *ether) {
 void Noiser::FillLiquid(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  if (args.Length() < 2) {
+  if (args.Length() < 6) {
     isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
