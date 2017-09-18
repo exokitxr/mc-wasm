@@ -572,7 +572,7 @@ void Noiser::postProcessGeometry(int ox, int oz, Local<Object> &range, float *po
   int landStart = range->Get(landStartString)->Int32Value();
   int landCount = range->Get(landCountString)->Int32Value();
   postProcessGeometryRange(ox, oz, landStart, landCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
-    const Biome &biome = BIOMES[biomes[getCoordOverscanIndex((int)std::floor(x - ox * NUM_CELLS), (int)std::floor(z - oz * NUM_CELLS))]];
+    const Biome &biome = BIOMES[biomes[getCoordOverscanIndex((int)x - ox * NUM_CELLS, (int)z - oz * NUM_CELLS)]];
     const unsigned int color = biome.color;
     r = ((color >> (8 * 2)) & 0xFF) / 255.0;
     g = ((color >> (8 * 1)) & 0xFF) / 255.0;

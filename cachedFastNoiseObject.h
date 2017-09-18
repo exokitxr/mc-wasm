@@ -34,7 +34,7 @@ class CachedFastNoiseObject : public FastNoiseObject {
 
     static void New(const FunctionCallbackInfo<Value>& args);
     static void In2D(const FunctionCallbackInfo<Value>& args);
-    double in2D(double x, double z);
+    double in2D(int x, int z);
 };
 
 #endif
