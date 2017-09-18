@@ -174,7 +174,7 @@ void compose(
     if (n != 0) {
       float *positionBuffer = (float *)((char *)src + offset);
       const float y = positionBuffer[1];
-      const int chunkIndex = (int)std::floor(std::min<float>(std::max<float>(y, 0), (float)(NUM_CELLS_HEIGHT - 1)) / (float)NUM_CELLS);
+      const int chunkIndex = std::min<int>(std::max<int>(y, 0), NUM_CELLS_HEIGHT - 1) >> 4;
       objectsArray[chunkIndex].push_back(i);
     }
 

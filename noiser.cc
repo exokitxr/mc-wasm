@@ -388,6 +388,8 @@ inline void setLiquid(int ox, int oz, int x, int y, int z, float *liquid) {
   x -= ox * NUM_CELLS;
   z -= oz * NUM_CELLS;
 
+  const float factor = sqrt(3.0) * 0.8;
+
   for (int dz = -1; dz <= 1; dz++) {
     const int az = z + dz;
     if (az >= 0 && az <= NUM_CELLS) {
@@ -398,7 +400,7 @@ inline void setLiquid(int ox, int oz, int x, int y, int z, float *liquid) {
             const int ay = y + dy;
             if (ay >= 0 && ay < (NUM_CELLS_HEIGHT + 1)) {
               const int index = getEtherIndex(ax, ay, az);
-              liquid[index] = std::min<float>(-1.0 * (1.0 - (sqrt((float)dx*(float)dx + (float)dy*(float)dy + (float)dz*(float)dz) / (sqrt(3.0)*0.8))), liquid[index]);
+              liquid[index] = std::min<float>(-1.0 * (1.0 - (sqrt((float)dx*(float)dx + (float)dy*(float)dy + (float)dz*(float)dz) / factor)), liquid[index]);
             }
           }
         }
