@@ -166,20 +166,12 @@ inline unsigned char getLight(int ox, int oz, int x, int y, int z, unsigned char
 }
 
 void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, bool relight, float **lavaArray, float **objectLightsArray, float **etherArray, unsigned int **blocksArray, unsigned char **lightsArray) {
-  for (int z = minZ; z < maxZ; z++) {
-    for (int x = minX; x < maxX; x++) {
-      for (int y = minY; y <= maxY; y++) {
-        setLight(ox, oz, x, y, z, 0, lightsArray);
-      }
-    }
-  }
- 
   std::vector<LightSource> lightSources;
   getLightSources(ox, oz, lavaArray, objectLightsArray, lightSources);
   if (relight) {
     int x, y, z;
     // top
-    y = maxY + 1;
+    y = maxY;
     if (y <= NUM_CELLS_HEIGHT) {
       for (int z = minZ; z < maxZ; z++) {
         for (int x = minX; x < maxX; x++) {
@@ -188,7 +180,7 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
       }
     }
     // bottom
-    y = minY - 1;
+    y = minY;
     if (y >= 0) {
       for (int z = minZ; z < maxZ; z++) {
         for (int x = minX; x < maxX; x++) {
@@ -197,7 +189,7 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
       }
     }
     // left
-    x = minX - 1;
+    x = minX;
     if (x >= (ox - 1) * NUM_CELLS) {
       for (int z = minZ; z < maxZ; z++) {
         for (int y = minY; y <= maxY; y++) {
@@ -206,7 +198,7 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
       }
     }
     // right
-    x = maxX;
+    x = maxX - 1;
     if (x < (ox + 2) * NUM_CELLS) {
       for (int z = minZ; z < maxZ; z++) {
         for (int y = minY; y <= maxY; y++) {
@@ -215,7 +207,7 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
       }
     }
     // back
-    z = minZ - 1;
+    z = minZ;
     if (z >= (oz - 1) * NUM_CELLS) {
       for (int x = minX; x < maxX; x++) {
         for (int y = minY; y <= maxY; y++) {
@@ -224,7 +216,7 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
       }
     }
     // front
-    z = maxZ;
+    z = maxZ - 1;
     if (z < (oz + 2) * NUM_CELLS) {
       for (int x = minX; x < maxX; x++) {
         for (int y = minY; y <= maxY; y++) {
@@ -233,6 +225,15 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
       }
     }
   }
+
+  for (int z = minZ; z < maxZ; z++) {
+    for (int x = minX; x < maxX; x++) {
+      for (int y = minY; y <= maxY; y++) {
+        setLight(ox, oz, x, y, z, 0, lightsArray);
+      }
+    }
+  }
+
   for (const LightSource &lightSource : lightSources) {
     fillLight(ox, oz, lightSource.x, lightSource.y, lightSource.z, lightSource.v, minX, maxX, minY, maxY, minZ, maxZ, etherArray, blocksArray, lightsArray);
   }
