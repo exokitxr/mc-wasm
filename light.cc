@@ -127,10 +127,10 @@ void getLightSources(int ox, int oz, float **lavaArray, float **objectLightsArra
         if (objectLights[offset + 3] > 0) {
           lightSources.push_back(
             LightSource(
-              (int)std::floor(objectLights[offset + 0]),
-              (int)std::floor(objectLights[offset + 1]),
-              (int)std::floor(objectLights[offset + 2]),
-              (char)std::floor(objectLights[offset + 3])
+              (int)objectLights[offset + 0],
+              (int)objectLights[offset + 1],
+              (int)objectLights[offset + 2],
+              (char)objectLights[offset + 3]
             )
           );
         }
