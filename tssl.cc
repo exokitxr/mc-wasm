@@ -1,24 +1,11 @@
 #include "tssl.h"
 #include "v8-strings.h"
-#include <node.h>
 #include <string.h>
 #include <memory>
 #include <limits>
+#include <unordered_map>
 #include "vector.h"
 // #include <iostream>
-
-using v8::FunctionCallbackInfo;
-using v8::Isolate;
-using v8::Local;
-using v8::Object;
-using v8::String;
-using v8::Number;
-using v8::Value;
-using v8::Array;
-using v8::ArrayBuffer;
-using v8::Float32Array;
-using v8::Uint32Array;
-using v8::Uint8Array;
 
 const unsigned int NUM_POSITIONS_CHUNK = 100 * 1024;
 const unsigned int MASK_SIZE = 4096;
@@ -106,9 +93,24 @@ void generateMesh(unsigned int *colors, bool *mask, int d, int u, int v, int dim
   }
 }
 
-void getMeshData(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *verticesResult, unsigned int &vertexIndexResult, unsigned int *facesResult, unsigned int &faceIndexResult) {
-  Local<String> indexString = V8_STRINGS::index.Get(Isolate::GetCurrent());
+inline unsigned int findBlockType(unsigned int n, unsigned int *blockTypes, std::unordered_map<unsigned int, unsigned int> &blockTypesCache) {
+  std::unordered_map<unsigned int, unsigned int>::iterator iter = blockTypesCache.find(n);
+  if (iter != blockTypesCache.end()) {
+    return iter->second;
+  } else {
+    unsigned int blockType = 1;
+    for (unsigned int i = 0; i < 4096; i++) {
+      if (blockTypes[i] == n) {
+        blockType = i;
+        break;
+      }
+    }
+    blockTypesCache[n] = blockType;
+    return blockType;
+  }
+}
 
+void getMeshData(unsigned int *voxels, unsigned int *blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *verticesResult, unsigned int &vertexIndexResult, unsigned int *facesResult, unsigned int &faceIndexResult) {
   std::unique_ptr<float[]> vertices(new float[NUM_POSITIONS_CHUNK]);
   unsigned int vertexIndex = 0;
   std::unique_ptr<unsigned int[]> faces(new unsigned int[NUM_POSITIONS_CHUNK]);
@@ -117,6 +119,9 @@ void getMeshData(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], u
   unsigned int tVertexIndex = 0;
   std::unique_ptr<unsigned int[]> tFaces(new unsigned int[NUM_POSITIONS_CHUNK]);
   unsigned int tFaceIndex = 0;
+
+  std::unordered_map<unsigned int, unsigned int> blockTypesCache;
+  blockTypesCache.reserve(256);
 
   const int dimsX = dims[0];
   const int dimsY = dims[1];
@@ -156,7 +161,7 @@ void getMeshData(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], u
             const unsigned int aOffset = x[0]      + dimsX * x[1]          + dimsXY * x[2];
             a = voxels[aOffset];
             if (a != 0) {
-              a = Local<Object>::Cast(blockTypes->Get(a))->Get(indexString)->Uint32Value();
+              a = findBlockType(a, blockTypes, blockTypesCache);
             }
           } else {
             a = 0;
@@ -165,7 +170,7 @@ void getMeshData(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], u
             const unsigned int bOffset = x[0]+q[0] + dimsX * x[1] + qdimsX + dimsXY * x[2] + qdimsXY;
             b = voxels[bOffset];
             if (b != 0) {
-              b = Local<Object>::Cast(blockTypes->Get(b))->Get(indexString)->Uint32Value();
+              b = findBlockType(b, blockTypes, blockTypesCache);
             }
           } else {
             b = 0;
@@ -540,7 +545,7 @@ void shiftPositions(float *positions, unsigned int numPositions, float *shift) {
   }
 }
 
-void tesselate(unsigned int *voxels, Local<Object> &blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift, unsigned int oldPositionIndex, float *positions, float *uvs, unsigned char *ssaos, float *frames, float *objectIndices, unsigned int *indices, unsigned int &positionIndex, unsigned int &uvIndex, unsigned int &ssaoIndex, unsigned int &frameIndex, unsigned int &objectIndexIndex, unsigned int &indexIndex) {
+void tesselate(unsigned int *voxels, unsigned int *blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift, unsigned int oldPositionIndex, float *positions, float *uvs, unsigned char *ssaos, float *frames, float *objectIndices, unsigned int *indices, unsigned int &positionIndex, unsigned int &uvIndex, unsigned int &ssaoIndex, unsigned int &frameIndex, unsigned int &objectIndexIndex, unsigned int &indexIndex) {
 
   std::unique_ptr<float[]> vertices(new float[NUM_POSITIONS_CHUNK]);
   unsigned int vertexIndex;

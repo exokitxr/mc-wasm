@@ -295,7 +295,9 @@ void Objectize(const FunctionCallbackInfo<Value>& args) {
   unsigned int blocksByteOffset = opts->Get(blocksString)->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned int *blocks = (unsigned int *)((char *)blocksBuffer->GetContents().Data() + blocksByteOffset);
 
-  Local<Object> blockTypes = opts->Get(blockTypesString)->ToObject();
+  Local<ArrayBuffer> blockTypesBuffer = Local<ArrayBuffer>::Cast(opts->Get(blockTypesString)->ToObject()->Get(bufferString));
+  unsigned int blockTypesByteOffset = opts->Get(blockTypesString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned int *blockTypes = (unsigned int *)((char *)blockTypesBuffer->GetContents().Data() + blockTypesByteOffset);
 
   Local<Array> dimsArg = Local<Array>::Cast(opts->Get(dimsString));
   int dims[3] = {
