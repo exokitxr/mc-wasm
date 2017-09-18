@@ -287,7 +287,9 @@ void Objectize(const FunctionCallbackInfo<Value>& args) {
   unsigned int geometriesByteOffset = opts->Get(geometriesString)->ToObject()->Get(byteOffsetString)->Uint32Value();
   void *geometries = (void *)((char *)geometriesBuffer->GetContents().Data() + geometriesByteOffset);
 
-  Local<Object> geometryIndex = opts->Get(geometryIndexString)->ToObject();
+  Local<ArrayBuffer> geometryIndexBuffer = Local<ArrayBuffer>::Cast(opts->Get(geometryIndexString)->ToObject()->Get(bufferString));
+  unsigned int geometryIndexByteOffset = opts->Get(geometryIndexString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned int *geometryIndex = (unsigned int *)((char *)geometryIndexBuffer->GetContents().Data() + geometryIndexByteOffset);
 
   Local<ArrayBuffer> blocksBuffer = Local<ArrayBuffer>::Cast(opts->Get(blocksString)->ToObject()->Get(bufferString));
   unsigned int blocksByteOffset = opts->Get(blocksString)->ToObject()->Get(byteOffsetString)->Uint32Value();

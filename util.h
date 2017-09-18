@@ -11,6 +11,9 @@ const int HEIGHTFIELD_DEPTH = 8;
 const int HOLE_SIZE = 2;
 const int NUM_SLOTS = 64 * 64;
 const int BLOCK_BUFFER_SIZE = 16 * 128 * 16 * 4;
+const int GEOMETRY_BUFFER_SIZE = 100 * 1024;
+const int OBJECT_SLOTS = 64 * 64;
+const int NUM_VOXELS_CHUNKS_HEIGHT = BLOCK_BUFFER_SIZE / 4 / NUM_CHUNKS_HEIGHT;
 
 int getCoordOverscanIndex(int x, int z);
 int getEtherIndex(int x, int y, int z);

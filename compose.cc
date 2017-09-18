@@ -1,33 +1,12 @@
 #include "compose.h"
+#include "util.h"
 #include "tssl.h"
-#include <node.h>
 #include <string.h>
 #include <cmath>
 #include <algorithm>
 #include <memory>
 #include "vector.h"
 // #include <iostream>
-
-using v8::FunctionCallbackInfo;
-using v8::Isolate;
-using v8::Local;
-using v8::Object;
-using v8::String;
-using v8::Number;
-using v8::Value;
-using v8::Array;
-using v8::ArrayBuffer;
-using v8::Float32Array;
-using v8::Uint32Array;
-using v8::Uint8Array;
-
-const unsigned int NUM_CELLS = 16;
-const unsigned int NUM_CELLS_HEIGHT = 128;
-const unsigned int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS;
-const unsigned int BLOCK_BUFFER_SIZE = 16 * 128 * 16 * 4;
-const unsigned int NUM_VOXELS_CHUNKS_HEIGHT = BLOCK_BUFFER_SIZE / 4 / NUM_CHUNKS_HEIGHT;
-const unsigned int OBJECT_SLOTS = 64 * 64;
-const unsigned int GEOMETRY_BUFFER_SIZE = 100 * 1024;
 
 unsigned int _align(unsigned int n, unsigned int alignment) {
   unsigned int alignDiff = n % alignment;
@@ -169,8 +148,17 @@ class Geometry {
   }
 };
 
+inline unsigned int findGeometryIndex(unsigned int n, unsigned int *geometryIndex) {
+  for (unsigned int i = 0; i < 4096 / 2; i++) {
+    if (geometryIndex[i * 2 + 0] == n) {
+      return geometryIndex[i * 2 + 1];
+    }
+  }
+  return 0;
+}
+
 void compose(
-  void *src, void *geometries, Local<Object> &geometryIndex,
+  void *src, void *geometries, unsigned int *geometryIndex,
   unsigned int *blocks, Local<Object> &blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift,
   float *positions, float *uvs, unsigned char *ssaos, float *frames, float *objectIndices, unsigned int *indices, unsigned int *objects,
   unsigned int *positionIndex, unsigned int *uvIndex, unsigned int *ssaoIndex, unsigned int *frameIndex, unsigned int *objectIndexIndex, unsigned int *indexIndex, unsigned int *objectIndex
@@ -237,7 +225,7 @@ void compose(
 
       std::unique_ptr<Geometry> geometry(
         new Geometry(
-          (char *)geometries + geometryIndex->Get(n)->Uint32Value(),
+          (char *)geometries + findGeometryIndex(n, geometryIndex),
           i,
           positionIndex[chunkIndex],
           uvIndex[chunkIndex],
