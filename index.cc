@@ -299,12 +299,9 @@ void Objectize(const FunctionCallbackInfo<Value>& args) {
   unsigned int blockTypesByteOffset = opts->Get(blockTypesString)->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned int *blockTypes = (unsigned int *)((char *)blockTypesBuffer->GetContents().Data() + blockTypesByteOffset);
 
-  Local<Array> dimsArg = Local<Array>::Cast(opts->Get(dimsString));
-  int dims[3] = {
-    dimsArg->Get(0)->Int32Value(),
-    dimsArg->Get(1)->Int32Value(),
-    dimsArg->Get(2)->Int32Value()
-  };
+  Local<ArrayBuffer> dimsBuffer = Local<ArrayBuffer>::Cast(opts->Get(dimsString)->ToObject()->Get(bufferString));
+  unsigned int dimsByteOffset = opts->Get(dimsString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+  int *dims = (int *)((char *)dimsBuffer->GetContents().Data() + dimsByteOffset);
 
   Local<ArrayBuffer> transparentVoxelsBuffer = Local<ArrayBuffer>::Cast(opts->Get(transparentVoxelsString)->ToObject()->Get(bufferString));
   unsigned int transparentVoxelsByteOffset = opts->Get(transparentVoxelsString)->ToObject()->Get(byteOffsetString)->Uint32Value();
@@ -318,12 +315,9 @@ void Objectize(const FunctionCallbackInfo<Value>& args) {
   unsigned int faceUvsByteOffset = opts->Get(faceUvsString)->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *faceUvs = (float *)((char *)faceUvsBuffer->GetContents().Data() + faceUvsByteOffset);
 
-  Local<Array> shiftArg = Local<Array>::Cast(opts->Get(shiftString));
-  float shift[3] = {
-    (float)shiftArg->Get(0)->NumberValue(),
-    (float)shiftArg->Get(1)->NumberValue(),
-    (float)shiftArg->Get(2)->NumberValue()
-  };
+  Local<ArrayBuffer> shiftBuffer = Local<ArrayBuffer>::Cast(opts->Get(shiftString)->ToObject()->Get(bufferString));
+  unsigned int shiftByteOffset = opts->Get(shiftString)->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *shift = (float *)((char *)shiftBuffer->GetContents().Data() + shiftByteOffset);
 
   unsigned int positionIndex[NUM_CHUNKS_HEIGHT];
   unsigned int uvIndex[NUM_CHUNKS_HEIGHT];
