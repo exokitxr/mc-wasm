@@ -240,3 +240,38 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
     centerLights[getLightsIndex(NUM_CELLS, y, NUM_CELLS)] = southeastLights[getLightsIndex(0, y, 0)];
   }
 }
+
+inline unsigned char renderSkyVoxel(int x, int y, int z, float *staticHeightfield) {
+  return (unsigned char)(
+    std::min<float>(std::max<float>(
+      (y - (staticHeightfield[getStaticHeightfieldIndex(x, z)] - 8.0)) / 8.0
+    , 0), 1) * 255.0
+  );
+}
+inline unsigned char renderTorchVoxel(int x, int y, int z, unsigned char *lights) {
+  return (unsigned char)((std::min<int>(lights[getLightsIndex(x, y, z)], 15) * 255) / 15);
+}
+
+void lightmap(int ox, int oz, float *positions, unsigned int numPositions, float *staticHeightfield, unsigned char *lights, unsigned char *skyLightmaps, unsigned char *torchLightmaps) {
+  const int dox = ox * NUM_CELLS;
+  const int doz = oz * NUM_CELLS;
+
+  for (unsigned int i = 0; i < numPositions / 3; i++) {
+    unsigned int baseIndex = i * 3;
+    const int x = std::min<int>(std::max<int>((int)positions[baseIndex + 0] - dox, 0), NUM_CELLS);
+    const int y = std::min<int>(std::max<int>((int)positions[baseIndex + 1], 0), NUM_CELLS_HEIGHT + 1);
+    const int z = std::min<int>(std::max<int>((int)positions[baseIndex + 2] - doz, 0), NUM_CELLS);
+    skyLightmaps[i] = renderSkyVoxel(
+      x,
+      y,
+      z,
+      staticHeightfield
+    );
+    torchLightmaps[i] = renderTorchVoxel(
+      x,
+      y,
+      z,
+      lights
+    );
+  }
+}

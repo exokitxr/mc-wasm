@@ -510,6 +510,58 @@ void Light(const FunctionCallbackInfo<Value>& args) {
   light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
 }
 
+void Lightmap(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() < 8) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
+    return;
+  }
+  if (
+      !args[0]->IsNumber() ||
+      !args[1]->IsNumber() ||
+      !args[2]->IsFloat32Array() ||
+      !args[3]->IsNumber() ||
+      !args[4]->IsFloat32Array() ||
+      !args[5]->IsUint8Array() ||
+      !args[6]->IsUint8Array() ||
+      !args[7]->IsUint8Array()
+  ) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
+    return;
+  }
+
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
+
+  int ox = args[0]->Uint32Value();
+  int oz = args[1]->Uint32Value();
+
+  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
+  unsigned int positionsByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *positions = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
+
+  unsigned int numPositions = args[3]->Uint32Value();
+
+  Local<ArrayBuffer> staticHeightfieldBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
+  unsigned int staticHeightfieldByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *staticHeightfield = (float *)((char *)staticHeightfieldBuffer->GetContents().Data() + staticHeightfieldByteOffset);
+
+  Local<ArrayBuffer> lightsBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(bufferString));
+  unsigned int lightsByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *lights = (unsigned char *)((char *)lightsBuffer->GetContents().Data() + lightsByteOffset);
+
+  Local<ArrayBuffer> skyLightmapsBuffer = Local<ArrayBuffer>::Cast(args[6]->ToObject()->Get(bufferString));
+  unsigned int skyLightmapsByteOffset = args[6]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *skyLightmaps = (unsigned char *)((char *)skyLightmapsBuffer->GetContents().Data() + skyLightmapsByteOffset);
+
+  Local<ArrayBuffer> torchLightmapsBuffer = Local<ArrayBuffer>::Cast(args[7]->ToObject()->Get(bufferString));
+  unsigned int torchLightmapsByteOffset = args[7]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *torchLightmaps = (unsigned char *)((char *)torchLightmapsBuffer->GetContents().Data() + torchLightmapsByteOffset);
+
+  lightmap(ox, oz, positions, numPositions, staticHeightfield, lights, skyLightmaps, torchLightmaps);
+}
+
 void InitAll(Local<Object> exports, Local<Object> module) {
   Isolate *isolate = Isolate::GetCurrent();
 
@@ -529,6 +581,7 @@ void InitAll(Local<Object> exports, Local<Object> module) {
   NODE_SET_METHOD(result, "flood", Flod);
   NODE_SET_METHOD(result, "genHeightfield", GenHeightfield);
   NODE_SET_METHOD(result, "light", Light);
+  NODE_SET_METHOD(result, "lightmap", Lightmap);
 
   module->Set(V8_STRINGS::exports.Get(isolate), result);
 }
