@@ -2,7 +2,22 @@
 #include "util.h"
 #include "compose.h"
 #include "light.h"
-// #include <iostream>
+// #include "noiser.h"
+#include <iostream>
+
+extern "C" {
+
+/* EMSCRIPTEN_KEEPALIVE Noiser *make_noiser(int seed) {
+  return new Noiser(seed);
+}
+
+EMSCRIPTEN_KEEPALIVE void destroy_noiser(Noiser *noiser) {
+  delete noiser;
+}
+
+EMSCRIPTEN_KEEPALIVE void noiser_fill(Noiser *noiser) {
+  // XXX
+} */
 
 EMSCRIPTEN_KEEPALIVE void objectize(
   void *src, void *geometries, unsigned int *geometryIndex,
@@ -30,4 +45,13 @@ EMSCRIPTEN_KEEPALIVE void lght(
   float **lavaArray, float **objectLightsArray, float **etherArray, unsigned int **blocksArray, unsigned char **lightsArray
 ) {
   light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, (bool)relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
+}
+
+class Lol {
+  EMSCRIPTEN_KEEPALIVE int zol(int *arg) {
+    std::cout << "got arg " << (void *)this << " : " << (void *)arg << "\n";
+    return 7;
+  }
+};
+
 }

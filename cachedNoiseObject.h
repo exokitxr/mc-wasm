@@ -1,10 +1,11 @@
-#ifndef CACHED_FAST_NOISE_OBJECT_H
-#define CACHED_FAST_NOISE_OBJECT_H
+#ifndef CACHED_NOISE_OBJECT_H
+#define CACHED_NOISE_OBJECT_H
 
-#include "fastNoiseObject.h"
+#include "cachedNoise.h"
 // #include "MurmurHash3.h"
 #include "hash.h"
 #include <node.h>
+#include <node_object_wrap.h>
 #include <random>
 #include <unordered_map>
 #include <vector>
@@ -22,15 +23,15 @@ using v8::String;
 using v8::Value;
 using v8::Exception;
 
-class CachedFastNoiseObject : public FastNoiseObject {
+class CachedNoiseObject : public node::ObjectWrap {
   public:
     static Persistent<Function> constructor;
     static void Init(Isolate* isolate);
     static void NewInstance(const FunctionCallbackInfo<Value>& args);
 
+    CachedNoise cachedNoise;
     std::unordered_map<std::pair<int, int>, std::vector<double>> cache;
-
-    explicit CachedFastNoiseObject(int s, double frequency, int octaves);
+    explicit CachedNoiseObject(int s, double frequency, int octaves);
 
     static void New(const FunctionCallbackInfo<Value>& args);
     static void In2D(const FunctionCallbackInfo<Value>& args);

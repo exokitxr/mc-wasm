@@ -50,8 +50,8 @@ namespace V8_STRINGS {
   Persistent<String> lavaStart(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "lavaStart"));
   Persistent<String> lavaCount(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "lavaCount"));
 
-  Persistent<String> FastNoiseObject(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "FastNoiseObject"));
-  Persistent<String> CachedFastNoiseObject(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "CachedFastNoiseObject"));
+  Persistent<String> NoiseObject(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "NoiseObject"));
+  Persistent<String> CachedNoiseObject(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "CachedNoiseObject"));
   Persistent<String> Noiser(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "Noiser"));
 
   Persistent<String> wrongNumberOfArguments(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "Wrong number of arguments"));

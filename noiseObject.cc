@@ -1,5 +1,5 @@
 #include <node.h>
-#include "fastNoiseObject.h"
+#include "noiseObject.h"
 #include "v8-strings.h"
 
 using v8::Context;
@@ -15,24 +15,20 @@ using v8::String;
 using v8::Value;
 using v8::Exception;
 
-Persistent<Function> FastNoiseObject::constructor;
+Persistent<Function> NoiseObject::constructor;
 
-FastNoiseObject::FastNoiseObject(int s, double frequency, int octaves) : fastNoise(s) {
-  fastNoise.SetFrequency(frequency);
-  fastNoise.SetFractalOctaves(octaves);
+NoiseObject::NoiseObject(int s, double frequency, int octaves) : noise(s, frequency, octaves) {}
+
+NoiseObject::~NoiseObject() {}
+
+double NoiseObject::in2D(double x, double y) {
+  return noise.in2D(x, y);
 }
 
-FastNoiseObject::~FastNoiseObject() {
-}
-
-double FastNoiseObject::in2D(double x, double y) {
-  return (1.0 + fastNoise.GetSimplexFractal(x, y)) / 2.0;
-}
-
-void FastNoiseObject::Init(Isolate* isolate) {
+void NoiseObject::Init(Isolate* isolate) {
   // Prepare constructor template
   Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
-  tpl->SetClassName(V8_STRINGS::FastNoiseObject.Get(isolate));
+  tpl->SetClassName(V8_STRINGS::NoiseObject.Get(isolate));
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
   // Prototype
@@ -41,7 +37,7 @@ void FastNoiseObject::Init(Isolate* isolate) {
   constructor.Reset(isolate, tpl->GetFunction());
 }
 
-void FastNoiseObject::New(const FunctionCallbackInfo<Value>& args) {
+void NoiseObject::New(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.IsConstructCall()) {
@@ -51,7 +47,7 @@ void FastNoiseObject::New(const FunctionCallbackInfo<Value>& args) {
     double frequency = opts->Get(V8_STRINGS::frequency.Get(isolate))->NumberValue();
     int octaves = opts->Get(V8_STRINGS::octaves.Get(isolate))->IntegerValue();
 
-    FastNoiseObject* obj = new FastNoiseObject(seed, frequency, octaves);
+    NoiseObject* obj = new NoiseObject(seed, frequency, octaves);
     obj->Wrap(args.This());
     args.GetReturnValue().Set(args.This());
   } else {
@@ -64,7 +60,7 @@ void FastNoiseObject::New(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
-void FastNoiseObject::NewInstance(const FunctionCallbackInfo<Value>& args) {
+void NoiseObject::NewInstance(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   const unsigned argc = 1;
@@ -76,7 +72,7 @@ void FastNoiseObject::NewInstance(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(instance);
 }
 
-void FastNoiseObject::In2D(const FunctionCallbackInfo<Value>& args) {
+void NoiseObject::In2D(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 2) {
@@ -88,6 +84,6 @@ void FastNoiseObject::In2D(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  FastNoiseObject* obj = ObjectWrap::Unwrap<FastNoiseObject>(args.Holder());
+  NoiseObject* obj = ObjectWrap::Unwrap<NoiseObject>(args.Holder());
   args.GetReturnValue().Set(Number::New(isolate, obj->in2D(args[0]->NumberValue(), args[1]->NumberValue())));
 }

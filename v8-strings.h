@@ -53,8 +53,8 @@ namespace V8_STRINGS {
   extern Persistent<String> lavaStart;
   extern Persistent<String> lavaCount;
 
-  extern Persistent<String> FastNoiseObject;
-  extern Persistent<String> CachedFastNoiseObject;
+  extern Persistent<String> NoiseObject;
+  extern Persistent<String> CachedNoiseObject;
   extern Persistent<String> Noiser;
 
   extern Persistent<String> wrongNumberOfArguments;

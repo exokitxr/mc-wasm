@@ -1,7 +1,8 @@
 #ifndef NOISER_OBJECT_H
 #define NOISER_OBJECT_H
 
-#include "cachedFastNoiseObject.h"
+#include "noiseObject.h"
+#include "cachedNoiseObject.h"
 #include "hash.h"
 #include <node.h>
 #include <random>
@@ -29,14 +30,14 @@ class NoiserObject : public node::ObjectWrap {
     static void NewInstance(const FunctionCallbackInfo<Value>& args);
 
     std::mt19937 rng;
-    FastNoiseObject elevationNoise1;
-    FastNoiseObject elevationNoise2;
-    FastNoiseObject elevationNoise3;
-    CachedFastNoiseObject wormNoise;
-    CachedFastNoiseObject oceanNoise;
-    CachedFastNoiseObject riverNoise;
-    CachedFastNoiseObject temperatureNoise;
-    CachedFastNoiseObject humidityNoise;
+    NoiseObject elevationNoise1;
+    NoiseObject elevationNoise2;
+    NoiseObject elevationNoise3;
+    CachedNoiseObject wormNoise;
+    CachedNoiseObject oceanNoise;
+    CachedNoiseObject riverNoise;
+    CachedNoiseObject temperatureNoise;
+    CachedNoiseObject humidityNoise;
 
     std::unordered_map<std::pair<int, int>, unsigned char> biomeCache;
     std::unordered_map<std::tuple<unsigned char, int, int>, float> biomeHeightCache;

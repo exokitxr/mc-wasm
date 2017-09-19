@@ -1,7 +1,7 @@
 #include <node.h>
 #include "v8-strings.h"
-#include "fastNoiseObject.h"
-#include "cachedFastNoiseObject.h"
+#include "noiseObject.h"
+#include "cachedNoiseObject.h"
 #include "noiserObject.h"
 #include "march.h"
 #include "tssl.h"
@@ -29,12 +29,12 @@ const unsigned int NUM_CELLS = 16;
 const unsigned int NUM_CELLS_HEIGHT = 128;
 const unsigned int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS;
 
-void CreateFastNoise(const FunctionCallbackInfo<Value>& args) {
-  FastNoiseObject::NewInstance(args);
+void CreateNoise(const FunctionCallbackInfo<Value>& args) {
+  NoiseObject::NewInstance(args);
 }
 
-void CreateCachedFastNoise(const FunctionCallbackInfo<Value>& args) {
-  CachedFastNoiseObject::NewInstance(args);
+void CreateCachedNoise(const FunctionCallbackInfo<Value>& args) {
+  CachedNoiseObject::NewInstance(args);
 }
 
 void CreateNoiser(const FunctionCallbackInfo<Value>& args) {
@@ -522,14 +522,14 @@ void Light(const FunctionCallbackInfo<Value>& args) {
 void InitAll(Local<Object> exports, Local<Object> module) {
   Isolate *isolate = Isolate::GetCurrent();
 
-  FastNoiseObject::Init(isolate);
-  CachedFastNoiseObject::Init(isolate);
+  NoiseObject::Init(isolate);
+  CachedNoiseObject::Init(isolate);
   NoiserObject::Init(isolate);
   initFlod();
 
   Local<Object> result = Object::New(isolate);
-  NODE_SET_METHOD(result, "fastNoise", CreateFastNoise);
-  NODE_SET_METHOD(result, "cachedFastNoise", CreateCachedFastNoise);
+  NODE_SET_METHOD(result, "fastNoise", CreateNoise);
+  NODE_SET_METHOD(result, "cachedNoise", CreateCachedNoise);
   NODE_SET_METHOD(result, "noiser", CreateNoiser);
   NODE_SET_METHOD(result, "marchingCubes", MarchCubes);
   // NODE_SET_METHOD(result, "compose", Compose);

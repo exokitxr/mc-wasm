@@ -1,5 +1,4 @@
-#include "cachedFastNoiseObject.h"
-#include "fastNoiseObject.h"
+#include "cachedNoiseObject.h"
 #include "v8-strings.h"
 // #include "MurmurHash3.h"
 #include <node.h>
@@ -22,13 +21,11 @@ using v8::String;
 using v8::Value;
 using v8::Exception;
 
-const unsigned int NUM_CELLS = 16;
-
-Persistent<Function> CachedFastNoiseObject::constructor;
-void CachedFastNoiseObject::Init(Isolate* isolate) {
+Persistent<Function> CachedNoiseObject::constructor;
+void CachedNoiseObject::Init(Isolate* isolate) {
   // Prepare constructor template
   Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
-  tpl->SetClassName(V8_STRINGS::CachedFastNoiseObject.Get(isolate));
+  tpl->SetClassName(V8_STRINGS::CachedNoiseObject.Get(isolate));
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
   // Prototype
@@ -36,7 +33,7 @@ void CachedFastNoiseObject::Init(Isolate* isolate) {
 
   constructor.Reset(isolate, tpl->GetFunction());
 }
-void CachedFastNoiseObject::NewInstance(const FunctionCallbackInfo<Value>& args) {
+void CachedNoiseObject::NewInstance(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   const unsigned argc = 1;
@@ -48,10 +45,9 @@ void CachedFastNoiseObject::NewInstance(const FunctionCallbackInfo<Value>& args)
   args.GetReturnValue().Set(instance);
 }
 
-CachedFastNoiseObject::CachedFastNoiseObject(int s, double frequency, int octaves) : FastNoiseObject(s, frequency, octaves) {
-}
+CachedNoiseObject::CachedNoiseObject(int s, double frequency, int octaves) : cachedNoise(s, frequency, octaves) {}
 
-void CachedFastNoiseObject::New(const FunctionCallbackInfo<Value>& args) {
+void CachedNoiseObject::New(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.IsConstructCall()) {
@@ -61,7 +57,7 @@ void CachedFastNoiseObject::New(const FunctionCallbackInfo<Value>& args) {
     double frequency = opts->Get(V8_STRINGS::frequency.Get(isolate))->NumberValue();
     int octaves = opts->Get(V8_STRINGS::octaves.Get(isolate))->IntegerValue();
 
-    CachedFastNoiseObject* obj = new CachedFastNoiseObject(seed, frequency, octaves);
+    CachedNoiseObject* obj = new CachedNoiseObject(seed, frequency, octaves);
     obj->Wrap(args.This());
     args.GetReturnValue().Set(args.This());
   } else {
@@ -74,7 +70,7 @@ void CachedFastNoiseObject::New(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
-void CachedFastNoiseObject::In2D(const FunctionCallbackInfo<Value>& args) {
+void CachedNoiseObject::In2D(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 2) {
@@ -86,32 +82,10 @@ void CachedFastNoiseObject::In2D(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  CachedFastNoiseObject* obj = ObjectWrap::Unwrap<CachedFastNoiseObject>(args.Holder());
+  CachedNoiseObject* obj = ObjectWrap::Unwrap<CachedNoiseObject>(args.Holder());
   args.GetReturnValue().Set(Number::New(isolate, obj->in2D(args[0]->NumberValue(), args[1]->NumberValue())));
 }
 
-double CachedFastNoiseObject::in2D(int x, int z) {
-  const int ox = x >> 4;
-  const int oz = z >> 4;
-  const int ax = x - (x & 0xFFFFFFF0);
-  const int az = z - (z & 0xFFFFFFF0);
-  const int index = ax + az * NUM_CELLS;
-
-  const std::pair<int, int> key(ox, oz);
-  std::unordered_map<std::pair<int, int>, std::vector<double>>::iterator entryIter = cache.find(key);
-
-  if (entryIter != cache.end()) {
-    return entryIter->second[index];
-  } else {
-    std::vector<double> &entry = cache[key];
-    entry.reserve(NUM_CELLS * NUM_CELLS);
-
-    for (unsigned int dz = 0; dz < NUM_CELLS; dz++) {
-      for (unsigned int dx = 0; dx < NUM_CELLS; dx++) {
-        entry[dx + dz * NUM_CELLS] = FastNoiseObject::in2D(ox * NUM_CELLS + dx, oz * NUM_CELLS + dz);
-      }
-    }
-
-    return entry[index];
-  }
+double CachedNoiseObject::in2D(int x, int z) {
+  return cachedNoise.in2D(x, z);
 }
