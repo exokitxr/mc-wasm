@@ -506,15 +506,6 @@ void Light(const FunctionCallbackInfo<Value>& args) {
     unsigned int lightsByteOffset = lights->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
     lightsArray[i] = (unsigned char *)((char *)lightsBuffer->GetContents().Data() + lightsByteOffset);
   }
-  
- /*  unsigned int positionsByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
-  float *positions = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
-  Local<ArrayBuffer> colorsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
-  unsigned int colorsByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
-  float *colors = (float *)((char *)colorsBuffer->GetContents().Data() + colorsByteOffset);
-  Local<ArrayBuffer> biomesBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(bufferString));
-  unsigned int biomesByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
-  unsigned char *biomes = (unsigned char *)((char *)biomesBuffer->GetContents().Data() + biomesByteOffset); */
 
   light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
 }
