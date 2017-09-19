@@ -1,5 +1,5 @@
-#ifndef NOISER_H
-#define NOISER_H
+#ifndef NOISER_OBJECT_H
+#define NOISER_OBJECT_H
 
 #include "cachedFastNoiseObject.h"
 #include "hash.h"
@@ -22,7 +22,7 @@ using v8::Exception;
 using v8::Object;
 using v8::Array;
 
-class Noiser : public node::ObjectWrap {
+class NoiserObject : public node::ObjectWrap {
   public:
     static Persistent<Function> constructor;
     static void Init(Isolate* isolate);
@@ -42,7 +42,7 @@ class Noiser : public node::ObjectWrap {
     std::unordered_map<std::tuple<unsigned char, int, int>, float> biomeHeightCache;
     std::unordered_map<std::pair<int, int>, float> elevationCache;
 
-    explicit Noiser(int seed);
+    explicit NoiserObject(int seed);
 
     static void New(const FunctionCallbackInfo<Value>& args);
     static void GetBiome(const FunctionCallbackInfo<Value>& args);

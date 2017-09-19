@@ -1,4 +1,4 @@
-#include "noiser.h"
+#include "noiserObject.h"
 #include "util.h"
 #include "v8-strings.h"
 #include "biomes.h"
@@ -31,8 +31,8 @@ using v8::Exception;
 using v8::Array;
 using v8::ArrayBuffer;
 
-Persistent<Function> Noiser::constructor;
-void Noiser::Init(Isolate* isolate) {
+Persistent<Function> NoiserObject::constructor;
+void NoiserObject::Init(Isolate* isolate) {
   // Prepare constructor template
   Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
   tpl->SetClassName(V8_STRINGS::Noiser.Get(isolate));
@@ -53,7 +53,7 @@ void Noiser::Init(Isolate* isolate) {
 
   constructor.Reset(isolate, tpl->GetFunction());
 }
-void Noiser::NewInstance(const FunctionCallbackInfo<Value>& args) {
+void NoiserObject::NewInstance(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   const unsigned argc = 1;
@@ -65,7 +65,7 @@ void Noiser::NewInstance(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(instance);
 }
 
-void Noiser::New(const FunctionCallbackInfo<Value>& args) {
+void NoiserObject::New(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.IsConstructCall()) {
@@ -77,7 +77,7 @@ void Noiser::New(const FunctionCallbackInfo<Value>& args) {
 
 // std::cout << "got seed " << seed << "\n";
 
-    Noiser* obj = new Noiser(seed);
+    NoiserObject* obj = new NoiserObject(seed);
     obj->Wrap(args.This());
     args.GetReturnValue().Set(args.This());
   } else {
@@ -90,7 +90,7 @@ void Noiser::New(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
-Noiser::Noiser(int seed) :
+NoiserObject::NoiserObject(int seed) :
   rng(seed),
   elevationNoise1(rng(), 2, 1),
   elevationNoise2(rng(), 2, 1),
@@ -102,7 +102,7 @@ Noiser::Noiser(int seed) :
   humidityNoise(rng(), 0.002, 4)
 {}
 
-void Noiser::GetBiome(const FunctionCallbackInfo<Value>& args) {
+void NoiserObject::GetBiome(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 2) {
@@ -114,11 +114,11 @@ void Noiser::GetBiome(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   args.GetReturnValue().Set(Number::New(isolate, obj->getBiome(args[0]->Int32Value(), args[1]->Int32Value())));
 }
 
-unsigned char Noiser::getBiome(int x, int z) {
+unsigned char NoiserObject::getBiome(int x, int z) {
   const std::pair<int, int> key(x, z);
   std::unordered_map<std::pair<int, int>, unsigned char>::iterator entryIter = biomeCache.find(key);
 
@@ -155,7 +155,7 @@ unsigned char Noiser::getBiome(int x, int z) {
   }
 }
 
-void Noiser::GetBiomeHeight(const FunctionCallbackInfo<Value>& args) {
+void NoiserObject::GetBiomeHeight(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 3) {
@@ -169,11 +169,11 @@ void Noiser::GetBiomeHeight(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   args.GetReturnValue().Set(Number::New(isolate, obj->getBiomeHeight((unsigned char)args[0]->Uint32Value(), args[1]->Int32Value(), args[2]->Int32Value())));
 }
 
-float Noiser::getBiomeHeight(unsigned char b, int x, int z) {
+float NoiserObject::getBiomeHeight(unsigned char b, int x, int z) {
   const std::tuple<unsigned char, int, int> key(b, x, z);
   std::unordered_map<std::tuple<unsigned char, int, int>, float>::iterator entryIter = biomeHeightCache.find(key);
 
@@ -192,7 +192,7 @@ float Noiser::getBiomeHeight(unsigned char b, int x, int z) {
   }
 }
 
-void Noiser::GetElevation(const FunctionCallbackInfo<Value>& args) {
+void NoiserObject::GetElevation(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 2) {
@@ -204,11 +204,11 @@ void Noiser::GetElevation(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   args.GetReturnValue().Set(Number::New(isolate, obj->getElevation(args[0]->Int32Value(), args[1]->Int32Value())));
 }
 
-float Noiser::getElevation(int x, int z) {
+float NoiserObject::getElevation(int x, int z) {
   const std::pair<int, int> key(x, z);
   std::unordered_map<std::pair<int, int>, float>::iterator entryIter = elevationCache.find(key);
 
@@ -234,7 +234,7 @@ float Noiser::getElevation(int x, int z) {
   }
 }
 
-void Noiser::GetTemperature(const FunctionCallbackInfo<Value>& args) {
+void NoiserObject::GetTemperature(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 2) {
@@ -246,15 +246,15 @@ void Noiser::GetTemperature(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   args.GetReturnValue().Set(Number::New(isolate, obj->getTemperature(args[0]->NumberValue(), args[1]->NumberValue())));
 }
 
-double Noiser::getTemperature(double x, double z) {
+double NoiserObject::getTemperature(double x, double z) {
   return temperatureNoise.in2D(x, z);
 }
 
-/* void Noiser::FillBiomes(const FunctionCallbackInfo<Value>& args) {
+/* void NoiserObject::FillBiomes(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 3) {
@@ -274,11 +274,11 @@ double Noiser::getTemperature(double x, double z) {
   unsigned int biomesByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned char *biomes = (unsigned char *)((char *)biomesBuffer->GetContents().Data() + biomesByteOffset);
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   obj->fillBiomes(args[0]->Int32Value(), args[1]->Int32Value(), biomes);
 } */
 
-void Noiser::fillBiomes(int ox, int oz, unsigned char *biomes) {
+void NoiserObject::fillBiomes(int ox, int oz, unsigned char *biomes) {
   unsigned int index = 0;
   for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
     for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
@@ -287,7 +287,7 @@ void Noiser::fillBiomes(int ox, int oz, unsigned char *biomes) {
   }
 }
 
-/* void Noiser::FillElevations(const FunctionCallbackInfo<Value>& args) {
+/* void NoiserObject::FillElevations(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 3) {
@@ -305,11 +305,11 @@ void Noiser::fillBiomes(int ox, int oz, unsigned char *biomes) {
   unsigned int elevationsByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *elevations = (float *)((char *)elevationsBuffer->GetContents().Data() + elevationsByteOffset);
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   obj->fillElevations(args[0]->Int32Value(), args[1]->Int32Value(), elevations);
 } */
 
-void Noiser::fillElevations(int ox, int oz, float *elevations) {
+void NoiserObject::fillElevations(int ox, int oz, float *elevations) {
   unsigned int index = 0;
   for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
     for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
@@ -318,7 +318,7 @@ void Noiser::fillElevations(int ox, int oz, float *elevations) {
   }
 }
 
-/* void Noiser::FillEther(const FunctionCallbackInfo<Value>& args) {
+/* void NoiserObject::FillEther(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 2) {
@@ -339,11 +339,11 @@ void Noiser::fillElevations(int ox, int oz, float *elevations) {
   unsigned int ethersByteOffset = args[1]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *ethers = (float *)((char *)ethersBuffer->GetContents().Data() + ethersByteOffset);
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   obj->fillEther(elevations, ethers);
 } */
 
-void Noiser::fillEther(float *elevations, float *ether) {
+void NoiserObject::fillEther(float *elevations, float *ether) {
   unsigned int index = 0;
   for (int y = 0; y < NUM_CELLS_OVERSCAN_Y; y++) {
     for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
@@ -355,7 +355,7 @@ void Noiser::fillEther(float *elevations, float *ether) {
   }
 }
 
-/* void Noiser::FillLiquid(const FunctionCallbackInfo<Value>& args) {
+/* void NoiserObject::FillLiquid(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 6) {
@@ -388,7 +388,7 @@ void Noiser::fillEther(float *elevations, float *ether) {
   unsigned int lavaByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *lava = (float *)((char *)lavaBuffer->GetContents().Data() + lavaByteOffset);
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   obj->fillLiquid(ox, oz, ether, elevations, water, lava);
 } */
 
@@ -417,7 +417,7 @@ inline void setLiquid(int ox, int oz, int x, int y, int z, float *liquid) {
   }
 }
 
-void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *water, float *lava) {
+void NoiserObject::fillLiquid(int ox, int oz, float *ether, float *elevations, float *water, float *lava) {
   for (unsigned int i = 0; i < (NUM_CELLS + 1) * (NUM_CELLS_HEIGHT + 1) * (NUM_CELLS + 1); i++) {
     water[i] = 1.0;
     lava[i] = 1.0;
@@ -456,7 +456,7 @@ void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *
   }
 }
 
-/* void Noiser::ApplyEther(const FunctionCallbackInfo<Value>& args) {
+/* void NoiserObject::ApplyEther(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 3) {
@@ -480,11 +480,11 @@ void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *
   unsigned int etherByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *ether = (float *)((char *)etherBuffer->GetContents().Data() + etherByteOffset);
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   obj->applyEther(newEther, numNewEthers, ether);
 } */
 
-void Noiser::applyEther(float *newEther, unsigned int numNewEthers, float *ether) {
+void NoiserObject::applyEther(float *newEther, unsigned int numNewEthers, float *ether) {
   unsigned int baseIndex = 0;
   for (unsigned int i = 0; i < numNewEthers; i++) {
     const float x = newEther[baseIndex + 0];
@@ -511,7 +511,7 @@ void Noiser::applyEther(float *newEther, unsigned int numNewEthers, float *ether
   }
 }
 
-void Noiser::makeGeometries(int ox, int oy, float *ether, float *water, float *lava, float *positionsBuffer, unsigned int *indicesBuffer, unsigned int *attributeRanges, unsigned int *indexRanges) {
+void NoiserObject::makeGeometries(int ox, int oy, float *ether, float *water, float *lava, float *positionsBuffer, unsigned int *indicesBuffer, unsigned int *attributeRanges, unsigned int *indexRanges) {
   int attributeIndex = 0;
   int indexIndex = 0;
 
@@ -611,7 +611,7 @@ void Noiser::makeGeometries(int ox, int oy, float *ether, float *water, float *l
 }
 
 
-void Noiser::Fill(const FunctionCallbackInfo<Value>& args) {
+void NoiserObject::Fill(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 21) {
@@ -719,7 +719,7 @@ void Noiser::Fill(const FunctionCallbackInfo<Value>& args) {
   unsigned int peeksByteOffset = args[20]->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned char *peeks = (unsigned char *)((char *)peeksBuffer->GetContents().Data() + peeksByteOffset);
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   if (fillBiomes) {
     obj->fillBiomes(ox, oz, biomes);
   }
@@ -776,7 +776,7 @@ inline void postProcessGeometryRange(int ox, int oz, unsigned int start, unsigne
   }
 };
 
-/* void Noiser::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
+/* void NoiserObject::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 6) {
@@ -804,11 +804,11 @@ inline void postProcessGeometryRange(int ox, int oz, unsigned int start, unsigne
   unsigned int biomesByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned char *biomes = (unsigned char *)((char *)biomesBuffer->GetContents().Data() + biomesByteOffset);
 
-  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
   obj->postProcessGeometry(ox, oz, range, positions, colors, biomes);
 } */
 
-void Noiser::postProcessGeometry(int ox, int oz, unsigned int *attributeRanges, float *positions, float *colors, unsigned char *biomes) {
+void NoiserObject::postProcessGeometry(int ox, int oz, unsigned int *attributeRanges, float *positions, float *colors, unsigned char *biomes) {
   for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
     unsigned int landStart = attributeRanges[i * 6 + 0];
     unsigned int landCount = attributeRanges[i * 6 + 1];

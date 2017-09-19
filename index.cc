@@ -2,7 +2,7 @@
 #include "v8-strings.h"
 #include "fastNoiseObject.h"
 #include "cachedFastNoiseObject.h"
-#include "noiser.h"
+#include "noiserObject.h"
 #include "march.h"
 #include "tssl.h"
 #include "compose.h"
@@ -38,7 +38,7 @@ void CreateCachedFastNoise(const FunctionCallbackInfo<Value>& args) {
 }
 
 void CreateNoiser(const FunctionCallbackInfo<Value>& args) {
-  Noiser::NewInstance(args);
+  NoiserObject::NewInstance(args);
 }
 
 void MarchCubes(const FunctionCallbackInfo<Value>& args) {
@@ -524,7 +524,7 @@ void InitAll(Local<Object> exports, Local<Object> module) {
 
   FastNoiseObject::Init(isolate);
   CachedFastNoiseObject::Init(isolate);
-  Noiser::Init(isolate);
+  NoiserObject::Init(isolate);
   initFlod();
 
   Local<Object> result = Object::New(isolate);
