@@ -1,6 +1,5 @@
 #include "cachedNoise.h"
 #include "util.h"
-#include <node.h>
 #include <cmath>
 #include <random>
 #include <unordered_map>

@@ -2,12 +2,12 @@
 #include "util.h"
 #include "compose.h"
 #include "light.h"
-// #include "noiser.h"
+#include "noiser.h"
 #include <iostream>
 
 extern "C" {
 
-/* EMSCRIPTEN_KEEPALIVE Noiser *make_noiser(int seed) {
+EMSCRIPTEN_KEEPALIVE Noiser *make_noiser(int seed) {
   return new Noiser(seed);
 }
 
@@ -15,9 +15,9 @@ EMSCRIPTEN_KEEPALIVE void destroy_noiser(Noiser *noiser) {
   delete noiser;
 }
 
-EMSCRIPTEN_KEEPALIVE void noiser_fill(Noiser *noiser) {
-  // XXX
-} */
+EMSCRIPTEN_KEEPALIVE void noiser_fill(Noiser *noiser, int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges, float *heightfield, float *staticHeightfield, float *colors, unsigned char *peeks) {
+  noiser->fill(ox, oz, biomes, fillBiomes, elevations, fillElevations, ethers, fillEther, water, lava, fillLiquid, newEther, numNewEthers, positions, indices, attributeRanges, indexRanges, heightfield, staticHeightfield, colors, peeks);
+}
 
 EMSCRIPTEN_KEEPALIVE void objectize(
   void *src, void *geometries, unsigned int *geometryIndex,
