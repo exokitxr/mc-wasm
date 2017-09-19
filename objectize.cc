@@ -3,7 +3,7 @@
 #include "compose.h"
 #include "light.h"
 #include "noiser.h"
-#include <iostream>
+// #include <iostream>
 
 extern "C" {
 
@@ -49,7 +49,7 @@ EMSCRIPTEN_KEEPALIVE void lght(
 
 class Lol {
   EMSCRIPTEN_KEEPALIVE int zol(int *arg) {
-    std::cout << "got arg " << (void *)this << " : " << (void *)arg << "\n";
+    // std::cout << "got arg " << (void *)this << " : " << (void *)arg << "\n";
     return 7;
   }
 };
