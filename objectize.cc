@@ -1,6 +1,7 @@
 #include <emscripten.h>
 #include "util.h"
 #include "compose.h"
+#include "light.h"
 // #include <iostream>
 
 EMSCRIPTEN_KEEPALIVE void objectize(
@@ -22,32 +23,11 @@ EMSCRIPTEN_KEEPALIVE void objectize(
     positions, uvs, ssaos, frames, objectIndices, indices, objects,
     positionIndex, uvIndex, ssaoIndex, frameIndex, objectIndexIndex, indexIndex, objectIndex
   );
+}
 
-  /* Local<Array> numPositions = Array::New(args.GetIsolate(), NUM_CHUNKS_HEIGHT);
-  Local<Array> numUvs = Array::New(args.GetIsolate(), NUM_CHUNKS_HEIGHT);
-  Local<Array> numSsaos = Array::New(args.GetIsolate(), NUM_CHUNKS_HEIGHT);
-  Local<Array> numFrames = Array::New(args.GetIsolate(), NUM_CHUNKS_HEIGHT);
-  Local<Array> numObjectIndices = Array::New(args.GetIsolate(), NUM_CHUNKS_HEIGHT);
-  Local<Array> numIndices = Array::New(args.GetIsolate(), NUM_CHUNKS_HEIGHT);
-  Local<Array> numObjects = Array::New(args.GetIsolate(), NUM_CHUNKS_HEIGHT);
-
-  for (unsigned int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
-    numPositions->Set(i, Number::New(args.GetIsolate(), positionIndex[i]));
-    numUvs->Set(i, Number::New(args.GetIsolate(), uvIndex[i]));
-    numSsaos->Set(i, Number::New(args.GetIsolate(), ssaoIndex[i]));
-    numFrames->Set(i, Number::New(args.GetIsolate(), frameIndex[i]));
-    numObjectIndices->Set(i, Number::New(args.GetIsolate(), objectIndexIndex[i]));
-    numIndices->Set(i, Number::New(args.GetIsolate(), indexIndex[i]));
-    numObjects->Set(i, Number::New(args.GetIsolate(), objectIndex[i]));
-  }
-
-  Local<Object> result = Object::New(args.GetIsolate());
-  result->Set(positionsString, numPositions);
-  result->Set(uvsString, numUvs);
-  result->Set(ssaosString, numSsaos);
-  result->Set(framesString, numFrames);
-  result->Set(objectIndicesString, numObjectIndices);
-  result->Set(indicesString, numIndices);
-  result->Set(objectsString, numObjects);
-  args.GetReturnValue().Set(result); */
+EMSCRIPTEN_KEEPALIVE void lght(
+  int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, unsigned relight,
+  float **lavaArray, float **objectLightsArray, float **etherArray, unsigned int **blocksArray, unsigned char **lightsArray
+) {
+  light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, (bool)relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
 }
