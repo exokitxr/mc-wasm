@@ -53,18 +53,20 @@ class Noiser : public node::ObjectWrap {
     float getElevation(int x, int z);
     static void GetTemperature(const FunctionCallbackInfo<Value>& args);
     double getTemperature(double x, double z);
-    static void FillBiomes(const FunctionCallbackInfo<Value>& args);
+    // static void FillBiomes(const FunctionCallbackInfo<Value>& args);
     void fillBiomes(int ox, int oz, unsigned char *biomes);
-    static void FillElevations(const FunctionCallbackInfo<Value>& args);
+    // static void FillElevations(const FunctionCallbackInfo<Value>& args);
     void fillElevations(int ox, int oz, float *elevations);
-    static void FillEther(const FunctionCallbackInfo<Value>& args);
+    // static void FillEther(const FunctionCallbackInfo<Value>& args);
     void fillEther(float *elevations, float *ether);
-    static void FillLiquid(const FunctionCallbackInfo<Value>& args);
+    // static void FillLiquid(const FunctionCallbackInfo<Value>& args);
     void fillLiquid(int ox, int oz, float *ether, float *elevations, float *water, float *lava);
-    static void ApplyEther(const FunctionCallbackInfo<Value>& args);
+    // static void ApplyEther(const FunctionCallbackInfo<Value>& args);
     void applyEther(float *newEther, unsigned int numNewEthers, float *ether);
-    static void PostProcessGeometry(const FunctionCallbackInfo<Value>& args);
-    void postProcessGeometry(int ox, int oz, Local<Object> &range, float *positions, float *colors, unsigned char *biomes);
+    void makeGeometries(int ox, int oy, float *ether, float *water, float *lava, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges);
+    static void Fill(const FunctionCallbackInfo<Value>& args);
+    // static void PostProcessGeometry(const FunctionCallbackInfo<Value>& args);
+    void postProcessGeometry(int ox, int oz, unsigned int *attributeRanges, float *positions, float *colors, unsigned char *biomes);
 };
 
 #endif

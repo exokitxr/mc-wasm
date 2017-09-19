@@ -1,9 +1,12 @@
 #include "noiser.h"
 #include "util.h"
 #include "v8-strings.h"
+#include "biomes.h"
 #include "cachedFastNoiseObject.h"
 #include "fastNoiseObject.h"
-#include "biomes.h"
+#include "march.h"
+#include "heightfield.h"
+#include "flod.h"
 #include <node.h>
 #include <cmath>
 #include <random>
@@ -11,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 #include <functional>
-// #include <iostream>
+#include <iostream>
 
 using v8::Context;
 using v8::Function;
@@ -40,12 +43,13 @@ void Noiser::Init(Isolate* isolate) {
   NODE_SET_PROTOTYPE_METHOD(tpl, "getBiome", GetBiome);
   NODE_SET_PROTOTYPE_METHOD(tpl, "getElevation", GetElevation);
   NODE_SET_PROTOTYPE_METHOD(tpl, "getTemperature", GetTemperature);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "fillBiomes", FillBiomes);
+  /* NODE_SET_PROTOTYPE_METHOD(tpl, "fillBiomes", FillBiomes);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillElevations", FillElevations);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillEther", FillEther);
   NODE_SET_PROTOTYPE_METHOD(tpl, "fillLiquid", FillLiquid);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "applyEther", ApplyEther);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "postProcessGeometry", PostProcessGeometry);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "applyEther", ApplyEther); */
+  NODE_SET_PROTOTYPE_METHOD(tpl, "fill", Fill);
+  // NODE_SET_PROTOTYPE_METHOD(tpl, "postProcessGeometry", PostProcessGeometry);
 
   constructor.Reset(isolate, tpl->GetFunction());
 }
@@ -250,7 +254,7 @@ double Noiser::getTemperature(double x, double z) {
   return temperatureNoise.in2D(x, z);
 }
 
-void Noiser::FillBiomes(const FunctionCallbackInfo<Value>& args) {
+/* void Noiser::FillBiomes(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 3) {
@@ -272,7 +276,7 @@ void Noiser::FillBiomes(const FunctionCallbackInfo<Value>& args) {
 
   Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
   obj->fillBiomes(args[0]->Int32Value(), args[1]->Int32Value(), biomes);
-}
+} */
 
 void Noiser::fillBiomes(int ox, int oz, unsigned char *biomes) {
   unsigned int index = 0;
@@ -283,7 +287,7 @@ void Noiser::fillBiomes(int ox, int oz, unsigned char *biomes) {
   }
 }
 
-void Noiser::FillElevations(const FunctionCallbackInfo<Value>& args) {
+/* void Noiser::FillElevations(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 3) {
@@ -303,7 +307,7 @@ void Noiser::FillElevations(const FunctionCallbackInfo<Value>& args) {
 
   Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
   obj->fillElevations(args[0]->Int32Value(), args[1]->Int32Value(), elevations);
-}
+} */
 
 void Noiser::fillElevations(int ox, int oz, float *elevations) {
   unsigned int index = 0;
@@ -314,7 +318,7 @@ void Noiser::fillElevations(int ox, int oz, float *elevations) {
   }
 }
 
-void Noiser::FillEther(const FunctionCallbackInfo<Value>& args) {
+/* void Noiser::FillEther(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 2) {
@@ -337,7 +341,7 @@ void Noiser::FillEther(const FunctionCallbackInfo<Value>& args) {
 
   Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
   obj->fillEther(elevations, ethers);
-}
+} */
 
 void Noiser::fillEther(float *elevations, float *ether) {
   unsigned int index = 0;
@@ -351,7 +355,7 @@ void Noiser::fillEther(float *elevations, float *ether) {
   }
 }
 
-void Noiser::FillLiquid(const FunctionCallbackInfo<Value>& args) {
+/* void Noiser::FillLiquid(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 6) {
@@ -367,22 +371,26 @@ void Noiser::FillLiquid(const FunctionCallbackInfo<Value>& args) {
   Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
   int ox = args[0]->Int32Value();
   int oz = args[1]->Int32Value();
+
   Local<ArrayBuffer> etherBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
   unsigned int etherByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *ether = (float *)((char *)etherBuffer->GetContents().Data() + etherByteOffset);
+
   Local<ArrayBuffer> elevationsBuffer = Local<ArrayBuffer>::Cast(args[3]->ToObject()->Get(bufferString));
   unsigned int elevationsByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *elevations = (float *)((char *)elevationsBuffer->GetContents().Data() + elevationsByteOffset);
+
   Local<ArrayBuffer> waterBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
   unsigned int waterByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *water = (float *)((char *)waterBuffer->GetContents().Data() + waterByteOffset);
+
   Local<ArrayBuffer> lavaBuffer = Local<ArrayBuffer>::Cast(args[5]->ToObject()->Get(bufferString));
   unsigned int lavaByteOffset = args[5]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *lava = (float *)((char *)lavaBuffer->GetContents().Data() + lavaByteOffset);
 
   Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
   obj->fillLiquid(ox, oz, ether, elevations, water, lava);
-}
+} */
 
 inline void setLiquid(int ox, int oz, int x, int y, int z, float *liquid) {
   x -= ox * NUM_CELLS;
@@ -448,7 +456,7 @@ void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *
   }
 }
 
-void Noiser::ApplyEther(const FunctionCallbackInfo<Value>& args) {
+/* void Noiser::ApplyEther(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 3) {
@@ -465,8 +473,7 @@ void Noiser::ApplyEther(const FunctionCallbackInfo<Value>& args) {
 
   Local<ArrayBuffer> newEtherBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
   unsigned int newEtherByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
-  float *newEther = (float *)((char *)newEtherBuffer->GetContents().Data() + newEtherByteOffset);
-
+  float *newEther = (float *)((char *)newEtherBuffer->GetContents().Data() + newEtherByteOffset); 
   unsigned int numNewEthers = args[1]->Uint32Value();
 
   Local<ArrayBuffer> etherBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
@@ -475,7 +482,7 @@ void Noiser::ApplyEther(const FunctionCallbackInfo<Value>& args) {
 
   Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
   obj->applyEther(newEther, numNewEthers, ether);
-}
+} */
 
 void Noiser::applyEther(float *newEther, unsigned int numNewEthers, float *ether) {
   unsigned int baseIndex = 0;
@@ -504,12 +511,254 @@ void Noiser::applyEther(float *newEther, unsigned int numNewEthers, float *ether
   }
 }
 
-inline void postProcessGeometryRange(int ox, int oz, int start, int count, float *positions, float *colors, const std::function<void(const float,const float,const float,const float,const float,float &,float &,float &)>& getColor) {
+void Noiser::makeGeometries(int ox, int oy, float *ether, float *water, float *lava, float *positionsBuffer, unsigned int *indicesBuffer, unsigned int *attributeRanges, unsigned int *indexRanges) {
+  int attributeIndex = 0;
+  int indexIndex = 0;
+
+  // land
+  for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
+    unsigned int positionIndex;
+    unsigned int faceIndex;
+
+    int dims[3] = {
+      NUM_CELLS + 1,
+      NUM_CELLS + 1,
+      NUM_CELLS + 1
+    };
+    float *potential = ether;
+    int shift[3] = {
+      0,
+      NUM_CELLS * i,
+      0
+    };
+    int indexOffset = attributeIndex / 3;
+    float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
+    unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
+
+    marchingCubes(dims, potential, shift, indexOffset, positions, faces, positionIndex, faceIndex);
+
+    attributeRanges[i * 6 + 0] = attributeIndex;
+    attributeRanges[i * 6 + 1] = positionIndex;
+    indexRanges[i * 6 + 0] = indexIndex;
+    indexRanges[i * 6 + 1] = faceIndex,
+
+    attributeIndex += positionIndex;
+    indexIndex += faceIndex;
+  }
+
+  for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
+{
+    unsigned int positionIndex;
+    unsigned int faceIndex;
+
+    // water
+    int dims[3] = {
+      NUM_CELLS + 1,
+      NUM_CELLS + 1,
+      NUM_CELLS + 1
+    };
+    float *potential = water;
+    int shift[3] = {
+      0,
+      NUM_CELLS * i,
+      0
+    };
+    int indexOffset = attributeIndex / 3;
+    float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
+    unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
+
+    marchingCubes(dims, potential, shift, indexOffset, positions, faces, positionIndex, faceIndex);
+
+    attributeRanges[i * 6 + 2] = attributeIndex;
+    attributeRanges[i * 6 + 3] = positionIndex;
+    indexRanges[i * 6 + 2] = indexIndex;
+    indexRanges[i * 6 + 3] = faceIndex;
+
+    attributeIndex += positionIndex;
+    indexIndex += faceIndex;
+}
+{
+    unsigned int positionIndex;
+    unsigned int faceIndex;
+
+    // lava
+    int dims[3] = {
+      NUM_CELLS + 1,
+      NUM_CELLS + 1,
+      NUM_CELLS + 1
+    };
+    float *potential = lava;
+    int shift[3] = {
+      0,
+      NUM_CELLS * i,
+      0
+    };
+    int indexOffset = attributeIndex / 3;
+    float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
+    unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
+
+    marchingCubes(dims, potential, shift, indexOffset, positions, faces, positionIndex, faceIndex);
+
+    attributeRanges[i * 6 + 4] = attributeIndex;
+    attributeRanges[i * 6 + 5] = positionIndex;
+    indexRanges[i * 6 + 4] = indexIndex;
+    indexRanges[i * 6 + 5] = faceIndex;
+
+    attributeIndex += positionIndex;
+    indexIndex += faceIndex;
+}
+  }
+}
+
+
+void Noiser::Fill(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() < 21) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
+    return;
+  }
+
+  // Check the argument types
+  if (
+    !args[0]->IsNumber() ||
+    !args[1]->IsNumber() ||
+    !args[2]->IsUint8Array() ||
+    !args[3]->IsBoolean() ||
+    !args[4]->IsFloat32Array() ||
+    !args[5]->IsBoolean() ||
+    !args[6]->IsFloat32Array() ||
+    !args[7]->IsBoolean() ||
+    !args[8]->IsFloat32Array() ||
+    !args[9]->IsFloat32Array() ||
+    !args[10]->IsBoolean() ||
+    !args[11]->IsFloat32Array() ||
+    !args[12]->IsNumber() ||
+    !args[13]->IsFloat32Array() ||
+    !args[14]->IsUint32Array() ||
+    !args[15]->IsUint32Array() ||
+    !args[16]->IsUint32Array() ||
+    !args[17]->IsFloat32Array() ||
+    !args[18]->IsFloat32Array() ||
+    !args[19]->IsFloat32Array() ||
+    !args[20]->IsUint8Array()
+  ) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
+    return;
+  }
+
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
+
+  int ox = args[0]->Int32Value();
+  int oz = args[1]->Int32Value();
+
+  Local<ArrayBuffer> biomesBuffer = Local<ArrayBuffer>::Cast(args[2]->ToObject()->Get(bufferString));
+  unsigned int biomesByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *biomes = (unsigned char *)((char *)biomesBuffer->GetContents().Data() + biomesByteOffset);
+
+  bool fillBiomes = args[3]->BooleanValue();
+
+  Local<ArrayBuffer> elevationsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
+  unsigned int elevationsByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *elevations = (float *)((char *)elevationsBuffer->GetContents().Data() + elevationsByteOffset);
+
+  bool fillElevations = args[5]->BooleanValue();
+
+  Local<ArrayBuffer> ethersBuffer = Local<ArrayBuffer>::Cast(args[6]->ToObject()->Get(bufferString));
+  unsigned int ethersByteOffset = args[6]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *ethers = (float *)((char *)ethersBuffer->GetContents().Data() + ethersByteOffset);
+
+  bool fillEther = args[7]->BooleanValue();
+
+  Local<ArrayBuffer> waterBuffer = Local<ArrayBuffer>::Cast(args[8]->ToObject()->Get(bufferString));
+  unsigned int waterByteOffset = args[8]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *water = (float *)((char *)waterBuffer->GetContents().Data() + waterByteOffset);
+
+  Local<ArrayBuffer> lavaBuffer = Local<ArrayBuffer>::Cast(args[9]->ToObject()->Get(bufferString));
+  unsigned int lavaByteOffset = args[9]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *lava = (float *)((char *)lavaBuffer->GetContents().Data() + lavaByteOffset);
+
+  bool fillLiquid = args[10]->BooleanValue();
+
+  Local<ArrayBuffer> newEtherBuffer = Local<ArrayBuffer>::Cast(args[11]->ToObject()->Get(bufferString));
+  unsigned int newEtherByteOffset = args[11]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *newEther = (float *)((char *)newEtherBuffer->GetContents().Data() + newEtherByteOffset);
+
+  unsigned int numNewEthers = args[12]->Uint32Value();
+
+  Local<ArrayBuffer> positionsBuffer = Local<ArrayBuffer>::Cast(args[13]->ToObject()->Get(bufferString));
+  unsigned int positionsByteOffset = args[13]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *positions = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
+
+  Local<ArrayBuffer> indicesBuffer = Local<ArrayBuffer>::Cast(args[14]->ToObject()->Get(bufferString));
+  unsigned int indicesByteOffset = args[14]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned int *indices = (unsigned int *)((char *)indicesBuffer->GetContents().Data() + indicesByteOffset);
+
+  Local<ArrayBuffer> attributeRangeBuffer = Local<ArrayBuffer>::Cast(args[15]->ToObject()->Get(bufferString));
+  unsigned int attributeRangeByteOffset = args[15]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned int *attributeRanges = (unsigned int *)((char *)attributeRangeBuffer->GetContents().Data() + attributeRangeByteOffset);
+
+  Local<ArrayBuffer> indexRangeBuffer = Local<ArrayBuffer>::Cast(args[16]->ToObject()->Get(bufferString));
+  unsigned int indexRangeByteOffset = args[16]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned int *indexRanges = (unsigned int *)((char *)indexRangeBuffer->GetContents().Data() + indexRangeByteOffset);
+
+  Local<ArrayBuffer> heightfieldBuffer = Local<ArrayBuffer>::Cast(args[17]->ToObject()->Get(bufferString));
+  unsigned int heightfieldByteOffset = args[17]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *heightfield = (float *)((char *)heightfieldBuffer->GetContents().Data() + heightfieldByteOffset);
+
+  Local<ArrayBuffer> staticHeightfieldBuffer = Local<ArrayBuffer>::Cast(args[18]->ToObject()->Get(bufferString));
+  unsigned int staticHeightfieldByteOffset = args[18]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *staticHeightfield = (float *)((char *)staticHeightfieldBuffer->GetContents().Data() + staticHeightfieldByteOffset);
+
+  Local<ArrayBuffer> colorsBuffer = Local<ArrayBuffer>::Cast(args[19]->ToObject()->Get(bufferString));
+  unsigned int colorsByteOffset = args[19]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *colors = (float *)((char *)colorsBuffer->GetContents().Data() + colorsByteOffset);
+
+  Local<ArrayBuffer> peeksBuffer = Local<ArrayBuffer>::Cast(args[20]->ToObject()->Get(bufferString));
+  unsigned int peeksByteOffset = args[20]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *peeks = (unsigned char *)((char *)peeksBuffer->GetContents().Data() + peeksByteOffset);
+
+  Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
+  if (fillBiomes) {
+    obj->fillBiomes(ox, oz, biomes);
+  }
+  if (fillElevations) {
+    obj->fillElevations(ox, oz, elevations);
+  }
+  if (fillEther) {
+    obj->fillEther(elevations, ethers);
+  }
+  if (fillLiquid) {
+    obj->fillLiquid(ox, oz, ethers, elevations, water, lava);
+  }
+  if (numNewEthers > 0) {
+    obj->applyEther(newEther, numNewEthers, ethers);
+  }
+
+  obj->makeGeometries(ox, oz, ethers, water, lava, positions, indices, attributeRanges, indexRanges);
+
+  unsigned int numIndices = indexRanges[5 * 6 + 4] + indexRanges[5 * 6 + 5];
+  genHeightfield(positions, indices, numIndices, heightfield, staticHeightfield);
+
+  obj->postProcessGeometry(ox, oz, attributeRanges, positions, colors, biomes);
+
+  for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
+    int shift[3] = {
+      0,
+      NUM_CELLS * i,
+      0
+    };
+    flod(ethers, shift, peeks + i * 16);
+  }
+}
+
+inline void postProcessGeometryRange(int ox, int oz, unsigned int start, unsigned int count, float *positions, float *colors, const std::function<void(const float,const float,const float,const float,const float,float &,float &,float &)>& getColor) {
   float *geometryPositions = positions + start;
   float *geometryColors = colors + start;
 
   unsigned int baseIndex = 0;
-  for (int i = 0; i < count / 3; i++) {
+  for (unsigned int i = 0; i < count / 3; i++) {
     const float x = geometryPositions[baseIndex + 0];
     const float y = geometryPositions[baseIndex + 1];
     const float z = geometryPositions[baseIndex + 2];
@@ -527,7 +776,7 @@ inline void postProcessGeometryRange(int ox, int oz, int start, int count, float
   }
 };
 
-void Noiser::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
+/* void Noiser::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
   if (args.Length() < 6) {
@@ -557,41 +806,37 @@ void Noiser::PostProcessGeometry(const FunctionCallbackInfo<Value>& args) {
 
   Noiser* obj = ObjectWrap::Unwrap<Noiser>(args.Holder());
   obj->postProcessGeometry(ox, oz, range, positions, colors, biomes);
-}
+} */
 
-void Noiser::postProcessGeometry(int ox, int oz, Local<Object> &range, float *positions, float *colors, unsigned char *biomes) {
-  Isolate* isolate = Isolate::GetCurrent();
+void Noiser::postProcessGeometry(int ox, int oz, unsigned int *attributeRanges, float *positions, float *colors, unsigned char *biomes) {
+  for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
+    unsigned int landStart = attributeRanges[i * 6 + 0];
+    unsigned int landCount = attributeRanges[i * 6 + 1];
+// std::cout << "invoke 1 " << landStart << " : " << landCount << "\n";
+    postProcessGeometryRange(ox, oz, landStart, landCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
+      const Biome &biome = BIOMES[biomes[getCoordOverscanIndex((int)x - ox * NUM_CELLS, (int)z - oz * NUM_CELLS)]];
+      const unsigned int color = biome.color;
+      r = ((color >> (8 * 2)) & 0xFF) / 255.0;
+      g = ((color >> (8 * 1)) & 0xFF) / 255.0;
+      b = ((color >> (8 * 0)) & 0xFF) / 255.0;
+    });
 
-  Local<String> landStartString = V8_STRINGS::landStart.Get(isolate);
-  Local<String> landCountString = V8_STRINGS::landCount.Get(isolate);
-  Local<String> waterStartString = V8_STRINGS::waterStart.Get(isolate);
-  Local<String> waterCountString = V8_STRINGS::waterCount.Get(isolate);
-  Local<String> lavaStartString = V8_STRINGS::lavaStart.Get(isolate);
-  Local<String> lavaCountString = V8_STRINGS::lavaCount.Get(isolate);
+    unsigned int waterStart = attributeRanges[i * 6 + 2];
+    unsigned int waterCount = attributeRanges[i * 6 + 3];
+// std::cout << "invoke 2 " << waterStart << " : " << waterCount << "\n";
+    postProcessGeometryRange(ox, oz, waterStart, waterCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
+      r = 0.0;
+      g = 0.0;
+      b = 1.0;
+    });
 
-  int landStart = range->Get(landStartString)->Int32Value();
-  int landCount = range->Get(landCountString)->Int32Value();
-  postProcessGeometryRange(ox, oz, landStart, landCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
-    const Biome &biome = BIOMES[biomes[getCoordOverscanIndex((int)x - ox * NUM_CELLS, (int)z - oz * NUM_CELLS)]];
-    const unsigned int color = biome.color;
-    r = ((color >> (8 * 2)) & 0xFF) / 255.0;
-    g = ((color >> (8 * 1)) & 0xFF) / 255.0;
-    b = ((color >> (8 * 0)) & 0xFF) / 255.0;
-  });
-
-  int waterStart = range->Get(waterStartString)->Int32Value();
-  int waterCount = range->Get(waterCountString)->Int32Value();
-  postProcessGeometryRange(ox, oz, waterStart, waterCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
-    r = 0.0;
-    g = 0.0;
-    b = 1.0;
-  });
-
-  int lavaStart = range->Get(lavaStartString)->Int32Value();
-  int lavaCount = range->Get(lavaCountString)->Int32Value();
-  postProcessGeometryRange(ox, oz, lavaStart, lavaCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
-    r = 0.5;
-    g = 0.0;
-    b = 2.0;
-  });
+    unsigned int lavaStart = attributeRanges[i * 6 + 4];
+    unsigned int lavaCount = attributeRanges[i * 6 + 5];
+// std::cout << "invoke 3 " << lavaStart << " : " << lavaCount << "\n";
+    postProcessGeometryRange(ox, oz, lavaStart, lavaCount, positions, colors, [&](const float ox, const float oz, const float x, const float y, const float z, float &r, float &g, float &b)->void {
+      r = 0.5;
+      g = 0.0;
+      b = 2.0;
+    });
+  }
 }
