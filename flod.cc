@@ -3,32 +3,6 @@
 #include <memory>
 // #include <iostream>
 
-enum class PEEK_FACES : int {
-  FRONT = 0,
-  BACK,
-  LEFT,
-  RIGHT,
-  TOP,
-  BOTTOM
-};
-int PEEK_FACE_INDICES[8 * 8];
-
-void initFlod() {
-  for (int i = 0; i < 8 * 8; i++) {
-    PEEK_FACE_INDICES[i] = 0xFF;
-  }
-
-  int peekIndex = 0;
-  for (int i = 0; i < 6; i++) {
-    for (int j = 0; j < 6; j++) {
-      if (i != j) {
-        int otherEntry = PEEK_FACE_INDICES[j << 3 | i];
-        PEEK_FACE_INDICES[i << 3 | j] = otherEntry != 0xFF ? otherEntry : peekIndex++;
-      }
-    }
-  }
-}
-
 inline void _floodFill(int x, int y, int z, int startFace, float *ether, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, unsigned char *peeks, unsigned char *seenPeeks) {
   std::unique_ptr<int[]> queue(new int[NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN * 4]);
   unsigned int queueEnd = 0;

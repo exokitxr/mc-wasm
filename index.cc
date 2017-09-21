@@ -1,5 +1,6 @@
 #include <node.h>
 #include "v8-strings.h"
+#include "util.h"
 #include "noiseObject.h"
 #include "cachedNoiseObject.h"
 #include "noiserObject.h"
@@ -25,9 +26,9 @@ using v8::Uint32Array;
 using v8::Uint8Array;
 using v8::Boolean;
 
-const unsigned int NUM_CELLS = 16;
+/* const unsigned int NUM_CELLS = 16;
 const unsigned int NUM_CELLS_HEIGHT = 128;
-const unsigned int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS;
+const unsigned int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS; */
 
 void CreateNoise(const FunctionCallbackInfo<Value>& args) {
   NoiseObject::NewInstance(args);
@@ -568,7 +569,7 @@ void InitAll(Local<Object> exports, Local<Object> module) {
   NoiseObject::Init(isolate);
   CachedNoiseObject::Init(isolate);
   NoiserObject::Init(isolate);
-  initFlod();
+  initUtil();
 
   Local<Object> result = Object::New(isolate);
   NODE_SET_METHOD(result, "fastNoise", CreateNoise);

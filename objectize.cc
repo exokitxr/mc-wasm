@@ -2,10 +2,16 @@
 #include "util.h"
 #include "compose.h"
 #include "light.h"
+#include "cull.h"
 #include "noiser.h"
-// #include <iostream>
+#include <iostream>
 
 extern "C" {
+
+int main() {
+  std::cout << "main" << "\n";
+  initUtil();
+}
 
 EMSCRIPTEN_KEEPALIVE Noiser *make_noiser(int seed) {
   return new Noiser(seed);
@@ -62,12 +68,9 @@ EMSCRIPTEN_KEEPALIVE void lghtmap(int ox, int oz, float *positions, unsigned int
   lightmap(ox, oz, positions, numPositions, staticHeightfield, lights, skyLightmaps, torchLightmaps);
 }
 
-
-class Lol {
-  EMSCRIPTEN_KEEPALIVE int zol(int *arg) {
-    // std::cout << "got arg " << (void *)this << " : " << (void *)arg << "\n";
-    return 7;
-  }
-};
+EMSCRIPTEN_KEEPALIVE unsigned int cllTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
+  std::cout << "culling" << "\n";
+  return cullTerrain(hmdPosition, projectionMatrix, matrixWorldInverse, mapChunkMeshes, numMapChunkMeshes, groups);
+}
 
 }

@@ -17,6 +17,7 @@
         "flod.cc",
         "heightfield.cc",
         "light.cc",
+        "cull.cc",
         "noiserObject.cc"
       ]
     }
