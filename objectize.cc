@@ -22,7 +22,8 @@ EMSCRIPTEN_KEEPALIVE void noiser_fill(Noiser *noiser, int ox, int oz, unsigned c
 EMSCRIPTEN_KEEPALIVE void objectize(
   void *src, void *geometries, unsigned int *geometryIndex,
   unsigned int *blocks, unsigned int *blockTypes, int *dims, unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift,
-  float *positions, float *uvs, unsigned char *ssaos, float *frames, float *objectIndices, unsigned int *indices, unsigned int *objects
+  float *positions, float *uvs, unsigned char *ssaos, float *frames, float *objectIndices, unsigned int *indices, unsigned int *objects,
+  unsigned int *result
 ) {
   unsigned int positionIndex[NUM_CHUNKS_HEIGHT];
   unsigned int uvIndex[NUM_CHUNKS_HEIGHT];
@@ -38,6 +39,16 @@ EMSCRIPTEN_KEEPALIVE void objectize(
     positions, uvs, ssaos, frames, objectIndices, indices, objects,
     positionIndex, uvIndex, ssaoIndex, frameIndex, objectIndexIndex, indexIndex, objectIndex
   );
+
+  for (unsigned int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
+    result[NUM_CHUNKS_HEIGHT * 0 + i] = positionIndex[i];
+    result[NUM_CHUNKS_HEIGHT * 1 + i] = uvIndex[i];
+    result[NUM_CHUNKS_HEIGHT * 2 + i] = ssaoIndex[i];
+    result[NUM_CHUNKS_HEIGHT * 3 + i] = frameIndex[i];
+    result[NUM_CHUNKS_HEIGHT * 4 + i] = objectIndexIndex[i];
+    result[NUM_CHUNKS_HEIGHT * 5 + i] = indexIndex[i];
+    result[NUM_CHUNKS_HEIGHT * 6 + i] = objectIndex[i];
+  }
 }
 
 EMSCRIPTEN_KEEPALIVE void lght(
