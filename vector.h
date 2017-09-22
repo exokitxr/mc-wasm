@@ -251,13 +251,13 @@ class Matrix {
     Matrix() : elements() {}
     
     Matrix(const Matrix &m) {
-      for (unsigned int i = 0; i < sizeof(elements) / sizeof(elements[0]); i++) {
+      for (unsigned int i = 0; i < sizeof(this->elements) / sizeof(this->elements[0]); i++) {
         this->elements[i] = m.elements[i];
       }
     }
 
     Matrix(float *elements) {
-      for (unsigned int i = 0; i < sizeof(elements) / sizeof(elements[0]); i++) {
+      for (unsigned int i = 0; i < sizeof(this->elements) / sizeof(this->elements[0]); i++) {
         this->elements[i] = elements[i];
       }
     }
