@@ -237,8 +237,7 @@ unsigned int cullObjects(float *hmdPosition, float *projectionMatrix, float *mat
           z * NUM_CELLS + NUM_CELLS_HALF,
           NUM_CELLS_CUBE
         );
-        // if (frustum.intersectsSphere(boundingSphere)) {
-        if (true) {
+        if (frustum.intersectsSphere(boundingSphere)) {
           const int localStart = mapChunkMeshes[mapChunkMeshBaseIndex + 3 + j * 2 + 0];
           const int localCount = mapChunkMeshes[mapChunkMeshBaseIndex + 3 + j * 2 + 1];
           if (start == -1 && localCount > 0) {
