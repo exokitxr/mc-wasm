@@ -221,23 +221,34 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
     fillLight(ox, oz, lightSource.x, lightSource.y, lightSource.z, lightSource.v, minX, maxX, minY, maxY, minZ, maxZ, etherArray, blocksArray, lightsArray);
   }
 
-  // merge edges and corner into center lights
-  unsigned char *centerLights = lightsArray[getLightsArrayIndex(1, 1)];
-  unsigned char *eastLights = lightsArray[getLightsArrayIndex(2, 1)];
-  unsigned char *southLights = lightsArray[getLightsArrayIndex(1, 2)];
-  unsigned char *southeastLights = lightsArray[getLightsArrayIndex(2, 2)];
-  for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
-    for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
-      centerLights[getLightsIndex(NUM_CELLS, y, z)] = eastLights[getLightsIndex(0, y, z)];
+  // merge edges and corners
+  for (unsigned int doz = 0; doz <= 2; doz++) {
+    for (unsigned int dox = 0; dox <= 2; dox++) {
+      unsigned char *centerLights = lightsArray[getLightsArrayIndex(dox, doz)];
+
+      if (dox + 1 <= 2) {
+        unsigned char *eastLights = lightsArray[getLightsArrayIndex(dox + 1, doz)];
+        for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
+          for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
+            centerLights[getLightsIndex(NUM_CELLS, y, z)] = eastLights[getLightsIndex(0, y, z)];
+          }
+        }
+      }
+      if (doz + 1 <= 2) {
+        unsigned char *southLights = lightsArray[getLightsArrayIndex(dox, doz + 1)];
+        for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
+          for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
+            centerLights[getLightsIndex(x, y, NUM_CELLS)] = southLights[getLightsIndex(x, y, 0)];
+          }
+        }
+      }
+      if (dox + 1 <= 2 && doz + 1 <=2) {
+        unsigned char *southeastLights = lightsArray[getLightsArrayIndex(dox + 1, doz + 1)];
+        for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
+          centerLights[getLightsIndex(NUM_CELLS, y, NUM_CELLS)] = southeastLights[getLightsIndex(0, y, 0)];
+        }
+      }
     }
-  }
-  for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
-    for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
-      centerLights[getLightsIndex(x, y, NUM_CELLS)] = southLights[getLightsIndex(x, y, 0)];
-    }
-  }
-  for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
-    centerLights[getLightsIndex(NUM_CELLS, y, NUM_CELLS)] = southeastLights[getLightsIndex(0, y, 0)];
   }
 }
 
