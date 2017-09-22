@@ -4,12 +4,12 @@
 #include "light.h"
 #include "cull.h"
 #include "noiser.h"
-#include <iostream>
+// #include <iostream>
 
 extern "C" {
 
 int main() {
-  std::cout << "main" << "\n";
+  // std::cout << "main" << "\n";
   initUtil();
 }
 
@@ -69,8 +69,11 @@ EMSCRIPTEN_KEEPALIVE void lghtmap(int ox, int oz, float *positions, unsigned int
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int cllTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
-  std::cout << "culling" << "\n";
   return cullTerrain(hmdPosition, projectionMatrix, matrixWorldInverse, mapChunkMeshes, numMapChunkMeshes, groups);
+}
+
+EMSCRIPTEN_KEEPALIVE unsigned int cllObjects(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
+  return cullObjects(hmdPosition, projectionMatrix, matrixWorldInverse, mapChunkMeshes, numMapChunkMeshes, groups);
 }
 
 }

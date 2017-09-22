@@ -2,5 +2,6 @@
 #define CULL_H
 
 unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups);
+unsigned int cullObjects(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups);
 
 #endif

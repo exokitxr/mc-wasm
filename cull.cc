@@ -6,31 +6,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
-#include <iostream>
-
-/* enum class PEEK_FACES : unsigned char {
-  FRONT = 0,
-  BACK,
-  LEFT,
-  RIGHT,
-  TOP,
-  BOTTOM,
-  NONE
-};
-unsigned char PEEK_FACE_INDICES[8 * 8];
-void initCull() {
-  std::fill_n(PEEK_FACE_INDICES, sizeof(PEEK_FACE_INDICES) / sizeof(PEEK_FACE_INDICES[0]), 0xFF);
-
-  unsigned char peekIndex = 0;
-  for (unsigned int i = 0; i < 6; i++) {
-    for (unsigned int j = 0; j < 6; j++) {
-      if (i != j) {
-        const unsigned char otherEntry = PEEK_FACE_INDICES[j << 3 | i];
-        PEEK_FACE_INDICES[i << 3 | j] = otherEntry != 0xFF ? otherEntry : peekIndex++;
-      }
-    }
-  }
-} */
+// #include <iostream>
 
 struct CullQueueEntry {
   int x;
@@ -56,7 +32,7 @@ PeekFace peekFaceSpecs[] = {
 };
 const unsigned int numPeekFaceSpecs = sizeof(peekFaceSpecs) / sizeof(peekFaceSpecs[0]);
 
-struct MapChunkMesh {
+struct TerrainMapChunkMesh {
   unsigned char *peeks;
   int landStart;
   int landCount;
@@ -72,11 +48,10 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
   const int oy = std::min<int>(std::max<int>(std::floor((int)hmdPosition[1] >> 4), 0), NUM_CHUNKS_HEIGHT - 1);
   const int oz = std::floor((int)hmdPosition[2] >> 4);
 
-  std::unordered_map<std::tuple<int, int, int>, MapChunkMesh> mapChunkMeshMap;
+  std::unordered_map<std::tuple<int, int, int>, TerrainMapChunkMesh> mapChunkMeshMap;
   mapChunkMeshMap.reserve(512 * NUM_CELLS_HEIGHT);
   std::unordered_set<std::pair<int, int>> mapChunkMeshSet;
   mapChunkMeshSet.reserve(512 * NUM_CELLS_HEIGHT);
-// std::cout << "check num map chunk meshes " << numMapChunkMeshes << "\n";
   for (unsigned int i = 0; i < numMapChunkMeshes; i++) {
     const unsigned int baseIndex = i * 14;
     const bool valid = mapChunkMeshes[baseIndex + 0] > 0;
@@ -85,10 +60,9 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
       const int x = mapChunkMeshes[baseIndex + 1];
       const int y = mapChunkMeshes[baseIndex + 2];
       const int z = mapChunkMeshes[baseIndex + 3];
-// std::cout << "valid " << x << " : " << y << " : " << z << "\n";
       unsigned char *peeks = (unsigned char *)(mapChunkMeshes + (baseIndex + 4));
       const std::tuple<int, int, int> key(x, y, z);
-      mapChunkMeshMap[key] = MapChunkMesh{
+      mapChunkMeshMap[key] = TerrainMapChunkMesh{
         peeks,
         mapChunkMeshes[baseIndex + 8],
         mapChunkMeshes[baseIndex + 9],
@@ -105,9 +79,9 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
   std::queue<CullQueueEntry> cullQueue;
 
   const std::tuple<int, int, int> key(ox, oy, oz);
-  const std::unordered_map<std::tuple<int, int, int>, MapChunkMesh>::iterator trackedMapChunkMesh = mapChunkMeshMap.find(key);
+  const std::unordered_map<std::tuple<int, int, int>, TerrainMapChunkMesh>::iterator trackedMapChunkMesh = mapChunkMeshMap.find(key);
   if (trackedMapChunkMesh != mapChunkMeshMap.end()) {
-    const Frustum localFrustum = Frustum::fromMatrix(Matrix::fromArray(projectionMatrix) *= Matrix::fromArray(matrixWorldInverse));
+    const Frustum frustum = Frustum::fromMatrix(Matrix::fromArray(projectionMatrix) *= Matrix::fromArray(matrixWorldInverse));
 
     cullQueue.push(CullQueueEntry{ox, oy, oz, (unsigned char)PEEK_FACES::NONE});
     while (cullQueue.size() > 0) {
@@ -120,7 +94,7 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
       const unsigned char enterFace = entry.enterFace;
 
       const std::tuple<int, int, int> key(x, y, z);
-      MapChunkMesh &trackedMapChunkMesh = mapChunkMeshMap[key];
+      TerrainMapChunkMesh &trackedMapChunkMesh = mapChunkMeshMap[key];
       trackedMapChunkMesh.visible = true;
 
       for (unsigned int j = 0; j < numPeekFaceSpecs; j++) {
@@ -141,7 +115,7 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
                 az * NUM_CELLS + NUM_CELLS_HALF,
                 NUM_CELLS_CUBE
               );
-              if (localFrustum.intersectsSphere(boundingSphere)) {
+              if (frustum.intersectsSphere(boundingSphere)) {
                 cullQueue.push(CullQueueEntry{ax, ay, az, peekFaceSpec.enterFace});
               }
             }
@@ -173,7 +147,7 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
 
     for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
       const std::tuple<int, int, int> key(x, i, z);
-      const MapChunkMesh &trackedMapChunkMesh = mapChunkMeshMap[key];
+      const TerrainMapChunkMesh &trackedMapChunkMesh = mapChunkMeshMap[key];
       if (trackedMapChunkMesh.visible) {
         if (landStart == -1 && trackedMapChunkMesh.landCount > 0) {
           landStart = trackedMapChunkMesh.landStart;
@@ -236,44 +210,61 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
   }
   return groupIndex;
 };
-/* const _getObjectsCull = (hmdPosition, projectionMatrix, matrixWorldInverse) => {
-  localFrustum.setFromMatrix(localMatrix.fromArray(projectionMatrix).multiply(localMatrix2.fromArray(matrixWorldInverse)));
+unsigned int cullObjects(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
+  const Frustum frustum = Frustum::fromMatrix(Matrix::fromArray(projectionMatrix) *= Matrix::fromArray(matrixWorldInverse));
 
-  for (const index in zde.chunks) {
-    const chunk = zde.chunks[index];
+  unsigned int groupIndex = 0;
+  for (unsigned int i = 0; i < numMapChunkMeshes; i++) {
+    const unsigned int mapChunkMeshBaseIndex = i * (1 + 2 + NUM_CHUNKS_HEIGHT * 2);
+    bool valid = mapChunkMeshes[mapChunkMeshBaseIndex + 0] > 0;
 
-    if (chunk && chunk[objectsDecorationsSymbol]) {
-      const {renderSpec} = chunk;
+    if (valid) {
+      const int x = mapChunkMeshes[mapChunkMeshBaseIndex + 1];
+      const int z = mapChunkMeshes[mapChunkMeshBaseIndex + 2];
 
-      renderSpec.groups.fill(-1);
-      let groupIndex = 0;
-      let start = -1;
-      let count = 0;
-      for (let i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
-        const trackedObjectChunkMesh = renderSpec.array[i];
-        if (localFrustum.intersectsSphere(trackedObjectChunkMesh.boundingSphere)) {
-          if (start === -1 && trackedObjectChunkMesh.indexRange.count > 0) {
-            start = trackedObjectChunkMesh.indexRange.start;
+      groups[groupIndex++] = getChunkIndex(x, z);
+      for (int i = 0; i < NUM_RENDER_GROUPS * 2; i++) {
+        groups[groupIndex + i] = -1;
+      }
+
+      int chunkGroupIndex = 0;
+      int start = -1;
+      int count = 0;
+      for (int j = 0; j < NUM_CHUNKS_HEIGHT; j++) {
+        Sphere boundingSphere(
+          x * NUM_CELLS + NUM_CELLS_HALF,
+          j * NUM_CELLS + NUM_CELLS_HALF,
+          z * NUM_CELLS + NUM_CELLS_HALF,
+          NUM_CELLS_CUBE
+        );
+        // if (frustum.intersectsSphere(boundingSphere)) {
+        if (true) {
+          const int localStart = mapChunkMeshes[mapChunkMeshBaseIndex + 3 + j * 2 + 0];
+          const int localCount = mapChunkMeshes[mapChunkMeshBaseIndex + 3 + j * 2 + 1];
+          if (start == -1 && localCount > 0) {
+            start = localStart;
           }
-          count += trackedObjectChunkMesh.indexRange.count;
+          count += localCount;
         } else {
-          if (start !== -1) {
-            const baseIndex = groupIndex * 2;
-            renderSpec.groups[baseIndex + 0] = start;
-            renderSpec.groups[baseIndex + 1] = count;
-            groupIndex++;
+          if (start != -1) {
+            const int baseIndex = groupIndex + chunkGroupIndex * 2;
+            groups[baseIndex + 0] = start;
+            groups[baseIndex + 1] = count;
+            chunkGroupIndex++;
             start = -1;
             count = 0;
           }
         }
       }
-      if (start !== -1) {
-        const baseIndex = groupIndex * 2;
-        renderSpec.groups[baseIndex + 0] = start;
-        renderSpec.groups[baseIndex + 1] = count;
+      if (start != -1) {
+        const int baseIndex = groupIndex + chunkGroupIndex * 2;
+        groups[baseIndex + 0] = start;
+        groups[baseIndex + 1] = count;
       }
+
+      groupIndex += NUM_RENDER_GROUPS * 2;
     }
   }
 
-  return zde.chunks;
-} */
+  return groupIndex;
+}
