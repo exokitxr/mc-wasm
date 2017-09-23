@@ -1,6 +1,7 @@
 #include "compose.h"
 #include "util.h"
 #include "tssl.h"
+#include "heightfield.h"
 #include <string.h>
 #include <cmath>
 #include <vector>

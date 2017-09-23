@@ -10,7 +10,6 @@ void handleHeightfieldPoint(const Vec &point, float *heightfield, float *staticH
 
   for (int layer = 0; layer < HEIGHTFIELD_DEPTH; layer++) {
     const int heightfieldXYBaseIndex = getTopHeightfieldIndex(x, z);
-// std::cout << "got point " << point.x << " : " << point.z << " : " << x << " : " << y << " : " << z << " : " << heightfieldXYBaseIndex << " : " << layer << "\n";
     const float oldY = heightfield[heightfieldXYBaseIndex + layer];
     if (y > oldY) {
       if (layer == 0 || (y - oldY) >= 5) { // ignore non-surface heights with small height difference
@@ -52,6 +51,23 @@ void genHeightfield(float *positions, unsigned int *indices, unsigned int numInd
       handleHeightfieldPoint(localTriangle.a, heightfield, staticHeightfield);
       handleHeightfieldPoint(localTriangle.b, heightfield, staticHeightfield);
       handleHeightfieldPoint(localTriangle.c, heightfield, staticHeightfield);
+    }
+  }
+}
+
+void genBlockfield(unsigned int *blocks, unsigned char *blockfield) {
+  for (unsigned int chunkIndex = 0; chunkIndex < NUM_CHUNKS_HEIGHT; chunkIndex++) {
+    unsigned int *voxels = blocks + (chunkIndex * NUM_VOXELS_CHUNKS_HEIGHT);
+    unsigned char *voxelsField = blockfield + (chunkIndex * NUM_VOXELS_CHUNKS_HEIGHT);
+
+    unsigned int index = 0;
+    for (unsigned int z = 0; z < NUM_CELLS; z++) {
+      for (unsigned int y = 0; y < NUM_CELLS; y++) {
+        for (unsigned int x = 0; x < NUM_CELLS; x++) {
+          voxelsField[index] = (unsigned char)(voxels[index] != 0);
+          index++;
+        }
+      }
     }
   }
 }

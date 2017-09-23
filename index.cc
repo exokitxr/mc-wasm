@@ -563,6 +563,35 @@ void Lightmap(const FunctionCallbackInfo<Value>& args) {
   lightmap(ox, oz, positions, numPositions, staticHeightfield, lights, skyLightmaps, torchLightmaps);
 }
 
+void Blockfield(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() < 2) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
+    return;
+  }
+  if (
+      !args[0]->IsUint32Array() ||
+      !args[1]->IsUint8Array()
+  ) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
+    return;
+  }
+
+  Local<String> bufferString = V8_STRINGS::buffer.Get(isolate);
+  Local<String> byteOffsetString = V8_STRINGS::byteOffset.Get(isolate);
+
+  Local<ArrayBuffer> blocksBuffer = Local<ArrayBuffer>::Cast(args[0]->ToObject()->Get(bufferString));
+  unsigned int blocksByteOffset = args[0]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned int *blocks = (unsigned int *)((char *)blocksBuffer->GetContents().Data() + blocksByteOffset);
+
+  Local<ArrayBuffer> blockfieldBuffer = Local<ArrayBuffer>::Cast(args[1]->ToObject()->Get(bufferString));
+  unsigned int blockfieldByteOffset = args[1]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *blockfield = (unsigned char *)((char *)blockfieldBuffer->GetContents().Data() + blockfieldByteOffset);
+
+  genBlockfield(blocks, blockfield);
+}
+
 void InitAll(Local<Object> exports, Local<Object> module) {
   Isolate *isolate = Isolate::GetCurrent();
 
@@ -583,6 +612,7 @@ void InitAll(Local<Object> exports, Local<Object> module) {
   NODE_SET_METHOD(result, "genHeightfield", GenHeightfield);
   NODE_SET_METHOD(result, "light", Light);
   NODE_SET_METHOD(result, "lightmap", Lightmap);
+  NODE_SET_METHOD(result, "blockfield", Blockfield);
 
   module->Set(V8_STRINGS::exports.Get(isolate), result);
 }

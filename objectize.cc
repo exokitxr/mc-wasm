@@ -2,6 +2,7 @@
 #include "util.h"
 #include "compose.h"
 #include "light.h"
+#include "heightfield.h"
 #include "cull.h"
 #include "noiser.h"
 // #include <iostream>
@@ -66,6 +67,10 @@ EMSCRIPTEN_KEEPALIVE void lght(
 
 EMSCRIPTEN_KEEPALIVE void lghtmap(int ox, int oz, float *positions, unsigned int numPositions, float *staticHeightfield, unsigned char *lights, unsigned char *skyLightmaps, unsigned char *torchLightmaps) {
   lightmap(ox, oz, positions, numPositions, staticHeightfield, lights, skyLightmaps, torchLightmaps);
+}
+
+EMSCRIPTEN_KEEPALIVE void blockfield(unsigned int *blocks, unsigned char *blockfield) {
+  genBlockfield(blocks, blockfield);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int cllTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
