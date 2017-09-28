@@ -68,7 +68,7 @@ inline void fillLight(int ox, int oz, int x, int y, int z, char v, int minX, int
       for (int dy = -1; dy <= 1; dy++) {
         for (int dx = -1; dx <= 1; dx++) {
           tryQueue(ox, oz,
-            lightSource.x + dx, lightSource.y + dy, lightSource.z + dz, lightSource.v - (char)(std::abs(dx) + std::abs(dy) + std::abs(dz)), false,
+            lightSource.x + dx, lightSource.y + dy, lightSource.z + dz, lightSource.v - (char)(std::abs((float)dx) + std::abs((float)dy) + std::abs((float)dz)), false,
             minX, maxX, minY, maxY, minZ, maxZ,
             etherArray, blocksArray, queue, lightsArray
           );
