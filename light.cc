@@ -252,10 +252,36 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
   }
 }
 
-inline unsigned char renderSkyVoxel(int x, int y, int z, float *staticHeightfield) {
+inline float _li(float left, float right, float x) {
+  return left*(1-x) + right*x;
+}
+inline float _bi(float bottomLeft, float bottomRight, float topLeft, float topRight, float x, float y) {
+  return bottomLeft*(1-x)*(1-y) + bottomRight*x*(1-y) + topLeft*(1-x)*y + topRight*x*y;
+}
+inline float _tri(float c010, float c110, float c000, float c100, float c011, float c111, float c001, float c101, float x, float y, float z) {
+  return _li(
+    _bi(c010, c110, c000, c100, x, z),
+    _bi(c011, c111, c001, c101, x, z),
+    y
+  );
+}
+
+inline unsigned char renderSkyVoxel(float x, float y, float z, float *staticHeightfield) {
+  const int minX = (int)x;
+  const int maxX = (int)std::ceil(x);
+  const int minZ = (int)z;
+  const int maxZ = (int)std::ceil(z);
+  const float bottomLeft = staticHeightfield[getStaticHeightfieldIndex(minX, minZ)];
+  const float bottomRight = staticHeightfield[getStaticHeightfieldIndex(maxX, minZ)];
+  const float topLeft = staticHeightfield[getStaticHeightfieldIndex(minX, maxZ)];
+  const float topRight = staticHeightfield[getStaticHeightfieldIndex(maxX, maxZ)];
+  const float dx = std::fmod(x, 1.0f);
+  const float dz = std::fmod(z, 1.0f);
+  const float v = _bi(bottomLeft, bottomRight, topLeft, topRight, dx, dz);
+
   return (unsigned char)(
     std::min<float>(std::max<float>(
-      (y - (staticHeightfield[getStaticHeightfieldIndex(x, z)] - 8.0)) / 8.0
+      (y - (v - 8.0)) / 8.0
     , 0), 1) * 255.0
   );
 }
@@ -269,19 +295,24 @@ void lightmap(int ox, int oz, float *positions, unsigned int numPositions, float
 
   for (unsigned int i = 0; i < numPositions / 3; i++) {
     unsigned int baseIndex = i * 3;
-    const int x = std::min<int>(std::max<int>((int)positions[baseIndex + 0] - dox, 0), NUM_CELLS);
-    const int y = std::min<int>(std::max<int>((int)positions[baseIndex + 1], 0), NUM_CELLS_HEIGHT + 1);
-    const int z = std::min<int>(std::max<int>((int)positions[baseIndex + 2] - doz, 0), NUM_CELLS);
+
+    const float x = std::min<float>(std::max<float>(positions[baseIndex + 0] - dox, 0), NUM_CELLS);
+    const float y = std::min<float>(std::max<float>(positions[baseIndex + 1], 0), NUM_CELLS_HEIGHT);
+    const float z = std::min<float>(std::max<float>(positions[baseIndex + 2] - doz, 0), NUM_CELLS);
     skyLightmaps[i] = renderSkyVoxel(
       x,
       y,
       z,
       staticHeightfield
     );
+
+    const int ix = (int)x;
+    const int iy = (int)y;
+    const int iz = (int)z;
     torchLightmaps[i] = renderTorchVoxel(
-      x,
-      y,
-      z,
+      ix,
+      iy,
+      iz,
       lights
     );
   }
