@@ -1,6 +1,6 @@
 {
   "name": "vxl",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "Native voxel library",
   "main": "index.js",
   "scripts": {
