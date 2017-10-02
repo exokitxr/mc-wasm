@@ -14,6 +14,21 @@ struct CullQueueEntry {
   int z;
   int enterFace;
 };
+namespace std {
+
+  template <>
+  struct hash<CullQueueEntry>
+  {
+    std::size_t operator()(const CullQueueEntry& k) const
+    {
+      return (k.x & 0xFF) | ((k.y & 0xFF) << 8) | ((k.z & 0xFF) << 16) | ((k.enterFace & 0xFF) << 24);
+    }
+  };
+
+}
+bool operator==(const CullQueueEntry& lhs, const CullQueueEntry& rhs) {
+  return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.enterFace == rhs.enterFace;
+}
 
 struct PeekFace {
   int exitFace;
@@ -77,6 +92,8 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
   }
 
   std::queue<CullQueueEntry> cullQueue;
+  std::unordered_set<CullQueueEntry> cullSet;
+  cullSet.reserve(256);
 
   const std::tuple<int, int, int> key(ox, oy, oz);
   const std::unordered_map<std::tuple<int, int, int>, TerrainMapChunkMesh>::iterator trackedMapChunkMesh = mapChunkMeshMap.find(key);
@@ -103,20 +120,26 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
         if (ay >= 0 && ay < NUM_CHUNKS_HEIGHT) {
           const int ax = x + peekFaceSpec.x;
           const int az = z + peekFaceSpec.z;
-          if (
-            (ax - ox) * peekFaceSpec.x > 0 ||
-            (ay - oy) * peekFaceSpec.y > 0 ||
-            (az - oz) * peekFaceSpec.z > 0
-          ) {
-            if (enterFace == (int)PEEK_FACES::NONE || trackedMapChunkMesh.peeks[PEEK_FACE_INDICES[enterFace << 3 | peekFaceSpec.exitFace]] == 1) {
-              Sphere boundingSphere(
-                ax * NUM_CELLS + NUM_CELLS_HALF,
-                ay * NUM_CELLS + NUM_CELLS_HALF,
-                az * NUM_CELLS + NUM_CELLS_HALF,
-                NUM_CELLS_CUBE
-              );
-              if (frustum.intersectsSphere(boundingSphere)) {
-                cullQueue.push(CullQueueEntry{ax, ay, az, peekFaceSpec.enterFace});
+
+          const CullQueueEntry newEntry{ax, ay, az, peekFaceSpec.enterFace};
+          if (cullSet.find(newEntry) == cullSet.end()) {
+            cullSet.emplace(newEntry);
+
+            if (
+              (ax - ox) * peekFaceSpec.x > 0 ||
+              (ay - oy) * peekFaceSpec.y > 0 ||
+              (az - oz) * peekFaceSpec.z > 0
+            ) {
+              if (enterFace == (int)PEEK_FACES::NONE || trackedMapChunkMesh.peeks[PEEK_FACE_INDICES[enterFace << 3 | peekFaceSpec.exitFace]] == 1) {
+                Sphere boundingSphere(
+                  ax * NUM_CELLS + NUM_CELLS_HALF,
+                  ay * NUM_CELLS + NUM_CELLS_HALF,
+                  az * NUM_CELLS + NUM_CELLS_HALF,
+                  NUM_CELLS_CUBE
+                );
+                if (frustum.intersectsSphere(boundingSphere)) {
+                  cullQueue.push(newEntry);
+                }
               }
             }
           }
