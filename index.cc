@@ -26,10 +26,6 @@ using v8::Uint32Array;
 using v8::Uint8Array;
 using v8::Boolean;
 
-/* const unsigned int NUM_CELLS = 16;
-const unsigned int NUM_CELLS_HEIGHT = 128;
-const unsigned int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS; */
-
 void CreateNoise(const FunctionCallbackInfo<Value>& args) {
   NoiseObject::NewInstance(args);
 }
