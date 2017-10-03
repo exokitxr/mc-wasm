@@ -448,11 +448,11 @@ void Light(const FunctionCallbackInfo<Value>& args) {
       !args[6]->IsNumber() ||
       !args[7]->IsNumber() ||
       !args[8]->IsBoolean() ||
-      !args[9]->IsArray() ||
-      !args[10]->IsArray() ||
-      !args[11]->IsArray() ||
-      !args[12]->IsArray() ||
-      !args[13]->IsArray()
+      !args[9]->IsFloat32Array() ||
+      !args[10]->IsFloat32Array() ||
+      !args[11]->IsFloat32Array() ||
+      !args[12]->IsUint32Array() ||
+      !args[13]->IsUint8Array()
   ) {
     isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
@@ -470,11 +470,26 @@ void Light(const FunctionCallbackInfo<Value>& args) {
   int minZ = args[6]->Int32Value();
   int maxZ = args[7]->Int32Value();
   bool relight = args[8]->BooleanValue();
-  Local<Array> lava = Local<Array>::Cast(args[9]);
-  Local<Array> objectLights = Local<Array>::Cast(args[10]);
-  Local<Array> ethers = Local<Array>::Cast(args[11]);
-  Local<Array> blocks = Local<Array>::Cast(args[12]);
-  Local<Array> lights = Local<Array>::Cast(args[13]);
+
+  Local<ArrayBuffer> lavaBuffer = Local<ArrayBuffer>::Cast(args[9]->ToObject()->Get(bufferString));
+  unsigned int lavaByteOffset = args[9]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *lava = (float *)((char *)lavaBuffer->GetContents().Data() + lavaByteOffset);
+
+  Local<ArrayBuffer> objectLightsBuffer = Local<ArrayBuffer>::Cast(args[10]->ToObject()->Get(bufferString));
+  unsigned int objectLightsByteOffset = args[10]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *objectLights = (float *)((char *)objectLightsBuffer->GetContents().Data() + objectLightsByteOffset);
+
+  Local<ArrayBuffer> ethersBuffer = Local<ArrayBuffer>::Cast(args[11]->ToObject()->Get(bufferString));
+  unsigned int ethersByteOffset = args[11]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  float *ethers = (float *)((char *)ethersBuffer->GetContents().Data() + ethersByteOffset);
+
+  Local<ArrayBuffer> blocksBuffer = Local<ArrayBuffer>::Cast(args[12]->ToObject()->Get(bufferString));
+  unsigned int blocksByteOffset = args[12]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned int *blocks = (unsigned int *)((char *)blocksBuffer->GetContents().Data() + blocksByteOffset);
+
+  Local<ArrayBuffer> lightsBuffer = Local<ArrayBuffer>::Cast(args[13]->ToObject()->Get(bufferString));
+  unsigned int lightsByteOffset = args[13]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *lights = (unsigned char *)((char *)lightsBuffer->GetContents().Data() + lightsByteOffset);
 
   float *lavaArray[9];
   float *objectLightsArray[9];
@@ -483,25 +498,11 @@ void Light(const FunctionCallbackInfo<Value>& args) {
   unsigned char *lightsArray[9];
 
   for (unsigned int i = 0; i < 9; i++) {
-    Local<ArrayBuffer> lavaBuffer = Local<ArrayBuffer>::Cast(lava->Get(i)->ToObject()->Get(bufferString));
-    unsigned int lavaByteOffset = lava->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
-    lavaArray[i] = (float *)((char *)lavaBuffer->GetContents().Data() + lavaByteOffset);
-
-    Local<ArrayBuffer> objectLightsBuffer = Local<ArrayBuffer>::Cast(objectLights->Get(i)->ToObject()->Get(bufferString));
-    unsigned int objectLightsByteOffset = objectLights->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
-    objectLightsArray[i] = (float *)((char *)objectLightsBuffer->GetContents().Data() + objectLightsByteOffset);
-
-    Local<ArrayBuffer> ethersBuffer = Local<ArrayBuffer>::Cast(ethers->Get(i)->ToObject()->Get(bufferString));
-    unsigned int ethersByteOffset = ethers->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
-    etherArray[i] = (float *)((char *)ethersBuffer->GetContents().Data() + ethersByteOffset);
-
-    Local<ArrayBuffer> blocksBuffer = Local<ArrayBuffer>::Cast(blocks->Get(i)->ToObject()->Get(bufferString));
-    unsigned int blocksByteOffset = blocks->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
-    blocksArray[i] = (unsigned int *)((char *)blocksBuffer->GetContents().Data() + blocksByteOffset);
-
-    Local<ArrayBuffer> lightsBuffer = Local<ArrayBuffer>::Cast(lights->Get(i)->ToObject()->Get(bufferString));
-    unsigned int lightsByteOffset = lights->Get(i)->ToObject()->Get(byteOffsetString)->Uint32Value();
-    lightsArray[i] = (unsigned char *)((char *)lightsBuffer->GetContents().Data() + lightsByteOffset);
+    lavaArray[i] = lava + (i * ((NUM_CELLS + 1) * (NUM_CELLS_HEIGHT + 1) * (NUM_CELLS + 1)));
+    objectLightsArray[i] = objectLights + (i * (64 * 64 * 4));
+    etherArray[i] = ethers + (i * ((NUM_CELLS + 1) * (NUM_CELLS_HEIGHT + 1) * (NUM_CELLS + 1)));
+    blocksArray[i] = blocks + (i * (NUM_CELLS * NUM_CELLS_HEIGHT * NUM_CELLS));
+    lightsArray[i] = lights + (i * (NUM_CELLS_OVERSCAN * (NUM_CELLS_HEIGHT + 1) * NUM_CELLS_OVERSCAN));
   }
 
   light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
