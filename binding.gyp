@@ -18,7 +18,8 @@
         "heightfield.cc",
         "light.cc",
         "cull.cc",
-        "noiserObject.cc"
+        "noiserObject.cc",
+        "noiser.cc"
       ]
     }
   ]
