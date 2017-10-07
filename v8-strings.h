@@ -31,7 +31,8 @@ namespace V8_STRINGS {
   extern Persistent<String> objects;
   extern Persistent<String> index;
 
-  extern Persistent<String> src;
+  extern Persistent<String> objectsSrc;
+  extern Persistent<String> vegetationsSrc;
   extern Persistent<String> geometries;
   extern Persistent<String> geometryIndex;
   extern Persistent<String> blocks;

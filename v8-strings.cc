@@ -29,7 +29,8 @@ namespace V8_STRINGS {
   Persistent<String> objects(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "objects"));
   Persistent<String> index(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "index"));
 
-  Persistent<String> src(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "src"));
+  Persistent<String> objectsSrc(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "objectsSrc"));
+  Persistent<String> vegetationsSrc(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "vegetationsSrc"));
   Persistent<String> geometries(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "geometries"));
   Persistent<String> geometryIndex(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "geometryIndex"));
   Persistent<String> blocks(Isolate::GetCurrent(), String::NewFromUtf8(Isolate::GetCurrent(), "blocks"));

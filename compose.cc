@@ -43,7 +43,7 @@ class Geometry {
   unsigned int numIndices;
   unsigned int numObjects;
 
-  Geometry(void *geometries, unsigned int i, unsigned int positionIndex, unsigned int uvIndex, unsigned int ssaoIndex, unsigned int frameIndex, unsigned int objectIndexIndex, unsigned int indexIndex, unsigned int objectIndex) :
+  Geometry(void *geometries, int i, unsigned int positionIndex, unsigned int uvIndex, unsigned int ssaoIndex, unsigned int frameIndex, unsigned int objectIndexIndex, unsigned int indexIndex, unsigned int objectIndex) :
     positionIndex(positionIndex),
     uvIndex(uvIndex),
     ssaoIndex(ssaoIndex),
@@ -86,7 +86,7 @@ class Geometry {
 
     numObjectIndices = numPositions / 3;
     for (unsigned int j = 0; j < numObjectIndices; j++) {
-      objectIndices[j] = i;
+      objectIndices[j] = (float)i;
     }
 
     unsigned int *indicesBuffer = (unsigned int *)((char *)geometries + byteOffset);
@@ -160,26 +160,41 @@ inline unsigned int findGeometryIndex(unsigned int n, unsigned int *geometryInde
 }
 
 void compose(
-  void *src, void *geometries, unsigned int *geometryIndex,
+  void *objectsSrc, void *vegetationsSrc, void *geometries, unsigned int *geometryIndex,
   unsigned int *blocks, unsigned int *blockTypes, int dims[3], unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift,
   float *positions, float *uvs, unsigned char *ssaos, float *frames, float *objectIndices, unsigned int *indices, unsigned int *objects,
   unsigned int *positionIndex, unsigned int *uvIndex, unsigned int *ssaoIndex, unsigned int *frameIndex, unsigned int *objectIndexIndex, unsigned int *indexIndex, unsigned int *objectIndex
 ) {
 
-  std::vector<unsigned int> objectsArray[NUM_CHUNKS_HEIGHT];
-  unsigned int offset = 0;
-  for (unsigned int i = 0; i < OBJECT_SLOTS; i++) {
-    const unsigned int n = *((unsigned int *)((char *)src + offset));
-    offset += 4;
+  std::vector<int> objectsArray[NUM_CHUNKS_HEIGHT];
+  unsigned int objectsSrcOffset = 0;
+  for (int i = 0; i < OBJECT_SLOTS; i++) {
+    const unsigned int n = *((unsigned int *)((char *)objectsSrc + objectsSrcOffset));
+    objectsSrcOffset += 4;
 
     if (n != 0) {
-      float *positionBuffer = (float *)((char *)src + offset);
+      float *positionBuffer = (float *)((char *)objectsSrc + objectsSrcOffset);
       const float y = positionBuffer[1];
       const int chunkIndex = std::min<int>(std::max<int>(y, 0), NUM_CELLS_HEIGHT - 1) >> 4;
       objectsArray[chunkIndex].push_back(i);
     }
 
-    offset += 4 * 11;
+    objectsSrcOffset += 4 * 11;
+  }
+  std::vector<int> vegetationsArray[NUM_CHUNKS_HEIGHT];
+  unsigned int vegetationsSrcOffset = 0;
+  for (int i = 0; i < OBJECT_SLOTS; i++) {
+    const unsigned int n = *((unsigned int *)((char *)vegetationsSrc + vegetationsSrcOffset));
+    vegetationsSrcOffset += 4;
+
+    if (n != 0) {
+      float *positionBuffer = (float *)((char *)vegetationsSrc + vegetationsSrcOffset);
+      const float y = positionBuffer[1];
+      const int chunkIndex = std::min<int>(std::max<int>(y, 0), NUM_CELLS_HEIGHT - 1) >> 4;
+      vegetationsArray[chunkIndex].push_back(i);
+    }
+
+    vegetationsSrcOffset += 4 * 10;
   }
 
   for (unsigned int chunkIndex = 0; chunkIndex < NUM_CHUNKS_HEIGHT; chunkIndex++) {
@@ -201,14 +216,14 @@ void compose(
       objectIndex[chunkIndex] = objectIndex[chunkIndex - 1];
     }
 
-    std::vector<unsigned int> &objectsVector = objectsArray[chunkIndex];
-    for (const unsigned int &i : objectsVector) {
-      unsigned int offset = i * 4 * 12;
+    std::vector<int> &objectsVector = objectsArray[chunkIndex];
+    for (const int &i : objectsVector) {
+      int offset = i * 4 * 12;
 
-      const unsigned int n = *((unsigned int *)((char *)src + offset));
+      const unsigned int n = *((unsigned int *)((char *)objectsSrc + offset));
       offset += 4;
 
-      float *positionBuffer = (float *)((char *)src + offset);
+      float *positionBuffer = (float *)((char *)objectsSrc + offset);
       const Vec position(
         positionBuffer[0],
         positionBuffer[1],
@@ -216,7 +231,7 @@ void compose(
       );
       offset += 4 * 3;
 
-      float *rotationBuffer = (float *)((char *)src + offset);
+      float *rotationBuffer = (float *)((char *)objectsSrc + offset);
       const Quat rotation(
         rotationBuffer[0],
         rotationBuffer[1],
@@ -229,6 +244,63 @@ void compose(
         new Geometry(
           (char *)geometries + findGeometryIndex(n, geometryIndex),
           i,
+          positionIndex[chunkIndex],
+          uvIndex[chunkIndex],
+          ssaoIndex[chunkIndex],
+          frameIndex[chunkIndex],
+          objectIndexIndex[chunkIndex],
+          indexIndex[chunkIndex],
+          objectIndex[chunkIndex]
+        )
+      );
+      geometry->applyRotation(rotation);
+      geometry->applyTranslation(position);
+      geometry->write(
+        positions,
+        uvs,
+        ssaos,
+        frames,
+        objectIndices,
+        indices,
+        objects,
+        positionIndex[chunkIndex],
+        uvIndex[chunkIndex],
+        ssaoIndex[chunkIndex],
+        frameIndex[chunkIndex],
+        objectIndexIndex[chunkIndex],
+        indexIndex[chunkIndex],
+        objectIndex[chunkIndex]
+      );
+    }
+
+    std::vector<int> &vegetationsVector = vegetationsArray[chunkIndex];
+    for (const int &i : vegetationsVector) {
+      int offset = i * 4 * 11;
+
+      const unsigned int n = *((unsigned int *)((char *)vegetationsSrc + offset));
+      offset += 4;
+
+      float *positionBuffer = (float *)((char *)vegetationsSrc + offset);
+      const Vec position(
+        positionBuffer[0],
+        positionBuffer[1],
+        positionBuffer[2]
+      );
+      offset += 4 * 3;
+
+      float *rotationBuffer = (float *)((char *)vegetationsSrc + offset);
+      const Quat rotation(
+        rotationBuffer[0],
+        rotationBuffer[1],
+        rotationBuffer[2],
+        rotationBuffer[3]
+      );
+      offset += 4 * 4;
+
+      std::unique_ptr<Geometry> geometry(
+        new Geometry(
+          (char *)geometries + findGeometryIndex(n, geometryIndex),
+          -2,
           positionIndex[chunkIndex],
           uvIndex[chunkIndex],
           ssaoIndex[chunkIndex],

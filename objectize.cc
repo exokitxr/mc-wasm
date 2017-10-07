@@ -27,7 +27,7 @@ EMSCRIPTEN_KEEPALIVE void noiser_fill(Noiser *noiser, int ox, int oz, unsigned c
 }
 
 EMSCRIPTEN_KEEPALIVE void objectize(
-  void *src, void *geometries, unsigned int *geometryIndex,
+  void *objectsSrc, void *vegetationsSrc, void *geometries, unsigned int *geometryIndex,
   unsigned int *blocks, unsigned int *blockTypes, int *dims, unsigned char *transparentVoxels, unsigned char *translucentVoxels, float *faceUvs, float *shift,
   float *positions, float *uvs, unsigned char *ssaos, float *frames, float *objectIndices, unsigned int *indices, unsigned int *objects,
   unsigned int *result
@@ -41,7 +41,7 @@ EMSCRIPTEN_KEEPALIVE void objectize(
   unsigned int objectIndex[NUM_CHUNKS_HEIGHT];
 
   compose(
-    src, geometries, geometryIndex,
+    objectsSrc, vegetationsSrc, geometries, geometryIndex,
     blocks, blockTypes, dims, transparentVoxels, translucentVoxels, faceUvs, shift,
     positions, uvs, ssaos, frames, objectIndices, indices, objects,
     positionIndex, uvIndex, ssaoIndex, frameIndex, objectIndexIndex, indexIndex, objectIndex
