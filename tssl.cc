@@ -574,7 +574,7 @@ void tesselate(unsigned int *voxels, unsigned int *blockTypes, int dims[3], unsi
   frameIndex += numNewPositions;
 
   for (unsigned int i = 0; i < numNewPositions / 3; i++) {
-    objectIndices[i] = 0;
+    objectIndices[i] = -2.0;
   }
   objectIndexIndex += numNewPositions / 3;
 
