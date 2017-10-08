@@ -332,41 +332,6 @@ void Noiser::makeGeometries(int ox, int oy, float *ether, float *water, float *l
   }
 }
 
-
-void Noiser::fill(int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges, float *staticHeightfield, float *colors, unsigned char *peeks) {
-  if (fillBiomes) {
-    this->fillBiomes(ox, oz, biomes);
-  }
-  if (fillElevations) {
-    this->fillElevations(ox, oz, elevations);
-  }
-  if (fillEther) {
-    this->fillEther(elevations, ethers);
-  }
-  if (fillLiquid) {
-    this->fillLiquid(ox, oz, ethers, elevations, water, lava);
-  }
-  if (numNewEthers > 0) {
-    this->applyEther(newEther, numNewEthers, ethers);
-  }
-
-  this->makeGeometries(ox, oz, ethers, water, lava, positions, indices, attributeRanges, indexRanges);
-
-  unsigned int numIndices = indexRanges[5 * 6 + 4] + indexRanges[5 * 6 + 5];
-  genHeightfield(positions, indices, numIndices, staticHeightfield);
-
-  this->postProcessGeometry(ox, oz, attributeRanges, positions, colors, biomes);
-
-  for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
-    int shift[3] = {
-      0,
-      NUM_CELLS * i,
-      0
-    };
-    flod(ethers, shift, peeks + i * 16);
-  }
-}
-
 inline void postProcessGeometryRange(int ox, int oz, unsigned int start, unsigned int count, float *positions, float *colors, const std::function<void(const float,const float,const float,const float,const float,float &,float &,float &)>& getColor) {
   float *geometryPositions = positions + start;
   float *geometryColors = colors + start;
@@ -417,5 +382,41 @@ void Noiser::postProcessGeometry(int ox, int oz, unsigned int *attributeRanges, 
       g = 0.0;
       b = 2.0;
     });
+  }
+}
+
+void Noiser::apply(int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers) {
+  if (fillBiomes) {
+    this->fillBiomes(ox, oz, biomes);
+  }
+  if (fillElevations) {
+    this->fillElevations(ox, oz, elevations);
+  }
+  if (fillEther) {
+    this->fillEther(elevations, ethers);
+  }
+  if (fillLiquid) {
+    this->fillLiquid(ox, oz, ethers, elevations, water, lava);
+  }
+  if (numNewEthers > 0) {
+    this->applyEther(newEther, numNewEthers, ethers);
+  }
+}
+
+void Noiser::fill(int ox, int oz, unsigned char *biomes, float *elevations, float *ethers, float *water, float *lava, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges, float *staticHeightfield, float *colors, unsigned char *peeks) {
+  this->makeGeometries(ox, oz, ethers, water, lava, positions, indices, attributeRanges, indexRanges);
+
+  unsigned int numIndices = indexRanges[5 * 6 + 4] + indexRanges[5 * 6 + 5];
+  genHeightfield(positions, indices, numIndices, staticHeightfield);
+
+  this->postProcessGeometry(ox, oz, attributeRanges, positions, colors, biomes);
+
+  for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
+    int shift[3] = {
+      0,
+      NUM_CELLS * i,
+      0
+    };
+    flod(ethers, shift, peeks + i * 16);
   }
 }

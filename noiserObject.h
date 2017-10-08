@@ -37,6 +37,8 @@ class NoiserObject : public Noiser, public node::ObjectWrap {
     static void GetBiomeHeight(const FunctionCallbackInfo<Value>& args);
     static void GetElevation(const FunctionCallbackInfo<Value>& args);
     static void GetTemperature(const FunctionCallbackInfo<Value>& args);
+
+    static void Apply(const FunctionCallbackInfo<Value>& args);
     static void Fill(const FunctionCallbackInfo<Value>& args);
 };
 
