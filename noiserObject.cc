@@ -153,7 +153,7 @@ void NoiserObject::GetTemperature(const FunctionCallbackInfo<Value>& args) {
 void NoiserObject::Fill(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  if (args.Length() < 21) {
+  if (args.Length() < 20) {
     isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
@@ -179,8 +179,7 @@ void NoiserObject::Fill(const FunctionCallbackInfo<Value>& args) {
     !args[16]->IsUint32Array() ||
     !args[17]->IsFloat32Array() ||
     !args[18]->IsFloat32Array() ||
-    !args[19]->IsFloat32Array() ||
-    !args[20]->IsUint8Array()
+    !args[19]->IsUint8Array()
   ) {
     isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
@@ -242,20 +241,16 @@ void NoiserObject::Fill(const FunctionCallbackInfo<Value>& args) {
   unsigned int indexRangeByteOffset = args[16]->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned int *indexRanges = (unsigned int *)((char *)indexRangeBuffer->GetContents().Data() + indexRangeByteOffset);
 
-  Local<ArrayBuffer> heightfieldBuffer = Local<ArrayBuffer>::Cast(args[17]->ToObject()->Get(bufferString));
-  unsigned int heightfieldByteOffset = args[17]->ToObject()->Get(byteOffsetString)->Uint32Value();
-  float *heightfield = (float *)((char *)heightfieldBuffer->GetContents().Data() + heightfieldByteOffset);
-
-  Local<ArrayBuffer> staticHeightfieldBuffer = Local<ArrayBuffer>::Cast(args[18]->ToObject()->Get(bufferString));
-  unsigned int staticHeightfieldByteOffset = args[18]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> staticHeightfieldBuffer = Local<ArrayBuffer>::Cast(args[17]->ToObject()->Get(bufferString));
+  unsigned int staticHeightfieldByteOffset = args[17]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *staticHeightfield = (float *)((char *)staticHeightfieldBuffer->GetContents().Data() + staticHeightfieldByteOffset);
 
-  Local<ArrayBuffer> colorsBuffer = Local<ArrayBuffer>::Cast(args[19]->ToObject()->Get(bufferString));
-  unsigned int colorsByteOffset = args[19]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> colorsBuffer = Local<ArrayBuffer>::Cast(args[18]->ToObject()->Get(bufferString));
+  unsigned int colorsByteOffset = args[18]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *colors = (float *)((char *)colorsBuffer->GetContents().Data() + colorsByteOffset);
 
-  Local<ArrayBuffer> peeksBuffer = Local<ArrayBuffer>::Cast(args[20]->ToObject()->Get(bufferString));
-  unsigned int peeksByteOffset = args[20]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> peeksBuffer = Local<ArrayBuffer>::Cast(args[19]->ToObject()->Get(bufferString));
+  unsigned int peeksByteOffset = args[19]->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned char *peeks = (unsigned char *)((char *)peeksBuffer->GetContents().Data() + peeksByteOffset);
 
   NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
@@ -278,7 +273,7 @@ void NoiserObject::Fill(const FunctionCallbackInfo<Value>& args) {
   obj->makeGeometries(ox, oz, ethers, water, lava, positions, indices, attributeRanges, indexRanges);
 
   unsigned int numIndices = indexRanges[5 * 6 + 4] + indexRanges[5 * 6 + 5];
-  genHeightfield(positions, indices, numIndices, heightfield, staticHeightfield);
+  genHeightfield(positions, indices, numIndices, staticHeightfield);
 
   obj->postProcessGeometry(ox, oz, attributeRanges, positions, colors, biomes);
 

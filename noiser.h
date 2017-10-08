@@ -35,7 +35,7 @@ class Noiser {
     void fillLiquid(int ox, int oz, float *ether, float *elevations, float *water, float *lava);
     void applyEther(float *newEther, unsigned int numNewEthers, float *ether);
     void makeGeometries(int ox, int oy, float *ether, float *water, float *lava, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges);
-    void fill(int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges, float *heightfield, float *staticHeightfield, float *colors, unsigned char *peeks);
+    void fill(int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges, float *staticHeightfield, float *colors, unsigned char *peeks);
     void postProcessGeometry(int ox, int oz, unsigned int *attributeRanges, float *positions, float *colors, unsigned char *biomes);
 };
 

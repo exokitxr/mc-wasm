@@ -253,17 +253,14 @@ void GenHeightfield(const FunctionCallbackInfo<Value>& args) {
   Local<ArrayBuffer> indicesBuffer = Local<ArrayBuffer>::Cast(args[1]->ToObject()->Get(bufferString));
   unsigned int indicesByteOffset = args[1]->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned int numIndices = args[2]->Uint32Value();
-  Local<ArrayBuffer> heightfieldBuffer = Local<ArrayBuffer>::Cast(args[3]->ToObject()->Get(bufferString));
-  unsigned int heightfieldByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
-  Local<ArrayBuffer> staticHeightfieldBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
-  unsigned int staticHeightfieldByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> staticHeightfieldBuffer = Local<ArrayBuffer>::Cast(args[3]->ToObject()->Get(bufferString));
+  unsigned int staticHeightfieldByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
 
   float *positions = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
   unsigned int *indices = (unsigned int *)((char *)indicesBuffer->GetContents().Data() + indicesByteOffset);
-  float *heightfield = (float *)((char *)heightfieldBuffer->GetContents().Data() + heightfieldByteOffset);
   float *staticHeightfield = (float *)((char *)staticHeightfieldBuffer->GetContents().Data() + staticHeightfieldByteOffset);
 
-  genHeightfield(positions, indices, numIndices, heightfield, staticHeightfield);
+  genHeightfield(positions, indices, numIndices, staticHeightfield);
 }
 
 void Light(const FunctionCallbackInfo<Value>& args) {

@@ -333,7 +333,7 @@ void Noiser::makeGeometries(int ox, int oy, float *ether, float *water, float *l
 }
 
 
-void Noiser::fill(int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges, float *heightfield, float *staticHeightfield, float *colors, unsigned char *peeks) {
+void Noiser::fill(int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges, float *staticHeightfield, float *colors, unsigned char *peeks) {
   if (fillBiomes) {
     this->fillBiomes(ox, oz, biomes);
   }
@@ -353,7 +353,7 @@ void Noiser::fill(int ox, int oz, unsigned char *biomes, bool fillBiomes, float 
   this->makeGeometries(ox, oz, ethers, water, lava, positions, indices, attributeRanges, indexRanges);
 
   unsigned int numIndices = indexRanges[5 * 6 + 4] + indexRanges[5 * 6 + 5];
-  genHeightfield(positions, indices, numIndices, heightfield, staticHeightfield);
+  genHeightfield(positions, indices, numIndices, staticHeightfield);
 
   this->postProcessGeometry(ox, oz, attributeRanges, positions, colors, biomes);
 
