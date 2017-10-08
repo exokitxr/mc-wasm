@@ -269,66 +269,66 @@ void Noiser::makeGeometries(int ox, int oy, float *ether, float *water, float *l
   }
 
   for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
-{
-    unsigned int positionIndex;
-    unsigned int faceIndex;
+    {
+      unsigned int positionIndex;
+      unsigned int faceIndex;
 
-    // water
-    int dims[3] = {
-      NUM_CELLS + 1,
-      NUM_CELLS + 1,
-      NUM_CELLS + 1
-    };
-    float *potential = water;
-    int shift[3] = {
-      0,
-      NUM_CELLS * i,
-      0
-    };
-    int indexOffset = attributeIndex / 3;
-    float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
-    unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
+      // water
+      int dims[3] = {
+        NUM_CELLS + 1,
+        NUM_CELLS + 1,
+        NUM_CELLS + 1
+      };
+      float *potential = water;
+      int shift[3] = {
+        0,
+        NUM_CELLS * i,
+        0
+      };
+      int indexOffset = attributeIndex / 3;
+      float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
+      unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
 
-    marchingCubes(dims, potential, shift, indexOffset, positions, faces, positionIndex, faceIndex);
+      marchingCubes(dims, potential, shift, indexOffset, positions, faces, positionIndex, faceIndex);
 
-    attributeRanges[i * 6 + 2] = attributeIndex;
-    attributeRanges[i * 6 + 3] = positionIndex;
-    indexRanges[i * 6 + 2] = indexIndex;
-    indexRanges[i * 6 + 3] = faceIndex;
+      attributeRanges[i * 6 + 2] = attributeIndex;
+      attributeRanges[i * 6 + 3] = positionIndex;
+      indexRanges[i * 6 + 2] = indexIndex;
+      indexRanges[i * 6 + 3] = faceIndex;
 
-    attributeIndex += positionIndex;
-    indexIndex += faceIndex;
-}
-{
-    unsigned int positionIndex;
-    unsigned int faceIndex;
+      attributeIndex += positionIndex;
+      indexIndex += faceIndex;
+    }
+    {
+      unsigned int positionIndex;
+      unsigned int faceIndex;
 
-    // lava
-    int dims[3] = {
-      NUM_CELLS + 1,
-      NUM_CELLS + 1,
-      NUM_CELLS + 1
-    };
-    float *potential = lava;
-    int shift[3] = {
-      0,
-      NUM_CELLS * i,
-      0
-    };
-    int indexOffset = attributeIndex / 3;
-    float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
-    unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
+      // lava
+      int dims[3] = {
+        NUM_CELLS + 1,
+        NUM_CELLS + 1,
+        NUM_CELLS + 1
+      };
+      float *potential = lava;
+      int shift[3] = {
+        0,
+        NUM_CELLS * i,
+        0
+      };
+      int indexOffset = attributeIndex / 3;
+      float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
+      unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
 
-    marchingCubes(dims, potential, shift, indexOffset, positions, faces, positionIndex, faceIndex);
+      marchingCubes(dims, potential, shift, indexOffset, positions, faces, positionIndex, faceIndex);
 
-    attributeRanges[i * 6 + 4] = attributeIndex;
-    attributeRanges[i * 6 + 5] = positionIndex;
-    indexRanges[i * 6 + 4] = indexIndex;
-    indexRanges[i * 6 + 5] = faceIndex;
+      attributeRanges[i * 6 + 4] = attributeIndex;
+      attributeRanges[i * 6 + 5] = positionIndex;
+      indexRanges[i * 6 + 4] = indexIndex;
+      indexRanges[i * 6 + 5] = faceIndex;
 
-    attributeIndex += positionIndex;
-    indexIndex += faceIndex;
-}
+      attributeIndex += positionIndex;
+      indexIndex += faceIndex;
+    }
   }
 }
 
