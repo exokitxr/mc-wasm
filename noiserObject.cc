@@ -254,36 +254,6 @@ void NoiserObject::Fill(const FunctionCallbackInfo<Value>& args) {
   unsigned char *peeks = (unsigned char *)((char *)peeksBuffer->GetContents().Data() + peeksByteOffset);
 
   NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
-  if (fillBiomes) {
-    obj->fillBiomes(ox, oz, biomes);
-  }
-  if (fillElevations) {
-    obj->fillElevations(ox, oz, elevations);
-  }
-  if (fillEther) {
-    obj->fillEther(elevations, ethers);
-  }
-  if (fillLiquid) {
-    obj->fillLiquid(ox, oz, ethers, elevations, water, lava);
-  }
-  if (numNewEthers > 0) {
-    obj->applyEther(newEther, numNewEthers, ethers);
-  }
-
-  obj->makeGeometries(ox, oz, ethers, water, lava, positions, indices, attributeRanges, indexRanges);
-
-  unsigned int numIndices = indexRanges[5 * 6 + 4] + indexRanges[5 * 6 + 5];
-  genHeightfield(positions, indices, numIndices, staticHeightfield);
-
-  obj->postProcessGeometry(ox, oz, attributeRanges, positions, colors, biomes);
-
-  for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
-    int shift[3] = {
-      0,
-      NUM_CELLS * i,
-      0
-    };
-    flod(ethers, shift, peeks + i * 16);
-  }
+  obj->fill(ox, oz, biomes, fillBiomes, elevations, fillElevations, ethers, fillEther, water, lava, fillLiquid, newEther, numNewEthers, positions, indices, attributeRanges, indexRanges, staticHeightfield, colors, peeks);
 }
 
