@@ -25,11 +25,11 @@ inline bool isOccluded(int ox, int oz, int x, int y, int z, float **etherArray, 
   const int lz = z - (z & 0xFFFFFFF0);
 
   float *ether = etherArray[arrayIndex];
-  if (ether[getEtherIndex(lx, y, lz)] <= -1) {
+  if (ether != nullptr && ether[getEtherIndex(lx, y, lz)] <= -1) {
     return true;
   }
   unsigned int *blocks = blocksArray[arrayIndex];
-  if (blocks[getBlockIndex(lx, y, lz)] != 0) {
+  if (blocks != nullptr && blocks[getBlockIndex(lx, y, lz)] != 0) {
     return true;
   }
   return false;
@@ -42,15 +42,17 @@ inline void tryQueue(int ox, int oz, int x, int y, int z, char v, bool origin, i
     const int lightsArrayIndex = getLightsArrayIndex(lax, laz);
     unsigned char *lights = lightsArray[lightsArrayIndex];
 
-    const int lx = x - (x & 0xFFFFFFF0);
-    const int ly = y;
-    const int lz = z - (z & 0xFFFFFFF0);
-    const int lightsIndex = getLightsIndex(lx, ly, lz);
-    if (lights[lightsIndex] < v) {
-      lights[lightsIndex] = v;
+    if (lights != nullptr) {
+      const int lx = x - (x & 0xFFFFFFF0);
+      const int ly = y;
+      const int lz = z - (z & 0xFFFFFFF0);
+      const int lightsIndex = getLightsIndex(lx, ly, lz);
+      if (lights[lightsIndex] < v) {
+        lights[lightsIndex] = v;
 
-      if (origin || !isOccluded(ox, oz, x, y, z, etherArray, blocksArray)) {
-        queue.push(LightSource(x, y, z, v));
+        if (origin || !isOccluded(ox, oz, x, y, z, etherArray, blocksArray)) {
+          queue.push(LightSource(x, y, z, v));
+        }
       }
     }
   }
@@ -86,36 +88,40 @@ void getLightSources(int ox, int oz, float **lavaArray, float **objectLightsArra
 
       const int arrayIndex = getLightsArrayIndex(dx + 1, dz + 1);
       float *lava = lavaArray[arrayIndex];
-      unsigned int index = 0;
-      for (int y = 0; y <= NUM_CELLS_HEIGHT; y++) {
-        for (int z = 0; z <= NUM_CELLS; z++) {
-          for (int x = 0; x <= NUM_CELLS; x++) {
-            if (lava[index++] < 0) {
-              lightSources.push_back(
-                LightSource(
-                  x + aox * NUM_CELLS,
-                  y,
-                  z + aoz * NUM_CELLS,
-                  15
-                )
-              );
+      if (lava != nullptr) {
+        unsigned int index = 0;
+        for (int y = 0; y <= NUM_CELLS_HEIGHT; y++) {
+          for (int z = 0; z <= NUM_CELLS; z++) {
+            for (int x = 0; x <= NUM_CELLS; x++) {
+              if (lava[index++] < 0) {
+                lightSources.push_back(
+                  LightSource(
+                    x + aox * NUM_CELLS,
+                    y,
+                    z + aoz * NUM_CELLS,
+                    15
+                  )
+                );
+              }
             }
           }
         }
       }
 
       float *objectLights = objectLightsArray[arrayIndex];
-      for (int i = 0; i < NUM_SLOTS; i++) {
-        const int offset = i * 4;
-        if (objectLights[offset + 3] > 0) {
-          lightSources.push_back(
-            LightSource(
-              (int)objectLights[offset + 0],
-              (int)objectLights[offset + 1],
-              (int)objectLights[offset + 2],
-              (char)objectLights[offset + 3]
-            )
-          );
+      if (objectLights != nullptr) {
+        for (int i = 0; i < NUM_SLOTS; i++) {
+          const int offset = i * 4;
+          if (objectLights[offset + 3] > 0) {
+            lightSources.push_back(
+              LightSource(
+                (int)objectLights[offset + 0],
+                (int)objectLights[offset + 1],
+                (int)objectLights[offset + 2],
+                (char)objectLights[offset + 3]
+              )
+            );
+          }
         }
       }
     }
@@ -128,11 +134,13 @@ inline void setLight(int ox, int oz, int x, int y, int z, unsigned char v, unsig
   const int lightsArrayIndex = getLightsArrayIndex(lax, laz);
   unsigned char *lights = lightsArray[lightsArrayIndex];
 
-  const int lx = x - (x & 0xFFFFFFF0);
-  const int ly = y;
-  const int lz = z - (z & 0xFFFFFFF0);
-  const int lightsIndex = getLightsIndex(lx, ly, lz);
-  lights[lightsIndex] = v;
+  if (lights != nullptr) {
+    const int lx = x - (x & 0xFFFFFFF0);
+    const int ly = y;
+    const int lz = z - (z & 0xFFFFFFF0);
+    const int lightsIndex = getLightsIndex(lx, ly, lz);
+    lights[lightsIndex] = v;
+  }
 }
 
 inline unsigned char getLight(int ox, int oz, int x, int y, int z, unsigned char **lightsArray) {
@@ -141,11 +149,15 @@ inline unsigned char getLight(int ox, int oz, int x, int y, int z, unsigned char
   const int lightsArrayIndex = getLightsArrayIndex(lax, laz);
   unsigned char *lights = lightsArray[lightsArrayIndex];
 
-  const int lx = x - (x & 0xFFFFFFF0);
-  const int ly = y;
-  const int lz = z - (z & 0xFFFFFFF0);
-  const int lightsIndex = getLightsIndex(lx, ly, lz);
-  return lights[lightsIndex];
+  if (lights != nullptr) {
+    const int lx = x - (x & 0xFFFFFFF0);
+    const int ly = y;
+    const int lz = z - (z & 0xFFFFFFF0);
+    const int lightsIndex = getLightsIndex(lx, ly, lz);
+    return lights[lightsIndex];
+  } else {
+    return 0;
+  }
 }
 
 void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, bool relight, float **lavaArray, float **objectLightsArray, float **etherArray, unsigned int **blocksArray, unsigned char **lightsArray) {
@@ -158,7 +170,10 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
     if (y <= NUM_CELLS_HEIGHT) {
       for (int z = minZ; z < maxZ; z++) {
         for (int x = minX; x < maxX; x++) {
-          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+          const unsigned char v = getLight(ox, oz, x, y, z, lightsArray);
+          if (v > 0) {
+            lightSources.push_back(LightSource(x, y, z, v));
+          }
         }
       }
     }
@@ -167,7 +182,10 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
     if (y >= 0) {
       for (int z = minZ; z < maxZ; z++) {
         for (int x = minX; x < maxX; x++) {
-          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+          const unsigned char v = getLight(ox, oz, x, y, z, lightsArray);
+          if (v > 0) {
+            lightSources.push_back(LightSource(x, y, z, v));
+          }
         }
       }
     }
@@ -176,7 +194,10 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
     if (x >= (ox - 1) * NUM_CELLS) {
       for (int z = minZ; z < maxZ; z++) {
         for (int y = minY; y <= maxY; y++) {
-          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+          const unsigned char v = getLight(ox, oz, x, y, z, lightsArray);
+          if (v > 0) {
+            lightSources.push_back(LightSource(x, y, z, v));
+          }
         }
       }
     }
@@ -185,7 +206,10 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
     if (x < (ox + 2) * NUM_CELLS) {
       for (int z = minZ; z < maxZ; z++) {
         for (int y = minY; y <= maxY; y++) {
-          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+          const unsigned char v = getLight(ox, oz, x, y, z, lightsArray);
+          if (v > 0) {
+            lightSources.push_back(LightSource(x, y, z, v));
+          }
         }
       }
     }
@@ -194,7 +218,10 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
     if (z >= (oz - 1) * NUM_CELLS) {
       for (int x = minX; x < maxX; x++) {
         for (int y = minY; y <= maxY; y++) {
-          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+          const unsigned char v = getLight(ox, oz, x, y, z, lightsArray);
+          if (v > 0) {
+            lightSources.push_back(LightSource(x, y, z, v));
+          }
         }
       }
     }
@@ -203,7 +230,10 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
     if (z < (oz + 2) * NUM_CELLS) {
       for (int x = minX; x < maxX; x++) {
         for (int y = minY; y <= maxY; y++) {
-          lightSources.push_back(LightSource(x, y, z, getLight(ox, oz, x, y, z, lightsArray)));
+          const unsigned char v = getLight(ox, oz, x, y, z, lightsArray);
+          if (v > 0) {
+            lightSources.push_back(LightSource(x, y, z, v));
+          }
         }
       }
     }
@@ -226,26 +256,34 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
     for (unsigned int dox = 0; dox <= 2; dox++) {
       unsigned char *centerLights = lightsArray[getLightsArrayIndex(dox, doz)];
 
-      if (dox + 1 <= 2) {
-        unsigned char *eastLights = lightsArray[getLightsArrayIndex(dox + 1, doz)];
-        for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
-          for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
-            centerLights[getLightsIndex(NUM_CELLS, y, z)] = eastLights[getLightsIndex(0, y, z)];
+      if (centerLights != nullptr) {
+        if (dox + 1 <= 2) {
+          unsigned char *eastLights = lightsArray[getLightsArrayIndex(dox + 1, doz)];
+          if (eastLights != nullptr) {
+            for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
+              for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
+                centerLights[getLightsIndex(NUM_CELLS, y, z)] = eastLights[getLightsIndex(0, y, z)];
+              }
+            }
           }
         }
-      }
-      if (doz + 1 <= 2) {
-        unsigned char *southLights = lightsArray[getLightsArrayIndex(dox, doz + 1)];
-        for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
-          for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
-            centerLights[getLightsIndex(x, y, NUM_CELLS)] = southLights[getLightsIndex(x, y, 0)];
+        if (doz + 1 <= 2) {
+          unsigned char *southLights = lightsArray[getLightsArrayIndex(dox, doz + 1)];
+          if (southLights != nullptr) {
+            for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
+              for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
+                centerLights[getLightsIndex(x, y, NUM_CELLS)] = southLights[getLightsIndex(x, y, 0)];
+              }
+            }
           }
         }
-      }
-      if (dox + 1 <= 2 && doz + 1 <=2) {
-        unsigned char *southeastLights = lightsArray[getLightsArrayIndex(dox + 1, doz + 1)];
-        for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
-          centerLights[getLightsIndex(NUM_CELLS, y, NUM_CELLS)] = southeastLights[getLightsIndex(0, y, 0)];
+        if (dox + 1 <= 2 && doz + 1 <=2) {
+          unsigned char *southeastLights = lightsArray[getLightsArrayIndex(dox + 1, doz + 1)];
+          if (southeastLights != nullptr) {
+            for (int y = 0; y < (NUM_CELLS_HEIGHT + 1); y++) {
+              centerLights[getLightsIndex(NUM_CELLS, y, NUM_CELLS)] = southeastLights[getLightsIndex(0, y, 0)];
+            }
+          }
         }
       }
     }
