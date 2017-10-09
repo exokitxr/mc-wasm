@@ -337,7 +337,8 @@ void Light(const FunctionCallbackInfo<Value>& args) {
     lightsArray[i] = lights + (i * (NUM_CELLS_OVERSCAN * (NUM_CELLS_HEIGHT + 1) * NUM_CELLS_OVERSCAN));
   }
 
-  light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
+  const bool lighted = light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
+  args.GetReturnValue().Set(Boolean::New(isolate, lighted));
 }
 
 void Lightmap(const FunctionCallbackInfo<Value>& args) {

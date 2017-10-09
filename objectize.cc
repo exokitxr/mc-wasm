@@ -62,11 +62,11 @@ EMSCRIPTEN_KEEPALIVE void objectize(
   }
 }
 
-EMSCRIPTEN_KEEPALIVE void lght(
+EMSCRIPTEN_KEEPALIVE bool lght(
   int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, unsigned int relight,
   float **lavaArray, float **objectLightsArray, float **etherArray, unsigned int **blocksArray, unsigned char **lightsArray
 ) {
-  light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, (bool)relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
+  return light(ox, oz, minX, maxX, minY, maxY, minZ, maxZ, (bool)relight, lavaArray, objectLightsArray, etherArray, blocksArray, lightsArray);
 }
 
 EMSCRIPTEN_KEEPALIVE void lghtmap(int ox, int oz, float *positions, unsigned int numPositions, float *staticHeightfield, unsigned char *lights, unsigned char *skyLightmaps, unsigned char *torchLightmaps) {

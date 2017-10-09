@@ -80,7 +80,8 @@ inline void fillLight(int ox, int oz, int x, int y, int z, char v, int minX, int
   }
 };
 
-void getLightSources(int ox, int oz, float **lavaArray, float **objectLightsArray, std::vector<LightSource> &lightSources) {
+bool getLightSources(int ox, int oz, float **lavaArray, float **objectLightsArray, std::vector<LightSource> &lightSources) {
+  bool hadLightSources = false;
   for (int dz = -1; dz <= 1; dz++) {
     for (int dx = -1; dx <= 1; dx++) {
       const int aox = ox + dx;
@@ -102,6 +103,7 @@ void getLightSources(int ox, int oz, float **lavaArray, float **objectLightsArra
                     15
                   )
                 );
+                hadLightSources = true;
               }
             }
           }
@@ -121,11 +123,14 @@ void getLightSources(int ox, int oz, float **lavaArray, float **objectLightsArra
                 (char)objectLights[offset + 3]
               )
             );
+            hadLightSources = true;
           }
         }
       }
     }
   }
+
+  return hadLightSources;
 }
 
 inline void setLight(int ox, int oz, int x, int y, int z, unsigned char v, unsigned char **lightsArray) {
@@ -160,9 +165,9 @@ inline unsigned char getLight(int ox, int oz, int x, int y, int z, unsigned char
   }
 }
 
-void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, bool relight, float **lavaArray, float **objectLightsArray, float **etherArray, unsigned int **blocksArray, unsigned char **lightsArray) {
+bool light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, bool relight, float **lavaArray, float **objectLightsArray, float **etherArray, unsigned int **blocksArray, unsigned char **lightsArray) {
   std::vector<LightSource> lightSources;
-  getLightSources(ox, oz, lavaArray, objectLightsArray, lightSources);
+  bool hadLightSources = getLightSources(ox, oz, lavaArray, objectLightsArray, lightSources);
   if (relight) {
     int x, y, z;
     // top
@@ -288,6 +293,8 @@ void light(int ox, int oz, int minX, int maxX, int minY, int maxY, int minZ, int
       }
     }
   }
+
+  return hadLightSources;
 }
 
 inline float _li(float left, float right, float x) {
