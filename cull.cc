@@ -14,6 +14,28 @@ struct CullQueueEntry {
   int z;
   int enterFace;
 };
+struct TerrainMapChunkMesh {
+  unsigned char *peeks;
+  int landStart;
+  int landCount;
+  int waterStart;
+  int waterCount;
+  int lavaStart;
+  int lavaCount;
+  bool visible;
+};
+struct TerrainMapChunkCoord {
+  int x;
+  int z;
+  int distance;
+
+  bool operator<(const TerrainMapChunkCoord &mapChunkCoord) const {
+    return this->distance < mapChunkCoord.distance;
+  }
+  bool operator==(const TerrainMapChunkCoord &mapChunkCoord) const {
+    return this->x == mapChunkCoord.x && this->z == mapChunkCoord.z;
+  }
+};
 namespace std {
 
   template <>
@@ -47,18 +69,7 @@ PeekFace peekFaceSpecs[] = {
 };
 const unsigned int numPeekFaceSpecs = sizeof(peekFaceSpecs) / sizeof(peekFaceSpecs[0]);
 
-struct TerrainMapChunkMesh {
-  unsigned char *peeks;
-  int landStart;
-  int landCount;
-  int waterStart;
-  int waterCount;
-  int lavaStart;
-  int lavaCount;
-  bool visible;
-};
-
-unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
+void cullTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups, int *groups2, unsigned int &groupIndex, unsigned int &groupIndex2) {
   const int ox = (int)hmdPosition[0] >> 4;
   const int oy = std::min<int>(std::max<int>(std::floor((int)hmdPosition[1] >> 4), 0), NUM_CHUNKS_HEIGHT - 1);
   const int oz = std::floor((int)hmdPosition[2] >> 4);
@@ -148,19 +159,69 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
     }
   }
 
-  unsigned int groupIndex = 0;
+  std::vector<TerrainMapChunkCoord> sortedMapChunkCoords;
+  sortedMapChunkCoords.reserve(mapChunkMeshSet.size());
   for (auto const &iter : mapChunkMeshSet) {
-    int x = iter.first;
-    int z = iter.second;
+    const int x = iter.first;
+    const int z = iter.second;
+    const int dx = x - ox;
+    const int dz = z - oz;
+    sortedMapChunkCoords.push_back(TerrainMapChunkCoord{x, z, dx*dx + dz*dz});
+  }
+  std::sort(sortedMapChunkCoords.begin(), sortedMapChunkCoords.end());
+
+  groupIndex = 0;
+  for (auto const &iter : sortedMapChunkCoords) {
+    int x = iter.x;
+    int z = iter.z;
 
     groups[groupIndex++] = getChunkIndex(x, z);
-    for (int i = 0; i < NUM_RENDER_GROUPS * 6; i++) {
+    for (int i = 0; i < NUM_RENDER_GROUPS * 2; i++) {
       groups[groupIndex + i] = -1;
     }
 
     int landGroupIndex = 0;
     int landStart = -1;
     int landCount = 0;
+
+    for (int i = 0; i < NUM_CHUNKS_HEIGHT; i++) {
+      const std::tuple<int, int, int> key(x, i, z);
+      const TerrainMapChunkMesh &trackedMapChunkMesh = mapChunkMeshMap[key];
+      if (trackedMapChunkMesh.visible) {
+        if (landStart == -1 && trackedMapChunkMesh.landCount > 0) {
+          landStart = trackedMapChunkMesh.landStart;
+        }
+        landCount += trackedMapChunkMesh.landCount;
+      } else {
+        if (landStart != -1) {
+          const int baseIndex = groupIndex + landGroupIndex * 2;
+          groups[baseIndex + 0] = landStart;
+          groups[baseIndex + 1] = landCount;
+          landGroupIndex++;
+          landStart = -1;
+          landCount = 0;
+        }
+      }
+    }
+    if (landStart != -1) {
+      const int baseIndex = groupIndex + landGroupIndex * 2;
+      groups[baseIndex + 0] = landStart;
+      groups[baseIndex + 1] = landCount;
+    }
+
+    groupIndex += NUM_RENDER_GROUPS * 2;
+  }
+
+  groupIndex2 = 0;
+  for (auto iter = sortedMapChunkCoords.rbegin(); iter != sortedMapChunkCoords.rend(); iter++) {
+    int x = iter->x;
+    int z = iter->z;
+
+    groups2[groupIndex2++] = getChunkIndex(x, z);
+    for (int i = 0; i < NUM_RENDER_GROUPS * 4; i++) {
+      groups2[groupIndex2 + i] = -1;
+    }
+
     int waterGroupIndex = 0;
     int waterStart = -1;
     int waterCount = 0;
@@ -172,66 +233,46 @@ unsigned int cullTerrain(float *hmdPosition, float *projectionMatrix, float *mat
       const std::tuple<int, int, int> key(x, i, z);
       const TerrainMapChunkMesh &trackedMapChunkMesh = mapChunkMeshMap[key];
       if (trackedMapChunkMesh.visible) {
-        if (landStart == -1 && trackedMapChunkMesh.landCount > 0) {
-          landStart = trackedMapChunkMesh.landStart;
-        }
-        landCount += trackedMapChunkMesh.landCount;
-
         if (waterStart == -1 && trackedMapChunkMesh.waterCount > 0) {
           waterStart = trackedMapChunkMesh.waterStart;
         }
         waterCount += trackedMapChunkMesh.waterCount;
-
         if (lavaStart == -1 && trackedMapChunkMesh.lavaCount > 0) {
           lavaStart = trackedMapChunkMesh.lavaStart;
         }
         lavaCount += trackedMapChunkMesh.lavaCount;
       } else {
-        if (landStart != -1) {
-          const int baseIndex = groupIndex + landGroupIndex * 6;
-          groups[baseIndex + 0] = landStart;
-          groups[baseIndex + 1] = landCount;
-          landGroupIndex++;
-          landStart = -1;
-          landCount = 0;
-        }
         if (waterStart != -1) {
-          const int baseIndex = groupIndex + waterGroupIndex * 6;
-          groups[baseIndex + 2] = waterStart;
-          groups[baseIndex + 3] = waterCount;
+          const int baseIndex = groupIndex2 + waterGroupIndex * 4;
+          groups2[baseIndex + 0] = waterStart;
+          groups2[baseIndex + 1] = waterCount;
           waterGroupIndex++;
           waterStart = -1;
           waterCount = 0;
         }
         if (lavaStart != -1) {
-          const int baseIndex = groupIndex + lavaGroupIndex * 6;
-          groups[baseIndex + 4] = lavaStart;
-          groups[baseIndex + 5] = lavaCount;
+          const int baseIndex = groupIndex2 + lavaGroupIndex * 4;
+          groups2[baseIndex + 2] = lavaStart;
+          groups2[baseIndex + 3] = lavaCount;
           lavaGroupIndex++;
           lavaStart = -1;
           lavaCount = 0;
         }
       }
     }
-    if (landStart != -1) {
-      const int baseIndex = groupIndex + landGroupIndex * 6;
-      groups[baseIndex + 0] = landStart;
-      groups[baseIndex + 1] = landCount;
-    }
     if (waterStart != -1) {
-      const int baseIndex = groupIndex + waterGroupIndex * 6;
-      groups[baseIndex + 2] = waterStart;
-      groups[baseIndex + 3] = waterCount;
+      const int baseIndex = groupIndex2 + waterGroupIndex * 4;
+      groups2[baseIndex + 0] = waterStart;
+      groups2[baseIndex + 1] = waterCount;
     }
     if (lavaStart != -1) {
-      const int baseIndex = groupIndex + lavaGroupIndex * 6;
-      groups[baseIndex + 4] = lavaStart;
-      groups[baseIndex + 5] = lavaCount;
+      const int baseIndex = groupIndex2 + lavaGroupIndex * 4;
+      groups2[baseIndex + 2] = lavaStart;
+      groups2[baseIndex + 3] = lavaCount;
     }
 
-    groupIndex += NUM_RENDER_GROUPS * 6;
+    groupIndex2 += NUM_RENDER_GROUPS * 4;
   }
-  return groupIndex;
 };
 unsigned int cullObjects(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
   const Frustum frustum = Frustum::fromMatrix(Matrix::fromArray(projectionMatrix) *= Matrix::fromArray(matrixWorldInverse));
