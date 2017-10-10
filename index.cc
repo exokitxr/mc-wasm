@@ -38,7 +38,7 @@ void CreateNoiser(const FunctionCallbackInfo<Value>& args) {
   NoiserObject::NewInstance(args);
 }
 
-void MarchCubes(const FunctionCallbackInfo<Value>& args) {
+/* void MarchCubes(const FunctionCallbackInfo<Value>& args) {
   unsigned int positionIndex;
   unsigned int faceIndex;
 
@@ -73,15 +73,13 @@ void MarchCubes(const FunctionCallbackInfo<Value>& args) {
   float *positions = (float *)((char *)positionsBuffer->GetContents().Data() + positionsByteOffset);
   unsigned int *faces = (unsigned int *)((char *)facesBuffer->GetContents().Data() + facesByteOffset);
 
-  // std::cout << "got init " << potential[99] << ":" << potential[100] << ":" << shift[0] << ":" << shift[1] << ":" << shift[2] << "\n";
-
   marchingCubes(dims, potential, shift, indexOffset, positions, faces, positionIndex, faceIndex);
 
   Local<Object> result = Object::New(args.GetIsolate());
   result->Set(positionsString, Float32Array::New(positionsBuffer, positionsByteOffset, positionIndex));
   result->Set(indicesString, Uint32Array::New(facesBuffer, facesByteOffset, faceIndex));
   args.GetReturnValue().Set(result);
-}
+} */
 
 void Objectize(const FunctionCallbackInfo<Value>& args) {
   Local<String> objectsSrcString = V8_STRINGS::objectsSrc.Get(args.GetIsolate());
@@ -434,7 +432,7 @@ void InitAll(Local<Object> exports, Local<Object> module) {
   NODE_SET_METHOD(result, "fastNoise", CreateNoise);
   NODE_SET_METHOD(result, "cachedNoise", CreateCachedNoise);
   NODE_SET_METHOD(result, "noiser", CreateNoiser);
-  NODE_SET_METHOD(result, "marchingCubes", MarchCubes);
+  // NODE_SET_METHOD(result, "marchingCubes", MarchCubes);
   // NODE_SET_METHOD(result, "compose", Compose);
   // NODE_SET_METHOD(result, "tesselate", Tssl);
   NODE_SET_METHOD(result, "objectize", Objectize);
