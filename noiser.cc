@@ -6,6 +6,7 @@
 #include "march.h"
 #include "heightfield.h"
 #include "flod.h"
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <cmath>
 #include <random>
