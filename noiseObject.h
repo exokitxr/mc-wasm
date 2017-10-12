@@ -16,9 +16,11 @@ class NoiseObject : public node::ObjectWrap {
   ~NoiseObject();
 
   double in2D(double x, double y);
+  double in3D(double x, double y, double z);
 
   static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
   static void In2D(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void In3D(const v8::FunctionCallbackInfo<v8::Value>& args);
 };
 
 #endif

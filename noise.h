@@ -11,6 +11,7 @@ class Noise {
   ~Noise();
 
   double in2D(double x, double y);
+  double in3D(double x, double y, double z);
 };
 
 #endif

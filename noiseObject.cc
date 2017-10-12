@@ -25,6 +25,10 @@ double NoiseObject::in2D(double x, double y) {
   return noise.in2D(x, y);
 }
 
+double NoiseObject::in3D(double x, double y, double z) {
+  return noise.in3D(x, y, z);
+}
+
 void NoiseObject::Init(Isolate* isolate) {
   // Prepare constructor template
   Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
@@ -33,6 +37,7 @@ void NoiseObject::Init(Isolate* isolate) {
 
   // Prototype
   NODE_SET_PROTOTYPE_METHOD(tpl, "in2D", In2D);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "in3D", In3D);
 
   constructor.Reset(isolate, tpl->GetFunction());
 }
@@ -86,4 +91,20 @@ void NoiseObject::In2D(const FunctionCallbackInfo<Value>& args) {
 
   NoiseObject* obj = ObjectWrap::Unwrap<NoiseObject>(args.Holder());
   args.GetReturnValue().Set(Number::New(isolate, obj->in2D(args[0]->NumberValue(), args[1]->NumberValue())));
+}
+
+void NoiseObject::In3D(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+
+  if (args.Length() < 3) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
+    return;
+  }
+  if (!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsNumber()) {
+    isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
+    return;
+  }
+
+  NoiseObject* obj = ObjectWrap::Unwrap<NoiseObject>(args.Holder());
+  args.GetReturnValue().Set(Number::New(isolate, obj->in3D(args[0]->NumberValue(), args[1]->NumberValue(), args[2]->NumberValue())));
 }
