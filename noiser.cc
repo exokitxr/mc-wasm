@@ -179,7 +179,7 @@ void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *
     for (int x = 0; x <= NUM_CELLS; x++) {
       const float elevation = elevations[index++];
       for (int y = elevation; y < 64; y++) {
-        if (y < 64 && y >= elevation) {
+        if (y >= elevation) {
           const int index = getEtherIndex(x, y, z);
           water[index] = ether[index] * -1;
         }
@@ -188,7 +188,6 @@ void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *
   }
 
   // lava
-  index = 0;
   for (int doz = -1; doz <= 1; doz++) {
     for (int dox = -1; dox <= 1; dox++) {
       for (int z = 0; z <= NUM_CELLS; z++) {
