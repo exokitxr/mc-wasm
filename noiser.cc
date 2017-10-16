@@ -64,7 +64,7 @@ unsigned char Noiser::getBiome(int x, int z) {
         biome = (unsigned char)BIOME::biRiver;
       }
     }
-    if (temperatureNoise.in2D(x + 1000, z + 1000) < ((4.0 * 16.0) / 255.0)) {
+    if (std::pow(temperatureNoise.in2D(x + 1000, z + 1000), 1.5) < ((4.0 * 16.0) / 255.0)) {
       if (biome == (unsigned char)BIOME::biOcean) {
         biome = (unsigned char)BIOME::biFrozenOcean;
       } else if (biome == (unsigned char)BIOME::biRiver) {
@@ -72,8 +72,8 @@ unsigned char Noiser::getBiome(int x, int z) {
       }
     }
     if (biome == 0xFF) {
-      const int t = (int)std::floor(temperatureNoise.in2D(x + 1000, z + 1000) * 16.0);
-      const int h = (int)std::floor(humidityNoise.in2D(x + 1000, z + 1000) * 16.0);
+      const int t = (int)std::floor(std::pow(temperatureNoise.in2D(x + 1000, z + 1000), 1.5) * 16.0);
+      const int h = (int)std::floor(std::pow(humidityNoise.in2D(x + 1000, z + 1000), 1.5) * 16.0);
       biome = (unsigned char)BIOMES_TEMPERATURE_HUMIDITY[t + 16 * h];
     }
 
