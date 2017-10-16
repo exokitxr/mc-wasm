@@ -32,6 +32,7 @@ class Noiser {
     CachedNoise riverNoise;
     CachedNoise temperatureNoise;
     CachedNoise humidityNoise;
+    CachedNoise lavaNoise;
 
     std::unordered_map<std::pair<int, int>, unsigned char> biomeCache;
     std::unordered_map<std::tuple<unsigned char, int, int>, float> biomeHeightCache;

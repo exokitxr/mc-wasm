@@ -40,8 +40,9 @@ Noiser::Noiser(int seed) :
   caveCenterNoiseZ(rng(), 2, 1),
   oceanNoise(rng(), 0.001, 4),
   riverNoise(rng(), 0.001, 4),
-  temperatureNoise(rng(), 0.00125, 4),
-  humidityNoise(rng(), 0.00125, 4)
+  temperatureNoise(rng(), 0.001, 4),
+  humidityNoise(rng(), 0.001, 4),
+  lavaNoise(rng(), 0.01, 4)
 {}
 
 unsigned char Noiser::getBiome(int x, int z) {
@@ -300,7 +301,7 @@ void Noiser::fillLiquid(int ox, int oz, float *ether, float *elevations, float *
           const int az = ((oz + doz) * NUM_CELLS) + z;
           const float elevation = getElevation(ax, az);
 
-          if (elevation >= 80 && getTemperature(ax + 1000, az + 1000) < 0.235) {
+          if (elevation >= 80 && lavaNoise.in2D(ax + 1000, az + 1000) > 0.8) {
             setLiquid(ox, oz, ax, (int)std::floor(elevation + 1.0), az, lava);
           }
         }
