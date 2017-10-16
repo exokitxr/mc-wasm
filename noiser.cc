@@ -38,10 +38,10 @@ Noiser::Noiser(int seed) :
   caveCenterNoiseX(rng(), 2, 1),
   caveCenterNoiseY(rng(), 2, 1),
   caveCenterNoiseZ(rng(), 2, 1),
-  oceanNoise(rng(), 0.002, 4),
-  riverNoise(rng(), 0.002, 4),
-  temperatureNoise(rng(), 0.002, 4),
-  humidityNoise(rng(), 0.002, 4)
+  oceanNoise(rng(), 0.001, 4),
+  riverNoise(rng(), 0.001, 4),
+  temperatureNoise(rng(), 0.001, 4),
+  humidityNoise(rng(), 0.001, 4)
 {}
 
 unsigned char Noiser::getBiome(int x, int z) {
