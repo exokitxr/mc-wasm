@@ -91,10 +91,10 @@ float Noiser::getBiomeHeight(unsigned char b, int x, int z) {
     float &biomeHeight = biomeHeightCache[key];
 
     const Biome &biome = BIOMES[b];
-    biomeHeight = biome.baseHeight +
+    biomeHeight = std::min<float>(biome.baseHeight +
       elevationNoise1.in2D(x * biome.amps[0][0], z * biome.amps[0][0]) * biome.amps[0][1] +
       elevationNoise2.in2D(x * biome.amps[1][0], z * biome.amps[1][0]) * biome.amps[1][1] +
-      elevationNoise3.in2D(x * biome.amps[2][0], z * biome.amps[2][0]) * biome.amps[2][1];
+      elevationNoise3.in2D(x * biome.amps[2][0], z * biome.amps[2][0]) * biome.amps[2][1], 128 - 0.1);
 
     return biomeHeight;
   }
