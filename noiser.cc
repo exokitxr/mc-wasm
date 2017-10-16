@@ -59,7 +59,7 @@ unsigned char Noiser::getBiome(int x, int z) {
     }
     if (biome == 0xFF) {
       const double n = riverNoise.in2D(x + 1000, z + 1000);
-      const double range = 0.02;
+      const double range = 0.022;
       if (n > 0.5 - range && n < 0.5 + range) {
         biome = (unsigned char)BIOME::biRiver;
       }
