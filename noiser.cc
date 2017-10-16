@@ -40,8 +40,8 @@ Noiser::Noiser(int seed) :
   caveCenterNoiseZ(rng(), 2, 1),
   oceanNoise(rng(), 0.001, 4),
   riverNoise(rng(), 0.001, 4),
-  temperatureNoise(rng(), 0.001, 4),
-  humidityNoise(rng(), 0.001, 4)
+  temperatureNoise(rng(), 0.00125, 4),
+  humidityNoise(rng(), 0.00125, 4)
 {}
 
 unsigned char Noiser::getBiome(int x, int z) {
@@ -54,7 +54,7 @@ unsigned char Noiser::getBiome(int x, int z) {
     unsigned char &biome = biomeCache[key];
 
     biome = 0xFF;
-    if (oceanNoise.in2D(x + 1000, z + 1000) < (90.0 / 255.0)) {
+    if (oceanNoise.in2D(x + 1000, z + 1000) < (80.0 / 255.0)) {
       biome = (unsigned char)BIOME::biOcean;
     }
     if (biome == 0xFF) {
