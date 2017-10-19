@@ -77,12 +77,12 @@ EMSCRIPTEN_KEEPALIVE void blockfield(unsigned int *blocks, unsigned char *blockf
   genBlockfield(blocks, blockfield);
 }
 
-EMSCRIPTEN_KEEPALIVE void cllTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups, int *groups2, unsigned int *groupIndices) {
-  cullTerrain(hmdPosition, projectionMatrix, matrixWorldInverse, mapChunkMeshes, numMapChunkMeshes, groups, groups2, groupIndices[0], groupIndices[1]);
+EMSCRIPTEN_KEEPALIVE void cllTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int frustumCulled, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups, int *groups2, unsigned int *groupIndices) {
+  cullTerrain(hmdPosition, projectionMatrix, matrixWorldInverse, frustumCulled != 0, mapChunkMeshes, numMapChunkMeshes, groups, groups2, groupIndices[0], groupIndices[1]);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int cllObjects(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
-  return cullObjects(hmdPosition, projectionMatrix, matrixWorldInverse, mapChunkMeshes, numMapChunkMeshes, groups);
+EMSCRIPTEN_KEEPALIVE unsigned int cllObjects(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int frustumCulled, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
+  return cullObjects(hmdPosition, projectionMatrix, matrixWorldInverse, frustumCulled != 0, mapChunkMeshes, numMapChunkMeshes, groups);
 }
 
 }

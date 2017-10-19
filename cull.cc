@@ -69,7 +69,7 @@ PeekFace peekFaceSpecs[] = {
 };
 const unsigned int numPeekFaceSpecs = sizeof(peekFaceSpecs) / sizeof(peekFaceSpecs[0]);
 
-void cullTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups, int *groups2, unsigned int &groupIndex, unsigned int &groupIndex2) {
+void cullTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, bool frustumCulled, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups, int *groups2, unsigned int &groupIndex, unsigned int &groupIndex2) {
   const int ox = (int)hmdPosition[0] >> 4;
   const int oy = std::min<int>(std::max<int>(std::floor((int)hmdPosition[1] >> 4), 0), NUM_CHUNKS_HEIGHT - 1);
   const int oz = std::floor((int)hmdPosition[2] >> 4);
@@ -148,7 +148,7 @@ void cullTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorld
                   az * NUM_CELLS + NUM_CELLS_HALF,
                   NUM_CELLS_CUBE
                 );
-                if (frustum.intersectsSphere(boundingSphere)) {
+                if (!frustumCulled || frustum.intersectsSphere(boundingSphere)) {
                   cullQueue.push(newEntry);
                 }
               }
@@ -274,7 +274,7 @@ void cullTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorld
     groupIndex2 += NUM_RENDER_GROUPS * 4;
   }
 };
-unsigned int cullObjects(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
+unsigned int cullObjects(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, bool frustumCulled, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
   const Frustum frustum = Frustum::fromMatrix(Matrix::fromArray(projectionMatrix) *= Matrix::fromArray(matrixWorldInverse));
 
   unsigned int groupIndex = 0;
@@ -301,7 +301,7 @@ unsigned int cullObjects(float *hmdPosition, float *projectionMatrix, float *mat
           z * NUM_CELLS + NUM_CELLS_HALF,
           NUM_CELLS_CUBE
         );
-        if (frustum.intersectsSphere(boundingSphere)) {
+        if (!frustumCulled || frustum.intersectsSphere(boundingSphere)) {
           const int localStart = mapChunkMeshes[mapChunkMeshBaseIndex + 3 + j * 2 + 0];
           const int localCount = mapChunkMeshes[mapChunkMeshBaseIndex + 3 + j * 2 + 1];
           if (start == -1 && localCount > 0) {
