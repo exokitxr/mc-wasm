@@ -22,8 +22,8 @@ EMSCRIPTEN_KEEPALIVE void destroy_noiser(Noiser *noiser) {
   delete noiser;
 }
 
-EMSCRIPTEN_KEEPALIVE void noiser_apply(Noiser *noiser, int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers) {
-  noiser->apply(ox, oz, biomes, fillBiomes, elevations, fillElevations, ethers, fillEther, water, lava, fillLiquid, newEther, numNewEthers);
+EMSCRIPTEN_KEEPALIVE void noiser_apply(Noiser *noiser, int ox, int oz, unsigned char *biomes, unsigned char *temperature, unsigned char *humidity, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers) {
+  noiser->apply(ox, oz, biomes, temperature, humidity, fillBiomes, elevations, fillElevations, ethers, fillEther, water, lava, fillLiquid, newEther, numNewEthers);
 }
 
 EMSCRIPTEN_KEEPALIVE void noiser_fill(Noiser *noiser, int ox, int oz, unsigned char *biomes, float *elevations, float *ethers, float *water, float *lava, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges, float *staticHeightfield, float *colors, unsigned char *peeks) {

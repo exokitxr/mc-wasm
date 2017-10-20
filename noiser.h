@@ -44,7 +44,8 @@ class Noiser {
     float getBiomeHeight(unsigned char b, int x, int z);
     float getElevation(int x, int z);
     double getTemperature(double x, double z);
-    void fillBiomes(int ox, int oz, unsigned char *biomes);
+    double getHumidity(double x, double z);
+    void fillBiomes(int ox, int oz, unsigned char *biomes, unsigned char *temperature, unsigned char *humidity);
     void fillElevations(int ox, int oz, float *elevations);
     void fillEther(int ox, int oz, float *elevations, float *ether);
     void fillLiquid(int ox, int oz, float *ether, float *elevations, float *water, float *lava);
@@ -52,7 +53,7 @@ class Noiser {
     void makeGeometries(int ox, int oy, float *ether, float *water, float *lava, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges);
     void postProcessGeometry(int ox, int oz, unsigned int *attributeRanges, float *positions, float *colors, unsigned char *biomes);
 
-    void apply(int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers);
+    void apply(int ox, int oz, unsigned char *biomes, unsigned char *temperature, unsigned char *humidity, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers);
     void fill(int ox, int oz, unsigned char *biomes, float *elevations, float *ethers, float *water, float *lava, float *positions, unsigned int *indices, unsigned int *attributeRanges, unsigned int *indexRanges, float *staticHeightfield, float *colors, unsigned char *peeks);
 };
 

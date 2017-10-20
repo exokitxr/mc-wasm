@@ -127,17 +127,34 @@ float Noiser::getElevation(int x, int z) {
   }
 }
 
-double Noiser::getTemperature(double x, double z) {
+inline double Noiser::getTemperature(double x, double z) {
   return temperatureNoise.in2D(x, z);
 }
 
-void Noiser::fillBiomes(int ox, int oz, unsigned char *biomes) {
+inline double Noiser::getHumidity(double x, double z) {
+  return humidityNoise.in2D(x, z);
+}
+
+void Noiser::fillBiomes(int ox, int oz, unsigned char *biomes, unsigned char *temperature, unsigned char *humidity) {
+  float totalTemperature = 0;
+  float totalHumidity = 0;
+
   unsigned int index = 0;
   for (int z = 0; z < NUM_CELLS_OVERSCAN; z++) {
     for (int x = 0; x < NUM_CELLS_OVERSCAN; x++) {
-      biomes[index++] = getBiome((ox * NUM_CELLS) + x, (oz * NUM_CELLS) + z);
+      int ax = (ox * NUM_CELLS) + x;
+      int az = (oz * NUM_CELLS) + z;
+      biomes[index++] = getBiome(ax, az);
+      totalTemperature += this->getTemperature(ax, az);
+      totalHumidity += this->getHumidity(ax, az);
     }
   }
+
+  totalTemperature /= (NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN);
+  totalHumidity /= (NUM_CELLS_OVERSCAN * NUM_CELLS_OVERSCAN);
+
+  *temperature = (unsigned char)(std::min<float>(totalTemperature, 1.0) * 255.0);
+  *humidity = (unsigned char)(std::min<float>(totalHumidity, 1.0) * 255.0);
 }
 
 void Noiser::fillElevations(int ox, int oz, float *elevations) {
@@ -489,9 +506,9 @@ void Noiser::postProcessGeometry(int ox, int oz, unsigned int *attributeRanges, 
   }
 }
 
-void Noiser::apply(int ox, int oz, unsigned char *biomes, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers) {
+void Noiser::apply(int ox, int oz, unsigned char *biomes, unsigned char *temperature, unsigned char *humidity, bool fillBiomes, float *elevations, bool fillElevations, float *ethers, bool fillEther, float *water, float *lava, bool fillLiquid, float *newEther, unsigned int numNewEthers) {
   if (fillBiomes) {
-    this->fillBiomes(ox, oz, biomes);
+    this->fillBiomes(ox, oz, biomes, temperature, humidity);
   }
   if (fillElevations) {
     this->fillElevations(ox, oz, elevations);

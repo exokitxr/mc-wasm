@@ -154,7 +154,7 @@ void NoiserObject::GetTemperature(const FunctionCallbackInfo<Value>& args) {
 void NoiserObject::Apply(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  if (args.Length() < 13) {
+  if (args.Length() < 15) {
     isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongNumberOfArguments.Get(isolate)));
     return;
   }
@@ -164,16 +164,18 @@ void NoiserObject::Apply(const FunctionCallbackInfo<Value>& args) {
     !args[0]->IsNumber() ||
     !args[1]->IsNumber() ||
     !args[2]->IsUint8Array() ||
-    !args[3]->IsBoolean() ||
-    !args[4]->IsFloat32Array() ||
+    !args[3]->IsUint8Array() ||
+    !args[4]->IsUint8Array() ||
     !args[5]->IsBoolean() ||
     !args[6]->IsFloat32Array() ||
     !args[7]->IsBoolean() ||
     !args[8]->IsFloat32Array() ||
-    !args[9]->IsFloat32Array() ||
-    !args[10]->IsBoolean() ||
+    !args[9]->IsBoolean() ||
+    !args[10]->IsFloat32Array() ||
     !args[11]->IsFloat32Array() ||
-    !args[12]->IsNumber()
+    !args[12]->IsBoolean() ||
+    !args[13]->IsFloat32Array() ||
+    !args[14]->IsNumber()
   ) {
     isolate->ThrowException(Exception::TypeError(V8_STRINGS::wrongArguments.Get(isolate)));
     return;
@@ -189,38 +191,46 @@ void NoiserObject::Apply(const FunctionCallbackInfo<Value>& args) {
   unsigned int biomesByteOffset = args[2]->ToObject()->Get(byteOffsetString)->Uint32Value();
   unsigned char *biomes = (unsigned char *)((char *)biomesBuffer->GetContents().Data() + biomesByteOffset);
 
-  bool fillBiomes = args[3]->BooleanValue();
+  Local<ArrayBuffer> temperatureBuffer = Local<ArrayBuffer>::Cast(args[3]->ToObject()->Get(bufferString));
+  unsigned int temperatureByteOffset = args[3]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *temperature = (unsigned char *)((char *)temperatureBuffer->GetContents().Data() + temperatureByteOffset);
 
-  Local<ArrayBuffer> elevationsBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
-  unsigned int elevationsByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> humidityBuffer = Local<ArrayBuffer>::Cast(args[4]->ToObject()->Get(bufferString));
+  unsigned int humidityByteOffset = args[4]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  unsigned char *humidity = (unsigned char *)((char *)humidityBuffer->GetContents().Data() + humidityByteOffset);
+
+  bool fillBiomes = args[5]->BooleanValue();
+
+  Local<ArrayBuffer> elevationsBuffer = Local<ArrayBuffer>::Cast(args[6]->ToObject()->Get(bufferString));
+  unsigned int elevationsByteOffset = args[6]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *elevations = (float *)((char *)elevationsBuffer->GetContents().Data() + elevationsByteOffset);
 
-  bool fillElevations = args[5]->BooleanValue();
+  bool fillElevations = args[7]->BooleanValue();
 
-  Local<ArrayBuffer> ethersBuffer = Local<ArrayBuffer>::Cast(args[6]->ToObject()->Get(bufferString));
-  unsigned int ethersByteOffset = args[6]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> ethersBuffer = Local<ArrayBuffer>::Cast(args[8]->ToObject()->Get(bufferString));
+  unsigned int ethersByteOffset = args[8]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *ethers = (float *)((char *)ethersBuffer->GetContents().Data() + ethersByteOffset);
 
-  bool fillEther = args[7]->BooleanValue();
+  bool fillEther = args[9]->BooleanValue();
 
-  Local<ArrayBuffer> waterBuffer = Local<ArrayBuffer>::Cast(args[8]->ToObject()->Get(bufferString));
-  unsigned int waterByteOffset = args[8]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> waterBuffer = Local<ArrayBuffer>::Cast(args[10]->ToObject()->Get(bufferString));
+  unsigned int waterByteOffset = args[10]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *water = (float *)((char *)waterBuffer->GetContents().Data() + waterByteOffset);
 
-  Local<ArrayBuffer> lavaBuffer = Local<ArrayBuffer>::Cast(args[9]->ToObject()->Get(bufferString));
-  unsigned int lavaByteOffset = args[9]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> lavaBuffer = Local<ArrayBuffer>::Cast(args[11]->ToObject()->Get(bufferString));
+  unsigned int lavaByteOffset = args[11]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *lava = (float *)((char *)lavaBuffer->GetContents().Data() + lavaByteOffset);
 
-  bool fillLiquid = args[10]->BooleanValue();
+  bool fillLiquid = args[12]->BooleanValue();
 
-  Local<ArrayBuffer> newEtherBuffer = Local<ArrayBuffer>::Cast(args[11]->ToObject()->Get(bufferString));
-  unsigned int newEtherByteOffset = args[11]->ToObject()->Get(byteOffsetString)->Uint32Value();
+  Local<ArrayBuffer> newEtherBuffer = Local<ArrayBuffer>::Cast(args[13]->ToObject()->Get(bufferString));
+  unsigned int newEtherByteOffset = args[13]->ToObject()->Get(byteOffsetString)->Uint32Value();
   float *newEther = (float *)((char *)newEtherBuffer->GetContents().Data() + newEtherByteOffset);
 
-  unsigned int numNewEthers = args[12]->Uint32Value();
+  unsigned int numNewEthers = args[14]->Uint32Value();
 
   NoiserObject* obj = ObjectWrap::Unwrap<NoiserObject>(args.Holder());
-  obj->apply(ox, oz, biomes, fillBiomes, elevations, fillElevations, ethers, fillEther, water, lava, fillLiquid, newEther, numNewEthers);
+  obj->apply(ox, oz, biomes, temperature, humidity, fillBiomes, elevations, fillElevations, ethers, fillEther, water, lava, fillLiquid, newEther, numNewEthers);
 }
 
 void NoiserObject::Fill(const FunctionCallbackInfo<Value>& args) {
