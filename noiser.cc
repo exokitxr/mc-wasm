@@ -368,12 +368,12 @@ void Noiser::makeGeometries(int ox, int oy, float *ether, float *water, float *l
       NUM_CELLS + 1,
       NUM_CELLS + 1
     };
-    float *potential = ether;
     int shift[3] = {
       0,
       NUM_CELLS * i,
       0
     };
+    float *potential = ether + (shift[1] * dims[0] * dims[1]);
     int indexOffset = attributeIndex / 3;
     float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
     unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
@@ -400,12 +400,12 @@ void Noiser::makeGeometries(int ox, int oy, float *ether, float *water, float *l
         NUM_CELLS + 1,
         NUM_CELLS + 1
       };
-      float *potential = water;
       int shift[3] = {
         0,
         NUM_CELLS * i,
         0
       };
+      float *potential = water + (shift[1] * dims[0] * dims[1]);
       int indexOffset = attributeIndex / 3;
       float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
       unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
@@ -430,12 +430,12 @@ void Noiser::makeGeometries(int ox, int oy, float *ether, float *water, float *l
         NUM_CELLS + 1,
         NUM_CELLS + 1
       };
-      float *potential = lava;
       int shift[3] = {
         0,
         NUM_CELLS * i,
         0
       };
+      float *potential = lava + (shift[1] * dims[0] * dims[1]);
       int indexOffset = attributeIndex / 3;
       float *positions = (float *)((char *)positionsBuffer + attributeIndex * 4);
       unsigned int *faces = (unsigned int *)((char *)indicesBuffer + indexIndex * 4);
@@ -528,7 +528,7 @@ void Noiser::fill(int ox, int oz, unsigned char *biomes, float *elevations, floa
   this->makeGeometries(ox, oz, ethers, water, lava, positions, indices, attributeRanges, indexRanges);
 
   unsigned int numIndices = indexRanges[5 * 6 + 4] + indexRanges[5 * 6 + 5];
-  genHeightfield(positions, indices, numIndices, staticHeightfield);
+  genHeightfield(positions, indices, numIndices, staticHeightfield); // XXX can be optimized out, allowing single-pass offsetted geometry tesselation
 
   this->postProcessGeometry(ox, oz, attributeRanges, positions, colors, biomes);
 

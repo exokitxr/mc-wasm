@@ -2,6 +2,7 @@
 #define VECTOR_H
 
 #include <cmath>
+#include <vector>
 #include <algorithm>
 
 // 3D Vector Class
@@ -177,6 +178,35 @@ class Vec {
           z = std::max<float>(z, o.z);
           return *this;
         }
+
+        float distanceTo(const Vec &v) const {
+          return (*this - v).magnitude();
+        }
+
+        float distanceToSq(const Vec &v) const {
+          return (*this - v).magnitude_sqr();
+        }
+
+        /* Vec &applyQuaternion(const Quat &q) {
+          float x = this->x, y = this->y, z = this->z;
+          float qx = q.x, qy = q.y, qz = q.z, qw = q.w;
+
+          // calculate quat * vector
+
+          float ix = qw * x + qy * z - qz * y;
+          float iy = qw * y + qz * x - qx * z;
+          float iz = qw * z + qx * y - qy * x;
+          float iw = - qx * x - qy * y - qz * z;
+
+          // calculate result * inverse quat
+
+          this->x = ix * qw + iw * - qx + iy * - qz - iz * - qy;
+          this->y = iy * qw + iw * - qy + iz * - qx - ix * - qz;
+          this->z = iz * qw + iw * - qz + ix * - qy - iy * - qx;
+
+          return *this;
+
+        } */
 };
 
 class Quat {
@@ -241,6 +271,42 @@ class Tri {
         return result;
       }
       return Vec(0, 0, 0);
+    }
+
+    Vec midpoint() const {
+      Vec result(a);
+      result += b;
+      result += c;
+      result *= 1.0/3.0;
+      return result;
+    }
+
+    Vec baryCoord(const Vec &point) const {
+      const Vec v0 = c - a;
+      const Vec v1 = b - a;
+      const Vec v2 = point - a;
+
+      const float dot00 = v0 * v0;
+      const float dot01 = v0 * v1;
+      const float dot02 = v0 * v2;
+      const float dot11 = v1 * v1;
+      const float dot12 = v1 * v2;
+
+      const float denom = dot00 * dot11 - dot01 * dot01;
+
+      // collinear or singular triangle
+      if (denom == 0.0) {
+        // arbitrary location outside of triangle?
+        // not sure if this is the best idea, maybe should be returning undefined
+        return Vec(-1.0, -1.0, -1.0 );
+      }
+
+      const float invDenom = 1.0 / denom;
+      const float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+      const float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+      // barycentric coordinates must always sum to 1
+      return Vec(1.0 - u - v, v, u);
     }
 };
 
@@ -322,6 +388,77 @@ class Sphere {
     Sphere(float x, float y, float z, float radius) : center(x, y, z), radius(radius) {}
 };
 
+class Ray {
+  public:
+    Vec origin;
+    Vec direction;
+
+    Ray() {}
+
+    Ray(const Vec &origin, const Vec &direction) : origin(origin), direction(direction) {}
+
+    Vec at(float t) const {
+      return (this->direction * t) + this->origin;
+    }
+
+    bool intersectTriangle(const Tri &tri, Vec &result) const {
+      Vec edge1 = tri.b - tri.a;
+      Vec edge2 = tri.c - tri.a;
+      Vec normal = edge1 ^ edge2;
+
+      // Solve Q + t*D = b1*E1 + b2*E2 (Q = kDiff, D = ray direction,
+      // E1 = kEdge1, E2 = kEdge2, N = Cross(E1,E2)) by
+      //   |Dot(D,N)|*b1 = sign(Dot(D,N))*Dot(D,Cross(Q,E2))
+      //   |Dot(D,N)|*b2 = sign(Dot(D,N))*Dot(D,Cross(E1,Q))
+      //   |Dot(D,N)|*t = -sign(Dot(D,N))*Dot(Q,N)
+      float DdN = this->direction * normal;
+      float sign;
+
+      if (DdN > 0) {
+        return false;
+        // if ( backfaceCulling ) return false;
+        // sign = 1;
+      } else if ( DdN < 0 ) {
+        sign = -1;
+        DdN = -DdN;
+      } else {
+        return false;
+      }
+
+      Vec diff = this->origin - tri.a;
+      float DdQxE2 = sign * (this->direction * (diff ^ edge2));
+
+      // b1 < 0, no intersection
+      if (DdQxE2 < 0) {
+        return false;
+      }
+
+      float DdE1xQ = sign * (this->direction * (edge1 ^ diff));
+
+      // b2 < 0, no intersection
+      if ( DdE1xQ < 0 ) {
+        return false;
+      }
+
+      // b1+b2 > 1, no intersection
+      if (DdQxE2 + DdE1xQ > DdN) {
+        return false;
+      }
+
+      // Line intersects triangle, check if ray does.
+      float QdN = -sign * (diff * normal);
+
+      // t < 0, no intersection
+      if (QdN < 0) {
+        return false;
+      }
+
+      // Ray intersects triangle.
+      result = this->at(QdN / DdN);
+      return true;
+    }
+};
+
 class Plane {
   public:
     Vec normal;
@@ -337,6 +474,13 @@ class Plane {
       return *this;
     }
 
+    Plane &setFromNormalAndCoplanarPoint(const Vec &normal, const Vec& point) {
+      this->normal = normal;
+      this->constant = -(point * normal);
+
+      return *this;
+    }
+
     Plane &normalize() {
       float inverseNormalLength = 1.0 / normal.magnitude();
       normal *= inverseNormalLength;
@@ -348,7 +492,69 @@ class Plane {
     float distanceToPoint(const Vec &point) const {
       return normal * point + constant;
     }
+
+    /* bool intersectLine(const Line &line, Vec &result) const {
+      Vec direction = line.delta();
+
+      float denominator = this->normal * direction;
+      if (denominator == 0.0) {
+        // line is coplanar, return origin
+        if (this->distanceToPoint(line.start) == 0.0) {
+          result = line.start;
+          return true;
+        }
+
+        // Unsure if this is the correct method to handle this case.
+        return false;
+      }
+
+      float t = -((line.start * this->normal) + this->constant) / denominator;
+      if (t < 0.0 || t > 1.0) {
+        return false;
+      }
+
+      result = (direction * t) + line.start;
+      return true;
+    }
+
+    Vec projectPoint(const Vec &p) const {
+      return (this->normal * -this->distanceToPoint(p)) + p;
+    } */
 };
+
+/* class Box {
+  public:
+    Vec position;
+    Quat rotation;
+    Vec size;
+    Vec points[4 * 3];
+
+    Box(const Vec &position, const Quat &rotation, const Vec &size) : position(position), rotation(rotation), size(size) {
+      unsigned int index = 0;
+      for (int dy = 0; dy <= 2; dy++) {
+        for (int dz = -1; dz <= 1; dz++) {
+          if (dz == 0) continue;
+          for (int dx = -1; dx <= 1; dx++) {
+            if (dx == 0) continue;
+
+            Vec point(this->position);
+            point += Vec((this->size.x / 2.0) * dx, -1.6 + (this->size.y / 2.0) * dy, (this->size.z / 2.0) * dz);//.applyQuaternion(this->rotation);
+            points[index++] = point;
+          }
+        }
+      }
+    }
+
+    Box &operator+=(const Vec &v) {
+      position += v;
+
+      for (unsigned int i = 0; i < (4 * 3); i++) {
+        points[i] += v;
+      }
+
+      return *this;
+    }
+}; */
 
 class Frustum {
   public:

@@ -1,6 +1,7 @@
 #include <emscripten.h>
 #include "util.h"
 #include "compose.h"
+#include "march.h"
 #include "light.h"
 #include "heightfield.h"
 #include "cull.h"
@@ -83,6 +84,16 @@ EMSCRIPTEN_KEEPALIVE void cllTerrain(float *hmdPosition, float *projectionMatrix
 
 EMSCRIPTEN_KEEPALIVE unsigned int cllObjects(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, int frustumCulled, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups) {
   return cullObjects(hmdPosition, projectionMatrix, matrixWorldInverse, frustumCulled != 0, mapChunkMeshes, numMapChunkMeshes, groups);
+}
+
+EMSCRIPTEN_KEEPALIVE void cllideBoxEther(int dims[3], float *potential, int shift[3], float *positionSpec, unsigned int *result) {
+  bool collided;
+  bool floored;
+  bool ceiled;
+  collideBoxEther(dims, potential, shift, positionSpec, collided, floored, ceiled);
+  result[0] = (unsigned int)collided;
+  result[1] = (unsigned int)floored;
+  result[2] = (unsigned int)ceiled;
 }
 
 }
