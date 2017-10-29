@@ -400,6 +400,8 @@ void collideBoxEther(int dims[3], float *potential, int shift[3], float *positio
   collided = false;
   floored = false;
   ceiled = false;
+
+  // horizontal
   {
     for (int dy = 1; dy <= 2; dy++) {
       // back-front
@@ -478,6 +480,7 @@ void collideBoxEther(int dims[3], float *potential, int shift[3], float *positio
       }
     }
   }
+  // up
   {
     const Ray topLeftRay(Vec(position.x - 0.5, position.y + 0.4 - 1, position.z - 0.5), Vec(0, 1, 0));
     const Ray topRightRay(Vec(position.x + 0.5, position.y + 0.4 - 1, position.z - 0.5), Vec(0, 1, 0));
@@ -543,6 +546,7 @@ void collideBoxEther(int dims[3], float *potential, int shift[3], float *positio
       position += maxRestitutionVector;
     }
   }
+  // down
   {
     const Ray topLeftRay(Vec(position.x - 0.5, position.y + 0.4 - 1, position.z - 0.5), Vec(0, -1, 0));
     const Ray topRightRay(Vec(position.x + 0.5, position.y + 0.4 - 1, position.z - 0.5), Vec(0, -1, 0));
