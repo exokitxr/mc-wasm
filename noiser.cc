@@ -127,11 +127,11 @@ float Noiser::getElevation(int x, int z) {
   }
 }
 
-inline double Noiser::getTemperature(double x, double z) {
+double Noiser::getTemperature(double x, double z) {
   return temperatureNoise.in2D(x + 1000, z + 1000);
 }
 
-inline double Noiser::getHumidity(double x, double z) {
+double Noiser::getHumidity(double x, double z) {
   return humidityNoise.in2D(x + 1000, z + 1000);
 }
 
