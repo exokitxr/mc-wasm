@@ -100,4 +100,8 @@ EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, int shi
   marchingCubes(dims, potential, shift, indexOffset, positions, faces, *positionIndex, *faceIndex);
 }
 
+EMSCRIPTEN_KEEPALIVE void doFree(void *ptr) {
+  free(ptr);
+}
+
 }
