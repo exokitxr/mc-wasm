@@ -100,6 +100,10 @@ EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, float s
   marchingCubes(dims, potential, shift, indexOffset, positions, faces, *positionIndex, *faceIndex);
 }
 
+EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int *indices, unsigned int numPositions, unsigned int numIndices, float origin[3], float direction[3], float *positionSpec) {
+  collide(positions, indices, numPositions, numIndices, origin, direction, positionSpec);
+}
+
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
   return malloc(size);
 }

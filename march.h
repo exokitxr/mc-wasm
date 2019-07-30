@@ -2,6 +2,6 @@
 #define MARCH_H
 
 void marchingCubes(int dims[3], float *potential, float shift[3], int indexOffset, float *positions, unsigned int *faces, unsigned int &positionIndex, unsigned int &faceIndex);
-void collideBoxEther(int dims[3], float *potential, float shift[3], float *positionSpec, bool &collided, bool &floored, bool &ceiled);
+void collide(float *positions, unsigned int *indices, unsigned int numPositions, unsigned int numIndices, float origin[3], float direction[3], float *positionSpec);
 
 #endif
