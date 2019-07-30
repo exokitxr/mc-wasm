@@ -1,16 +1,16 @@
 #include <emscripten.h>
-#include "util.h"
-#include "compose.h"
+#include <cstdlib>
+// #include "util.h"
+// #include "compose.h"
 #include "march.h"
-#include "light.h"
-#include "heightfield.h"
-#include "cull.h"
-#include "noiser.h"
-// #include <iostream>
+// #include "light.h"
+// #include "heightfield.h"
+// #include "cull.h"
+// #include "noiser.h"
 
 extern "C" {
 
-int main() {
+/* int main() {
   // std::cout << "main" << "\n";
   initUtil();
 }
@@ -94,7 +94,7 @@ EMSCRIPTEN_KEEPALIVE void cllideBoxEther(int dims[3], float *potential, int shif
   result[0] = (unsigned int)collided;
   result[1] = (unsigned int)floored;
   result[2] = (unsigned int)ceiled;
-}
+} */
 
 EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, int shift[3], int indexOffset, float *positions, unsigned int *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
   marchingCubes(dims, potential, shift, indexOffset, positions, faces, *positionIndex, *faceIndex);
