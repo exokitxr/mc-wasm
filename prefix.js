@@ -1,1 +1,1 @@
-wasmModule('vxl', function(Module) {
+wasmModule('mc', function(Module) {
