@@ -96,7 +96,7 @@ EMSCRIPTEN_KEEPALIVE void cllideBoxEther(int dims[3], float *potential, int shif
   result[2] = (unsigned int)ceiled;
 } */
 
-EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, int shift[3], int indexOffset, float *positions, unsigned int *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
+EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, float shift[3], int indexOffset, float *positions, unsigned int *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
   marchingCubes(dims, potential, shift, indexOffset, positions, faces, *positionIndex, *faceIndex);
 }
 

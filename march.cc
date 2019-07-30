@@ -317,7 +317,7 @@ int edgeIndex[12][2] = {
   {3,7}
 };
 
-void marchingCubes(int dims[3], float *potential, int shift[3], int indexOffset, float *positions, unsigned int *faces, unsigned int &positionIndex, unsigned int &faceIndex) {
+void marchingCubes(int dims[3], float *potential, float shift[3], int indexOffset, float *positions, unsigned int *faces, unsigned int &positionIndex, unsigned int &faceIndex) {
   positionIndex = 0;
   faceIndex = 0;
 
@@ -376,7 +376,7 @@ void marchingCubes(int dims[3], float *potential, int shift[3], int indexOffset,
   }
 }
 
-void collideBoxEther(int dims[3], float *potential, int shift[3], float *positionSpec, bool &collided, bool &floored, bool &ceiled) {
+void collideBoxEther(int dims[3], float *potential, float shift[3], float *positionSpec, bool &collided, bool &floored, bool &ceiled) {
   float positions[8 * 1024];
   unsigned int indices[8 * 1024];
   unsigned int numPositions;
