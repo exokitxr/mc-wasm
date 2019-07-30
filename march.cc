@@ -392,7 +392,7 @@ void collide(float *positions, unsigned int *indices, unsigned int numPositions,
     ));
   }
 
-  const Ray ray(Vec(origin[0], origin[1], origin[2]), Vec(direction[0], direction[1], direction[1]));
+  const Ray ray(Vec(origin[0], origin[1], origin[2]), Vec(direction[0], direction[1], direction[2]));
 
   for (const Tri &triangle : triangles) {
     Vec intersectionVector;
