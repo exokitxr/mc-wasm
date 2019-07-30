@@ -369,8 +369,8 @@ void marchingCubes(int dims[3], float *potential, int shift[3], int indexOffset,
     int *f = triTable[cube_index];
     for(int i=0;f[i]!=-1;i+=3) {
       faces[faceIndex] = edges[f[i]] + indexOffset;
-      faces[faceIndex + 1] = edges[f[i+1]] + indexOffset;
-      faces[faceIndex + 2] = edges[f[i+2]] + indexOffset;
+      faces[faceIndex + 1] = edges[f[i+2]] + indexOffset;
+      faces[faceIndex + 2] = edges[f[i+1]] + indexOffset;
       faceIndex += 3;
     }
   }
