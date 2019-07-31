@@ -382,6 +382,8 @@ void collide(float *positions, unsigned int *indices, unsigned int numPositions,
   positionSpec[1] = std::numeric_limits<float>::quiet_NaN();
   positionSpec[2] = std::numeric_limits<float>::quiet_NaN();
 
+  float closestDistance = std::numeric_limits<float>::infinity();
+
   std::vector<Tri> triangles;
   triangles.reserve(numIndices / 3);
   for (unsigned int i = 0; i < numIndices; i += 3) {
@@ -397,10 +399,13 @@ void collide(float *positions, unsigned int *indices, unsigned int numPositions,
   for (const Tri &triangle : triangles) {
     Vec intersectionVector;
     if (ray.intersectTriangle(triangle, intersectionVector)) {
-      positionSpec[0] = intersectionVector.x;
-      positionSpec[1] = intersectionVector.y;
-      positionSpec[2] = intersectionVector.z;
-      return;
+      const float distance = intersectionVector.magnitude();
+      if (distance < closestDistance) {
+        positionSpec[0] = intersectionVector.x;
+        positionSpec[1] = intersectionVector.y;
+        positionSpec[2] = intersectionVector.z;
+        closestDistance = distance;
+      }
     }
   }
 }
