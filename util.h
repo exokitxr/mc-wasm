@@ -3,10 +3,10 @@
 
 #include <cmath>
 
-const int NUM_CELLS = 16;
+const int NUM_CELLS = 8;
 const int OVERSCAN = 1;
 const int NUM_CELLS_OVERSCAN = NUM_CELLS + OVERSCAN;
-const int NUM_CELLS_HEIGHT = 128;
+const int NUM_CELLS_HEIGHT = NUM_CELLS*10;
 const int NUM_CHUNKS_HEIGHT = NUM_CELLS_HEIGHT / NUM_CELLS;
 const int NUM_CELLS_HALF = NUM_CELLS / 2;
 const float NUM_CELLS_CUBE = sqrt((float)NUM_CELLS_HALF * (float)NUM_CELLS_HALF * 3.0f);
@@ -29,6 +29,9 @@ int getLightsArrayIndex(int x, int z);
 int getLightsIndex(int x, int y, int z);
 int getTopHeightfieldIndex(int x, int z);
 int getStaticHeightfieldIndex(int x, int z);
+
+#define INNER_COORD(x) (x) - ((x) & 0xFFFFFFF8);
+#define OUTER_COORD(x) ((int)(x) >> 3);
 
 enum class PEEK_FACES : int {
   FRONT = 0,

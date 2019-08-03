@@ -175,7 +175,7 @@ void compose(
     if (n != 0) {
       float *positionBuffer = (float *)((char *)objectsSrc + objectsSrcOffset);
       const float y = positionBuffer[1];
-      const int chunkIndex = std::min<int>(std::max<int>(y, 0), NUM_CELLS_HEIGHT - 1) >> 4;
+      const int chunkIndex = OUTER_COORD(std::min<int>(std::max<int>(y, 0), NUM_CELLS_HEIGHT - 1));
       objectsArray[chunkIndex].push_back(i);
     }
 
@@ -190,7 +190,7 @@ void compose(
     if (n != 0) {
       float *positionBuffer = (float *)((char *)vegetationsSrc + vegetationsSrcOffset);
       const float y = positionBuffer[1];
-      const int chunkIndex = std::min<int>(std::max<int>(y, 0), NUM_CELLS_HEIGHT - 1) >> 4;
+      const int chunkIndex = OUTER_COORD(std::min<int>(std::max<int>(y, 0), NUM_CELLS_HEIGHT - 1));
       vegetationsArray[chunkIndex].push_back(i);
     }
 

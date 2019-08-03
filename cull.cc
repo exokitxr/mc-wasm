@@ -70,9 +70,9 @@ PeekFace peekFaceSpecs[] = {
 const unsigned int numPeekFaceSpecs = sizeof(peekFaceSpecs) / sizeof(peekFaceSpecs[0]);
 
 void cullTerrain(float *hmdPosition, float *projectionMatrix, float *matrixWorldInverse, bool frustumCulled, int *mapChunkMeshes, unsigned int numMapChunkMeshes, int *groups, int *groups2, unsigned int &groupIndex, unsigned int &groupIndex2) {
-  const int ox = (int)hmdPosition[0] >> 4;
-  const int oy = std::min<int>(std::max<int>(std::floor((int)hmdPosition[1] >> 4), 0), NUM_CHUNKS_HEIGHT - 1);
-  const int oz = std::floor((int)hmdPosition[2] >> 4);
+  const int ox = OUTER_COORD((int)hmdPosition[0]);
+  const int oy = std::min<int>(std::max<int>(OUTER_COORD((int)hmdPosition[1]), 0), NUM_CHUNKS_HEIGHT - 1);
+  const int oz = OUTER_COORD((int)hmdPosition[2]);
 
   std::unordered_map<std::tuple<int, int, int>, TerrainMapChunkMesh> mapChunkMeshMap;
   mapChunkMeshMap.reserve(512 * NUM_CELLS_HEIGHT);

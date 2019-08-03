@@ -9,10 +9,10 @@
 CachedNoise::CachedNoise(int s, double frequency, int octaves) : Noise(s, frequency, octaves) {}
 
 double CachedNoise::in2D(int x, int z) {
-  const int ox = x >> 4;
-  const int oz = z >> 4;
-  const int ax = x - (x & 0xFFFFFFF0);
-  const int az = z - (z & 0xFFFFFFF0);
+  const int ox = OUTER_COORD(x);
+  const int oz = OUTER_COORD(z);
+  const int ax = INNER_COORD(x);
+  const int az = INNER_COORD(z);
   const int index = ax + az * NUM_CELLS;
 
   const std::pair<int, int> key(ox, oz);

@@ -17,8 +17,8 @@ class LightSource {
 };
 
 inline bool isOccluded(int ox, int oz, int x, int y, int z, float **etherArray, unsigned int **blocksArray) {
-  const int lax = (x - (ox - 1) * NUM_CELLS) >> 4;
-  const int laz = (z - (oz - 1) * NUM_CELLS) >> 4;
+  const int lax = OUTER_COORD((x - (ox - 1) * NUM_CELLS));
+  const int laz = OUTER_COORD((z - (oz - 1) * NUM_CELLS));
   const int arrayIndex = getLightsArrayIndex(lax, laz);
 
   const int lx = x - (x & 0xFFFFFFF0);
@@ -37,8 +37,8 @@ inline bool isOccluded(int ox, int oz, int x, int y, int z, float **etherArray, 
 
 inline void tryQueue(int ox, int oz, int x, int y, int z, char v, bool origin, int minX, int maxX, int minY, int maxY, int minZ, int maxZ, float **etherArray, unsigned int **blocksArray, std::queue<LightSource> &queue, unsigned char **lightsArray) {
   if (x >= minX && x < maxX && y >= minY && y <= maxY && z >= minZ && z < maxZ && v > 0) {
-    const int lax = (x - (ox - 1) * NUM_CELLS) >> 4;
-    const int laz = (z - (oz - 1) * NUM_CELLS) >> 4;
+    const int lax = OUTER_COORD((x - (ox - 1) * NUM_CELLS));
+    const int laz = OUTER_COORD((z - (oz - 1) * NUM_CELLS));
     const int lightsArrayIndex = getLightsArrayIndex(lax, laz);
     unsigned char *lights = lightsArray[lightsArrayIndex];
 
@@ -134,8 +134,8 @@ bool getLightSources(int ox, int oz, float **lavaArray, float **objectLightsArra
 }
 
 inline void setLight(int ox, int oz, int x, int y, int z, unsigned char v, unsigned char **lightsArray) {
-  const int lax = (x - (ox - 1) * NUM_CELLS) >> 4;
-  const int laz = (z - (oz - 1) * NUM_CELLS) >> 4;
+  const int lax = OUTER_COORD((x - (ox - 1) * NUM_CELLS));
+  const int laz = OUTER_COORD((z - (oz - 1) * NUM_CELLS));
   const int lightsArrayIndex = getLightsArrayIndex(lax, laz);
   unsigned char *lights = lightsArray[lightsArrayIndex];
 
@@ -149,8 +149,8 @@ inline void setLight(int ox, int oz, int x, int y, int z, unsigned char v, unsig
 }
 
 inline unsigned char getLight(int ox, int oz, int x, int y, int z, unsigned char **lightsArray) {
-  const int lax = (x - (ox - 1) * NUM_CELLS) >> 4;
-  const int laz = (z - (oz - 1) * NUM_CELLS) >> 4;
+  const int lax = OUTER_COORD((x - (ox - 1) * NUM_CELLS));
+  const int laz = OUTER_COORD((z - (oz - 1) * NUM_CELLS));
   const int lightsArrayIndex = getLightsArrayIndex(lax, laz);
   unsigned char *lights = lightsArray[lightsArrayIndex];
 
