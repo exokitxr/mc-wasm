@@ -318,10 +318,11 @@ int edgeIndex[12][2] = {
   {3,7}
 };
 
-void marchingCubes(int dims[3], float *potential, float shift[3], int indexOffset, float *positions, float *coords, unsigned int *faces, unsigned int &positionIndex, unsigned int &coordIndex, unsigned int &faceIndex) {
-  positionIndex = 0;
-  faceIndex = 0;
-  coordIndex = 0;
+void marchingCubes(int dims[3], float *potential, float shift[3], float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int &positionIndex, unsigned int &barycentricIndex, unsigned int &uvIndex, unsigned int &uvIndex2) {
+  std::vector<float> positions2(1024 * 1024);
+  unsigned int positionIndex2 = 0;
+  std::vector<unsigned int> faces(1024 * 1024);
+  unsigned int faceIndex = 0;
 
   int n = 0;
   float grid[8] = {0};
@@ -354,7 +355,7 @@ void marchingCubes(int dims[3], float *potential, float shift[3], int indexOffse
       if((edge_mask & (1<<i)) == 0) {
         continue;
       }
-      edges[i] = positionIndex / 3;
+      edges[i] = positionIndex2 / 3;
       int *e = edgeIndex[i];
       int *p0 = cubeVerts[e[0]];
       int *p1 = cubeVerts[e[1]];
@@ -363,25 +364,90 @@ void marchingCubes(int dims[3], float *potential, float shift[3], int indexOffse
       float d = a - b;
       float t = a / d;
       for(int j=0; j<3; ++j) {
-        positions[positionIndex + j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) + shift[j];
+        positions2[positionIndex2 + j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) + shift[j];
       }
-      positionIndex += 3;
+      positionIndex2 += 3;
     }
     //Add faces
     int *f = triTable[cube_index];
     for(int i=0;f[i]!=-1;i+=3) {
-      faces[faceIndex] = edges[f[i]] + indexOffset;
-      faces[faceIndex + 1] = edges[f[i+2]] + indexOffset;
-      faces[faceIndex + 2] = edges[f[i+1]] + indexOffset;
+      faces[faceIndex] = edges[f[i]];
+      faces[faceIndex + 1] = edges[f[i+2]];
+      faces[faceIndex + 2] = edges[f[i+1]];
       faceIndex += 3;
-
-      coords[coordIndex] = x[0];
-      coords[coordIndex+1] = x[1];
-      coords[coordIndex+2] = x[2];
-      coords[coordIndex+3] = (float)i/3.0f;
-      coordIndex += 4;
     }
   }
+
+  for (int i = 0; i < faceIndex; i += 3) {
+    const unsigned int ai = faces[i];
+    const unsigned int bi = faces[i+1];
+    const unsigned int ci = faces[i+2];
+
+    const unsigned int baseA = ai*3;
+    const unsigned int baseB = bi*3;
+    const unsigned int baseC = ci*3;
+
+    const int baseIndex = i*3;
+    positions[baseIndex] = positions2[baseA];
+    positions[baseIndex+1] = positions2[baseA+1];
+    positions[baseIndex+2] = positions2[baseA+2];
+    positions[baseIndex+3] = positions2[baseB];
+    positions[baseIndex+4] = positions2[baseB+1];
+    positions[baseIndex+5] = positions2[baseB+2];
+    positions[baseIndex+6] = positions2[baseC];
+    positions[baseIndex+7] = positions2[baseC+1];
+    positions[baseIndex+8] = positions2[baseC+2];
+
+    barycentrics[baseIndex] = 1;
+    barycentrics[baseIndex+1] = 0;
+    barycentrics[baseIndex+2] = 0;
+    barycentrics[baseIndex+3] = 0;
+    barycentrics[baseIndex+4] = 1;
+    barycentrics[baseIndex+5] = 0;
+    barycentrics[baseIndex+6] = 0;
+    barycentrics[baseIndex+7] = 0;
+    barycentrics[baseIndex+8] = 1;
+
+    const int baseI = i/3;
+    const int baseIndex2 = i*2;
+    if ((baseI%2) == 0) {
+      const float cx = std::fmod(((float)baseI/2.0f), (marchCubesTexSquares));
+      const float cy = std::floor((float)baseI/2.0f/(marchCubesTexSquares));
+      uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+3] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+4] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+
+      uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+2] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+3] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+4] = (cx+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+    } else {
+      const float cx = std::fmod((((float)baseI-1.0f)/2.0f), (marchCubesTexSquares));
+      const float cy = std::floor(((float)baseI-1.0f)/2.0f/(marchCubesTexSquares));
+      uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+3] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+4] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+5] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+
+      uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+3] = (cy+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+4] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+5] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+    }
+  }
+  positionIndex = faceIndex*3;
+  barycentricIndex = faceIndex*3;
+  uvIndex = faceIndex*2;
+  uvIndex2 = faceIndex*2;
 }
 
 void collide(float *positions, unsigned int *indices, unsigned int numPositions, unsigned int numIndices, float origin[3], float direction[3], float *positionSpec) {
