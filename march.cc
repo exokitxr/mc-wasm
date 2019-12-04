@@ -318,9 +318,10 @@ int edgeIndex[12][2] = {
   {3,7}
 };
 
-void marchingCubes(int dims[3], float *potential, float shift[3], int indexOffset, float *positions, unsigned int *faces, unsigned int &positionIndex, unsigned int &faceIndex) {
+void marchingCubes(int dims[3], float *potential, float shift[3], int indexOffset, float *positions, float *coords, unsigned int *faces, unsigned int &positionIndex, unsigned int &coordIndex, unsigned int &faceIndex) {
   positionIndex = 0;
   faceIndex = 0;
+  coordIndex = 0;
 
   int n = 0;
   float grid[8] = {0};
@@ -373,6 +374,12 @@ void marchingCubes(int dims[3], float *potential, float shift[3], int indexOffse
       faces[faceIndex + 1] = edges[f[i+2]] + indexOffset;
       faces[faceIndex + 2] = edges[f[i+1]] + indexOffset;
       faceIndex += 3;
+
+      coords[coordIndex] = x[0];
+      coords[coordIndex+1] = x[1];
+      coords[coordIndex+2] = x[2];
+      coords[coordIndex+3] = (float)i/3.0f;
+      coordIndex += 4;
     }
   }
 }
