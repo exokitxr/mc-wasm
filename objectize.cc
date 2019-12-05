@@ -96,7 +96,7 @@ EMSCRIPTEN_KEEPALIVE void cllideBoxEther(int dims[3], float *potential, int shif
   result[2] = (unsigned int)ceiled;
 } */
 
-EMSCRIPTEN_KEEPALIVE void doSmoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
+/* EMSCRIPTEN_KEEPALIVE void doSmoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
   smoothedPotentials(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, potentialsBuffer);
 }
 
@@ -106,6 +106,10 @@ EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, float s
 
 EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int *indices, unsigned int numPositions, unsigned int numIndices, float origin[3], float direction[3], float *positionSpec) {
   collide(positions, indices, numPositions, numIndices, origin, direction, positionSpec);
+} */
+
+EMSCRIPTEN_KEEPALIVE void doComputeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int *positionIndex, unsigned int *barycentricIndex, unsigned int *uvIndex, unsigned int *uvIndex2) {
+  computeGeometry(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, marchCubesTexSize, marchCubesTexSquares, marchCubesTexTriangleSize, potentialsBuffer, positions, barycentrics, uvs, uvs2, positionIndex, barycentricIndex, uvIndex, uvIndex2);
 }
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {

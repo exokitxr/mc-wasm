@@ -619,6 +619,288 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float marchCub
   uvIndex2 = faceIndex*2;
 }
 
+void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positionsBuffer, float *barycentricsBuffer, float *uvsBuffer, float *uvs2Buffer, unsigned int *positionIndexBuffer, unsigned int *barycentricIndexBuffer, unsigned int *uvIndexBuffer, unsigned int *uvIndex2Buffer) {
+  // working potentials
+  std::vector<std::vector<float>> workingPotentialsArray;
+  workingPotentialsArray.reserve(numChunkCoords);
+  std::vector<int> dirtyWorkingPotentials;
+  dirtyWorkingPotentials.reserve(numChunkCoords);
+  const unsigned int potentialsBlockSize = (width+1)*(height+1)*(depth+1);
+
+  for (unsigned int i = 0; i < numChunkCoords; i++) {
+    std::array<int,3> chunkPosition = {
+      chunkCoords[i*3],
+      chunkCoords[i*3+1],
+      chunkCoords[i*3+2]
+    };
+
+    workingPotentialsArray.push_back(std::vector<float>(potentialsBlockSize));
+    std::vector<float> &workingPotentials = workingPotentialsArray.back();
+    dirtyWorkingPotentials.push_back(false);
+    int &dirty = dirtyWorkingPotentials.back();
+    dirty = 0;
+
+    std::fill(workingPotentials.begin(), workingPotentials.end(), potentialClearValue);
+
+    int index = 0;
+    for (int x = 0; x < colorTargetSize; x++) {
+      for (int y = 0; y < colorTargetSize; y++) {
+        std::array<float,3> localVector = {
+          colorTargetCoordBuf[index],
+          colorTargetCoordBuf[index+1],
+          colorTargetCoordBuf[index+2]
+        };
+
+        std::array<float,3> chunkPositionFloat = {
+          (float)chunkPosition[0],
+          (float)chunkPosition[1],
+          (float)chunkPosition[2]
+        };
+        localVector = sub(localVector, chunkPositionFloat);
+        localVector = divideScalar(localVector, voxelSize);
+        localVector = add(localVector, std::array<float,3>{0.5, 0.5, 0.5});
+
+        if (
+          localVector[0] >= 0 && localVector[0] < (width+1) &&
+          localVector[1] >= 0 && localVector[1] < (height+1) &&
+          localVector[2] >= 0 && localVector[2] < (depth+1)
+        ) {
+          workingPotentials[_getPotentialIndex(
+            (int)std::floor(localVector[0]),
+            (int)std::floor(localVector[1]),
+            (int)std::floor(localVector[2])
+          )] = potentialSetValue;
+          dirty = 1;
+        }
+        index += 3;
+      }
+    }
+  }
+
+  // potentials
+  for (unsigned int i = 0; i < numChunkCoords; i++) {
+    float *potentials = &potentialsBuffer[i*potentialsBlockSize];
+
+    if (dirtyWorkingPotentials[i]) {
+      std::array<int,3> chunkPosition = {
+        chunkCoords[i*3],
+        chunkCoords[i*3+1],
+        chunkCoords[i*3+2]
+      };
+      std::vector<float> &workingPotentials = workingPotentialsArray[i];
+
+      int index = 0;
+      for (int y = 0; y < height+1; y++) {
+        for (int z = 0; z < depth+1; z++) {
+          for (int x = 0; x < width+1; x++) {
+            float sum = 0;
+            for (int dy = -1; dy <= 1; dy++) {
+              const int ay = y + dy;
+              for (int dz = -1; dz <= 1; dz++) {
+                const int az = z + dz;
+                for (int dx = -1; dx <= 1; dx++) {
+                  const int ax = x + dx;
+                  if (ax >= 0 && ax < width && ay >= 0 && ay < height && az >= 0 && az < depth) {
+                    sum += workingPotentials[_getPotentialIndex(ax, ay, az)];
+                  } else {
+                    std::pair<std::array<int,3>, std::vector<float> *> chunk = _getChunkAt(
+                      (float)(chunkPosition[0]) + ((float)ax)*voxelSize,
+                      (float)(chunkPosition[1]) + ((float)ay)*voxelSize,
+                      (float)(chunkPosition[2]) + ((float)az)*voxelSize,
+                      chunkCoords,
+                      numChunkCoords,
+                      workingPotentialsArray
+                    );
+                    if (chunk.second) {
+                      std::array<int,3> &otherChunkPosition = chunk.first;
+                      std::vector<float> &workingPotentials = *(chunk.second);
+
+                      std::array<int,3> chunkOffset = {
+                        chunkPosition[0],
+                        chunkPosition[1],
+                        chunkPosition[2]
+                      };
+                      chunkOffset = sub(chunkOffset, otherChunkPosition);
+                      const int lax = ax + chunkOffset[0]*width;
+                      const int lay = ay + chunkOffset[1]*height;
+                      const int laz = az + chunkOffset[2]*depth;
+                      sum += workingPotentials[_getPotentialIndex(lax, lay, laz)];
+                    } else {
+                      sum += potentialClearValue;
+                    }
+                  }
+                }
+              }
+            }
+            potentials[index++] = sum/(3*3*3);
+          }
+        }
+      }
+    } else {
+      for (unsigned int i = 0; i < potentialsBlockSize; i++) {
+        potentials[i] = potentialClearValue;
+      }
+    }
+  }
+
+  // marching cubes
+  unsigned int positionIndex = 0;
+  unsigned int barycentricIndex = 0;
+  unsigned int uvIndex = 0;
+  unsigned int uvIndex2 = 0;
+  for (unsigned int i = 0; i < numChunkCoords; i++) {
+    if (dirtyWorkingPotentials[i]) {
+      float *potentials = &potentialsBuffer[i*potentialsBlockSize];
+      float *positions = &positionsBuffer[positionIndex];
+      float *barycentrics = &barycentricsBuffer[barycentricIndex];
+      float *uvs = &uvsBuffer[uvIndex];
+      float *uvs2 = &uvs2Buffer[uvIndex2];
+
+      std::vector<float> positions2(1024 * 1024);
+      unsigned int positionIndex2 = 0;
+      std::vector<unsigned int> faces(1024 * 1024);
+      unsigned int faceIndex = 0;
+
+      int n = 0;
+      float grid[8] = {0};
+      int edges[12] = {0};
+      int x[3] = {0};
+
+      //March over the volume
+      int dims[3] = {width+1, depth+1, height+1};
+      for(x[2]=0; x[2]<dims[2]-1; ++x[2], n+=dims[0])
+      for(x[1]=0; x[1]<dims[1]-1; ++x[1], ++n)
+      for(x[0]=0; x[0]<dims[0]-1; ++x[0], ++n) {
+        //For each cell, compute cube mask
+        int cube_index = 0;
+        for(int i=0; i<8; ++i) {
+          int *v = cubeVerts[i];
+          float s = potentials[
+            (x[0]+v[0]) +
+            (((x[2]+v[2])) * dims[0]) +
+            ((x[1]+v[1]) * dims[0] * dims[1])
+          ];
+
+          grid[i] = s;
+          cube_index |= (s > 0) ? 1 << i : 0;
+        }
+        //Compute vertices
+        int edge_mask = edgeTable[cube_index];
+        if(edge_mask == 0) {
+          continue;
+        }
+        for(int i=0; i<12; ++i) {
+          if((edge_mask & (1<<i)) == 0) {
+            continue;
+          }
+          edges[i] = positionIndex2 / 3;
+          int *e = edgeIndex[i];
+          int *p0 = cubeVerts[e[0]];
+          int *p1 = cubeVerts[e[1]];
+          float a = grid[e[0]];
+          float b = grid[e[1]];
+          float d = a - b;
+          float t = a / d;
+          for(int j=0; j<3; ++j) {
+            positions2[positionIndex2 + j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])); // + shift[j];
+          }
+          positionIndex2 += 3;
+        }
+        //Add faces
+        int *f = triTable[cube_index];
+        for(int i=0;f[i]!=-1;i+=3) {
+          faces[faceIndex] = edges[f[i]];
+          faces[faceIndex + 1] = edges[f[i+2]];
+          faces[faceIndex + 2] = edges[f[i+1]];
+          faceIndex += 3;
+        }
+      }
+
+      for (int i = 0; i < faceIndex; i += 3) {
+        const unsigned int ai = faces[i];
+        const unsigned int bi = faces[i+1];
+        const unsigned int ci = faces[i+2];
+
+        const unsigned int baseA = ai*3;
+        const unsigned int baseB = bi*3;
+        const unsigned int baseC = ci*3;
+
+        const int baseIndex = i*3;
+        positions[baseIndex] = positions2[baseA];
+        positions[baseIndex+1] = positions2[baseA+1];
+        positions[baseIndex+2] = positions2[baseA+2];
+        positions[baseIndex+3] = positions2[baseB];
+        positions[baseIndex+4] = positions2[baseB+1];
+        positions[baseIndex+5] = positions2[baseB+2];
+        positions[baseIndex+6] = positions2[baseC];
+        positions[baseIndex+7] = positions2[baseC+1];
+        positions[baseIndex+8] = positions2[baseC+2];
+
+        barycentrics[baseIndex] = 1;
+        barycentrics[baseIndex+1] = 0;
+        barycentrics[baseIndex+2] = 0;
+        barycentrics[baseIndex+3] = 0;
+        barycentrics[baseIndex+4] = 1;
+        barycentrics[baseIndex+5] = 0;
+        barycentrics[baseIndex+6] = 0;
+        barycentrics[baseIndex+7] = 0;
+        barycentrics[baseIndex+8] = 1;
+
+        const int baseI = i/3;
+        const int baseIndex2 = i*2;
+        if ((baseI%2) == 0) {
+          const float cx = std::fmod(((float)baseI/2.0f), (marchCubesTexSquares));
+          const float cy = std::floor((float)baseI/2.0f/(marchCubesTexSquares));
+          uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+3] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+4] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+
+          uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+3] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+4] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+        } else {
+          const float cx = std::fmod((((float)baseI-1.0f)/2.0f), (marchCubesTexSquares));
+          const float cy = std::floor(((float)baseI-1.0f)/2.0f/(marchCubesTexSquares));
+          uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+3] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+4] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+
+          uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+3] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+4] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+          uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+        }
+      }
+
+      positionIndexBuffer[i] = faceIndex*3;
+      barycentricIndexBuffer[i] = faceIndex*3;
+      uvIndexBuffer[i] = faceIndex*2;
+      uvIndex2Buffer[i] = faceIndex*2;
+
+      positionIndex += positionIndexBuffer[i];
+      barycentricIndex += barycentricIndexBuffer[i];
+      uvIndex += uvIndexBuffer[i];
+      uvIndex2 += uvIndex2Buffer[i];
+    } else {
+      positionIndexBuffer[i] = 0;
+      barycentricIndexBuffer[i] = 0;
+      uvIndexBuffer[i] = 0;
+      uvIndex2Buffer[i] = 0;
+    }
+  }
+}
+
 void collide(float *positions, unsigned int *indices, unsigned int numPositions, unsigned int numIndices, float origin[3], float direction[3], float *positionSpec) {
   positionSpec[0] = std::numeric_limits<float>::quiet_NaN();
   positionSpec[1] = std::numeric_limits<float>::quiet_NaN();
