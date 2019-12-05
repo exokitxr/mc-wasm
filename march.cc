@@ -363,6 +363,11 @@ std::pair<std::array<int,3>, std::vector<float> *> _getChunkAt(float x, float y,
 
 void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int width, int height, int depth, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
   std::vector<std::vector<float>> workingPotentialsArray;
+  workingPotentialsArray.reserve(numChunkCoords);
+  std::vector<int> dirtyWorkingPotentials;
+  dirtyWorkingPotentials.reserve(numChunkCoords);
+  const unsigned int potentialsBlockSize = (width+1)*(height+1)*(depth+1);
+
   for (unsigned int i = 0; i < numChunkCoords; i++) {
     std::array<int,3> chunkPosition = {
       chunkCoords[i*3],
@@ -370,8 +375,12 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
       chunkCoords[i*3+2]
     };
 
-    workingPotentialsArray.push_back(std::vector<float>((width+1)*(height+1)*(depth+1)));
+    workingPotentialsArray.push_back(std::vector<float>(potentialsBlockSize));
     std::vector<float> &workingPotentials = workingPotentialsArray.back();
+    dirtyWorkingPotentials.push_back(false);
+    int &dirty = dirtyWorkingPotentials.back();
+    dirty = 0;
+
     std::fill(workingPotentials.begin(), workingPotentials.end(), potentialClearValue);
 
     int index = 0;
@@ -406,6 +415,7 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
               height,
               depth
             )] = potentialSetValue;
+            dirty = 1;
           }
         }
         index += 3;
@@ -413,61 +423,67 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
     }
   }
 
-  // std::vector<std::vector<float>> potentialsArray;
   for (unsigned int i = 0; i < numChunkCoords; i++) {
-    std::array<int,3> chunkPosition = {
-      chunkCoords[i*3],
-      chunkCoords[i*3+1],
-      chunkCoords[i*3+2]
-    };
-    std::vector<float> &workingPotentials = workingPotentialsArray[i];
-    float *potentials = &potentialsBuffer[i*(width+1)*(height+1)*(depth+1)];
+    float *potentials = &potentialsBuffer[i*potentialsBlockSize];
 
-    int index = 0;
-    for (int y = 0; y < height+1; y++) {
-      for (int z = 0; z < depth+1; z++) {
-        for (int x = 0; x < width+1; x++) {
-          float sum = 0;
-          for (int dy = -1; dy <= 1; dy++) {
-            const int ay = y + dy;
-            for (int dz = -1; dz <= 1; dz++) {
-              const int az = z + dz;
-              for (int dx = -1; dx <= 1; dx++) {
-                const int ax = x + dx;
-                if (ax >= 0 && ax < width && ay >= 0 && ay < height && az >= 0 && az < depth) {
-                  sum += workingPotentials[_getPotentialIndex(ax, ay, az, width, height, depth)];
-                } else {
-                  std::pair<std::array<int,3>, std::vector<float> *> chunk = _getChunkAt(
-                    (float)(chunkPosition[0]) + ((float)ax)*voxelSize,
-                    (float)(chunkPosition[1]) + ((float)ay)*voxelSize,
-                    (float)(chunkPosition[2]) + ((float)az)*voxelSize,
-                    chunkCoords,
-                    numChunkCoords,
-                    workingPotentialsArray
-                  );
-                  if (chunk.second) {
-                    std::array<int,3> &otherChunkPosition = chunk.first;
-                    std::vector<float> &workingPotentials = *(chunk.second);
+    if (dirtyWorkingPotentials[i]) {
+      std::array<int,3> chunkPosition = {
+        chunkCoords[i*3],
+        chunkCoords[i*3+1],
+        chunkCoords[i*3+2]
+      };
+      std::vector<float> &workingPotentials = workingPotentialsArray[i];
 
-                    std::array<int,3> chunkOffset = {
-                      chunkPosition[0],
-                      chunkPosition[1],
-                      chunkPosition[2]
-                    };
-                    chunkOffset = sub(chunkOffset, otherChunkPosition);
-                    const int lax = ax + chunkOffset[0]*width;
-                    const int lay = ay + chunkOffset[1]*height;
-                    const int laz = az + chunkOffset[2]*depth;
-                    sum += workingPotentials[_getPotentialIndex(lax, lay, laz, width, height, depth)];
+      int index = 0;
+      for (int y = 0; y < height+1; y++) {
+        for (int z = 0; z < depth+1; z++) {
+          for (int x = 0; x < width+1; x++) {
+            float sum = 0;
+            for (int dy = -1; dy <= 1; dy++) {
+              const int ay = y + dy;
+              for (int dz = -1; dz <= 1; dz++) {
+                const int az = z + dz;
+                for (int dx = -1; dx <= 1; dx++) {
+                  const int ax = x + dx;
+                  if (ax >= 0 && ax < width && ay >= 0 && ay < height && az >= 0 && az < depth) {
+                    sum += workingPotentials[_getPotentialIndex(ax, ay, az, width, height, depth)];
                   } else {
-                    sum += potentialClearValue;
+                    std::pair<std::array<int,3>, std::vector<float> *> chunk = _getChunkAt(
+                      (float)(chunkPosition[0]) + ((float)ax)*voxelSize,
+                      (float)(chunkPosition[1]) + ((float)ay)*voxelSize,
+                      (float)(chunkPosition[2]) + ((float)az)*voxelSize,
+                      chunkCoords,
+                      numChunkCoords,
+                      workingPotentialsArray
+                    );
+                    if (chunk.second) {
+                      std::array<int,3> &otherChunkPosition = chunk.first;
+                      std::vector<float> &workingPotentials = *(chunk.second);
+
+                      std::array<int,3> chunkOffset = {
+                        chunkPosition[0],
+                        chunkPosition[1],
+                        chunkPosition[2]
+                      };
+                      chunkOffset = sub(chunkOffset, otherChunkPosition);
+                      const int lax = ax + chunkOffset[0]*width;
+                      const int lay = ay + chunkOffset[1]*height;
+                      const int laz = az + chunkOffset[2]*depth;
+                      sum += workingPotentials[_getPotentialIndex(lax, lay, laz, width, height, depth)];
+                    } else {
+                      sum += potentialClearValue;
+                    }
                   }
                 }
               }
             }
+            potentials[index++] = sum/(3*3*3);
           }
-          potentials[index++] = sum/(3*3*3);
         }
+      }
+    } else {
+      for (unsigned int i = 0; i < potentialsBlockSize; i++) {
+        potentials[i] = potentialClearValue;
       }
     }
   }
