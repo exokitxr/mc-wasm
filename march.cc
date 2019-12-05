@@ -395,28 +395,26 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
           colorTargetCoordBuf[index+2]
         };
 
-        if (localVector[1] >= 0) {
-          std::array<float,3> chunkPositionFloat = {
-            (float)chunkPosition[0],
-            (float)chunkPosition[1],
-            (float)chunkPosition[2]
-          };
-          localVector = sub(localVector, chunkPositionFloat);
-          localVector = divideScalar(localVector, voxelSize);
-          localVector = add(localVector, std::array<float,3>{0.5, 0.5, 0.5});
+        std::array<float,3> chunkPositionFloat = {
+          (float)chunkPosition[0],
+          (float)chunkPosition[1],
+          (float)chunkPosition[2]
+        };
+        localVector = sub(localVector, chunkPositionFloat);
+        localVector = divideScalar(localVector, voxelSize);
+        localVector = add(localVector, std::array<float,3>{0.5, 0.5, 0.5});
 
-          if (
-            localVector[0] >= 0 && localVector[0] < (width+1) &&
-            localVector[1] >= 0 && localVector[1] < (height+1) &&
-            localVector[2] >= 0 && localVector[2] < (depth+1)
-          ) {
-            workingPotentials[_getPotentialIndex(
-              (int)std::floor(localVector[0]),
-              (int)std::floor(localVector[1]),
-              (int)std::floor(localVector[2])
-            )] = potentialSetValue;
-            dirty = 1;
-          }
+        if (
+          localVector[0] >= 0 && localVector[0] < (width+1) &&
+          localVector[1] >= 0 && localVector[1] < (height+1) &&
+          localVector[2] >= 0 && localVector[2] < (depth+1)
+        ) {
+          workingPotentials[_getPotentialIndex(
+            (int)std::floor(localVector[0]),
+            (int)std::floor(localVector[1]),
+            (int)std::floor(localVector[2])
+          )] = potentialSetValue;
+          dirty = 1;
         }
         index += 3;
       }
