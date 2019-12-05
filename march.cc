@@ -318,6 +318,148 @@ int edgeIndex[12][2] = {
   {3,7}
 };
 
+const float potentialClearValue = -0.2;
+const float potentialSetValue = 0.7;
+inline int _getPotentialIndex(int x, int y, int z, int width, int height, int depth) {
+  return x + y*(width+1)*(depth+1) + z*(width+1);
+}
+inline std::array<float,3> add(const std::array<float,3> &a, const std::array<float,3> &b) {
+  return std::array<float,3>{a[0]+b[0], a[1]+b[1], a[2]+b[2]};
+}
+inline std::array<float,3> sub(const std::array<float,3> &a, const std::array<float,3> &b) {
+  return std::array<float,3>{a[0]-b[0], a[1]-b[1], a[2]-b[2]};
+}
+inline std::array<float,3> multiplyScalar(const std::array<float,3> &a, const float &c) {
+  return std::array<float,3>{a[0]*c, a[1]*c, a[2]*c};
+}
+inline std::array<float,3> divideScalar(const std::array<float,3> &a, const float &c) {
+  return std::array<float,3>{a[0]/c, a[1]/c, a[2]/c};
+}
+std::pair<std::array<int,3>, std::vector<float> *> _getChunkAt(float x, float y, float z, int *chunkCoords, unsigned int numChunkCoords, std::vector<std::vector<float>> &workingPotentialsArray) {
+  for (unsigned int i = 0; i < numChunkCoords; i++) {
+    std::array<float,3> chunkPosition = {
+      (float)chunkCoords[i*3],
+      (float)chunkCoords[i*3+1],
+      (float)chunkCoords[i*3+2]
+    };
+
+    const float dx = x - chunkPosition[0];
+    const float dy = y - chunkPosition[1];
+    const float dz = z - chunkPosition[2];
+    if (dx >= 0 && dx < 1 && dy >= 0 && dy < 1 && dz >= 0 && dz < 1) {
+      return std::pair<std::array<int,3>, std::vector<float> *>(std::array<int,3>{chunkCoords[0], chunkCoords[1], chunkCoords[2]}, &workingPotentialsArray[i]);
+    }
+  }
+  return std::pair<std::array<int,3>, std::vector<float> *>(std::array<int,3>{0, 0, 0}, nullptr);
+}
+std::vector<std::vector<float>> smoothedPotentials(int *chunkCoords, float *colorTargetCoordBuf, unsigned int numChunkCoords, unsigned int numColorTargetCoords, int width, int height, int depth, int colorTargetSize, float voxelSize) {
+  std::vector<std::vector<float>> workingPotentialsArray;
+  for (unsigned int i = 0; i < numChunkCoords; i++) {
+    std::array<int,3> chunkPosition = {
+      chunkCoords[i*3],
+      chunkCoords[i*3+1],
+      chunkCoords[i*3+2]
+    };
+
+    std::vector<float> workingPotentials((width+1)*(height+1)*(depth+1));
+    std::fill(workingPotentials.begin(), workingPotentials.end(), potentialClearValue);
+
+    int index = 0;
+    for (int x = 0; x < colorTargetSize; x++) {
+      for (int y = 0; y < colorTargetSize; y++) {
+        std::array<float,3> localVector = {
+          colorTargetCoordBuf[index],
+          colorTargetCoordBuf[index+1],
+          colorTargetCoordBuf[index+2]
+        };
+
+        if (localVector[1] >= 0) {
+          std::array<float,3> chunkPositionFloat = {
+            (float)chunkPosition[0],
+            (float)chunkPosition[1],
+            (float)chunkPosition[2]
+          };
+          sub(localVector, chunkPositionFloat);
+          divideScalar(localVector, voxelSize);
+          add(localVector, std::array<float,3>{0.5, 0.5, 0.5});
+
+          if (
+            localVector[0] >= 0 && localVector[0] < (width+1) &&
+            localVector[1] >= 0 && localVector[1] < (height+1) &&
+            localVector[2] >= 0 && localVector[2] < (depth+1)
+          ) {
+            workingPotentials[_getPotentialIndex(
+              (int)std::floor(localVector[0]),
+              (int)std::floor(localVector[1]),
+              (int)std::floor(localVector[2]),
+              width,
+              height,
+              depth
+            )] = potentialSetValue;
+          }
+        }
+        index += 3;
+      }
+    }
+    workingPotentialsArray.push_back(std::move(workingPotentials));
+  }
+
+  std::vector<std::vector<float>> potentialsArray;
+  for (unsigned int i = 0; i < numChunkCoords; i++) {
+    std::array<int,3> chunkPosition = {
+      chunkCoords[i*3],
+      chunkCoords[i*3+1],
+      chunkCoords[i*3+2]
+    };
+
+    std::vector<float> potentials((width+1)*(height+1)*(depth+1));
+
+    for (int x = 0; x < width+1; x++) {
+      for (int y = 0; y < height+1; y++) {
+        for (int z = 0; z < depth+1; z++) {
+          float sum = 0;
+          for (int dx = -1; dx <= 1; dx++) {
+            const int ax = x + dx;
+            for (int dy = -1; dy <= 1; dy++) {
+              const int ay = y + dy;
+              for (int dz = -1; dz <= 1; dz++) {
+                const int az = z + dz;
+                std::pair<std::array<int,3>, std::vector<float> *> chunk = _getChunkAt(
+                  (float)(chunkPosition[0]) + ((float)ax)*voxelSize,
+                  (float)(chunkPosition[1]) + ((float)ay)*voxelSize,
+                  (float)(chunkPosition[2]) + ((float)az)*voxelSize,
+                  chunkCoords,
+                  numChunkCoords,
+                  workingPotentialsArray
+                );
+                if (chunk.second) {
+                  std::array<int,3> &otherChunkPosition = chunk.first;
+                  std::vector<float> &workingPotentials = *(chunk.second);
+
+                  std::array<int,3> chunkOffset = {
+                    chunkPosition[0] - otherChunkPosition[0],
+                    chunkPosition[1] - otherChunkPosition[1],
+                    chunkPosition[2] - otherChunkPosition[2]
+                  };
+                  const int lax = ax + chunkOffset[0]*width;
+                  const int lay = ay + chunkOffset[1]*height;
+                  const int laz = az + chunkOffset[2]*depth;
+                  sum += workingPotentials[_getPotentialIndex(lax, lay, laz, width, height, depth)];
+                } else {
+                  sum += potentialClearValue;
+                }
+              }
+            }
+          }
+          potentials[_getPotentialIndex(x, y, z, width, height, depth)] = sum/(3*3*3);
+        }
+      }
+    }
+    potentialsArray.push_back(std::move(potentials));
+  }
+  return std::move(potentialsArray);
+}
+
 void marchingCubes(int dims[3], float *potential, float shift[3], float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int &positionIndex, unsigned int &barycentricIndex, unsigned int &uvIndex, unsigned int &uvIndex2) {
   std::vector<float> positions2(1024 * 1024);
   unsigned int positionIndex2 = 0;
