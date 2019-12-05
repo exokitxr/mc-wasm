@@ -423,6 +423,7 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
     std::vector<float> &workingPotentials = workingPotentialsArray[i];
     float *potentials = &potentialsBuffer[i*(width+1)*(height+1)*(depth+1)];
 
+    int index = 0;
     for (int y = 0; y < height+1; y++) {
       for (int z = 0; z < depth+1; z++) {
         for (int x = 0; x < width+1; x++) {
@@ -465,7 +466,7 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
               }
             }
           }
-          potentials[_getPotentialIndex(x, y, z, width, height, depth)] = sum/(3*3*3);
+          potentials[index++] = sum/(3*3*3);
         }
       }
     }
