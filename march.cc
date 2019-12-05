@@ -326,6 +326,12 @@ inline std::array<float,3> add(const std::array<float,3> &a, const std::array<fl
 inline std::array<float,3> sub(const std::array<float,3> &a, const std::array<float,3> &b) {
   return std::array<float,3>{a[0]-b[0], a[1]-b[1], a[2]-b[2]};
 }
+inline std::array<int,3> add(const std::array<int,3> &a, const std::array<int,3> &b) {
+  return std::array<int,3>{a[0]+b[0], a[1]+b[1], a[2]+b[2]};
+}
+inline std::array<int,3> sub(const std::array<int,3> &a, const std::array<int,3> &b) {
+  return std::array<int,3>{a[0]-b[0], a[1]-b[1], a[2]-b[2]};
+}
 inline std::array<float,3> multiplyScalar(const std::array<float,3> &a, const float &c) {
   return std::array<float,3>{a[0]*c, a[1]*c, a[2]*c};
 }
@@ -334,21 +340,27 @@ inline std::array<float,3> divideScalar(const std::array<float,3> &a, const floa
 }
 std::pair<std::array<int,3>, std::vector<float> *> _getChunkAt(float x, float y, float z, int *chunkCoords, unsigned int numChunkCoords, std::vector<std::vector<float>> &workingPotentialsArray) {
   for (unsigned int i = 0; i < numChunkCoords; i++) {
-    std::array<float,3> chunkPosition = {
+    std::array<float,3> chunkPositionFloat = {
       (float)chunkCoords[i*3],
       (float)chunkCoords[i*3+1],
       (float)chunkCoords[i*3+2]
     };
 
-    const float dx = x - chunkPosition[0];
-    const float dy = y - chunkPosition[1];
-    const float dz = z - chunkPosition[2];
+    const float dx = x - chunkPositionFloat[0];
+    const float dy = y - chunkPositionFloat[1];
+    const float dz = z - chunkPositionFloat[2];
     if (dx >= 0 && dx < 1 && dy >= 0 && dy < 1 && dz >= 0 && dz < 1) {
-      return std::pair<std::array<int,3>, std::vector<float> *>(std::array<int,3>{chunkCoords[0], chunkCoords[1], chunkCoords[2]}, &workingPotentialsArray[i]);
+      std::array<int,3> chunkPosition = {
+        chunkCoords[i*3],
+        chunkCoords[i*3+1],
+        chunkCoords[i*3+2]
+      };
+      return std::pair<std::array<int,3>, std::vector<float> *>(std::move(chunkPosition), &workingPotentialsArray[i]);
     }
   }
   return std::pair<std::array<int,3>, std::vector<float> *>(std::array<int,3>{0, 0, 0}, nullptr);
 }
+
 void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int width, int height, int depth, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
   std::vector<std::vector<float>> workingPotentialsArray;
   for (unsigned int i = 0; i < numChunkCoords; i++) {
@@ -358,7 +370,8 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
       chunkCoords[i*3+2]
     };
 
-    std::vector<float> workingPotentials((width+1)*(height+1)*(depth+1));
+    workingPotentialsArray.push_back(std::vector<float>((width+1)*(height+1)*(depth+1)));
+    std::vector<float> &workingPotentials = workingPotentialsArray.back();
     std::fill(workingPotentials.begin(), workingPotentials.end(), potentialClearValue);
 
     int index = 0;
@@ -376,9 +389,9 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
             (float)chunkPosition[1],
             (float)chunkPosition[2]
           };
-          sub(localVector, chunkPositionFloat);
-          divideScalar(localVector, voxelSize);
-          add(localVector, std::array<float,3>{0.5, 0.5, 0.5});
+          localVector = sub(localVector, chunkPositionFloat);
+          localVector = divideScalar(localVector, voxelSize);
+          localVector = add(localVector, std::array<float,3>{0.5, 0.5, 0.5});
 
           if (
             localVector[0] >= 0 && localVector[0] < (width+1) &&
@@ -398,7 +411,6 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
         index += 3;
       }
     }
-    workingPotentialsArray.push_back(std::move(workingPotentials));
   }
 
   // std::vector<std::vector<float>> potentialsArray;
@@ -434,10 +446,11 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
                   std::vector<float> &workingPotentials = *(chunk.second);
 
                   std::array<int,3> chunkOffset = {
-                    chunkPosition[0] - otherChunkPosition[0],
-                    chunkPosition[1] - otherChunkPosition[1],
-                    chunkPosition[2] - otherChunkPosition[2]
+                    chunkPosition[0],
+                    chunkPosition[1],
+                    chunkPosition[2]
                   };
+                  chunkOffset = sub(chunkOffset, otherChunkPosition);
                   const int lax = ax + chunkOffset[0]*width;
                   const int lay = ay + chunkOffset[1]*height;
                   const int laz = az + chunkOffset[2]*depth;
