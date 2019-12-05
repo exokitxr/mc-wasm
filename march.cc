@@ -349,7 +349,7 @@ std::pair<std::array<int,3>, std::vector<float> *> _getChunkAt(float x, float y,
   }
   return std::pair<std::array<int,3>, std::vector<float> *>(std::array<int,3>{0, 0, 0}, nullptr);
 }
-std::vector<std::vector<float>> smoothedPotentials(int *chunkCoords, float *colorTargetCoordBuf, unsigned int numChunkCoords, unsigned int numColorTargetCoords, int width, int height, int depth, int colorTargetSize, float voxelSize) {
+void smoothedPotentials(int *chunkCoords, float *colorTargetCoordBuf, unsigned int numChunkCoords, unsigned int numColorTargetCoords, int width, int height, int depth, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
   std::vector<std::vector<float>> workingPotentialsArray;
   for (unsigned int i = 0; i < numChunkCoords; i++) {
     std::array<int,3> chunkPosition = {
@@ -401,7 +401,7 @@ std::vector<std::vector<float>> smoothedPotentials(int *chunkCoords, float *colo
     workingPotentialsArray.push_back(std::move(workingPotentials));
   }
 
-  std::vector<std::vector<float>> potentialsArray;
+  // std::vector<std::vector<float>> potentialsArray;
   for (unsigned int i = 0; i < numChunkCoords; i++) {
     std::array<int,3> chunkPosition = {
       chunkCoords[i*3],
@@ -409,7 +409,7 @@ std::vector<std::vector<float>> smoothedPotentials(int *chunkCoords, float *colo
       chunkCoords[i*3+2]
     };
 
-    std::vector<float> potentials((width+1)*(height+1)*(depth+1));
+    float *potentials = &potentialsBuffer[i*(width+1)*(height+1)*(depth+1)];
 
     for (int x = 0; x < width+1; x++) {
       for (int y = 0; y < height+1; y++) {
@@ -452,9 +452,7 @@ std::vector<std::vector<float>> smoothedPotentials(int *chunkCoords, float *colo
         }
       }
     }
-    potentialsArray.push_back(std::move(potentials));
   }
-  return std::move(potentialsArray);
 }
 
 void marchingCubes(int dims[3], float *potential, float shift[3], float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int &positionIndex, unsigned int &barycentricIndex, unsigned int &uvIndex, unsigned int &uvIndex2) {
