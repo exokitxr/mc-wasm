@@ -315,9 +315,12 @@ int edgeIndex[12][2] = {
   {3,7}
 };
 
+const int width = 10;
+const int height = 10;
+const int depth = 10;
 const float potentialClearValue = -0.2;
 const float potentialSetValue = 0.7;
-inline int _getPotentialIndex(int x, int y, int z, int width, int height, int depth) {
+inline int _getPotentialIndex(int x, int y, int z) {
   return x + y*(width+1)*(depth+1) + z*(width+1);
 }
 inline std::array<float,3> add(const std::array<float,3> &a, const std::array<float,3> &b) {
@@ -361,7 +364,7 @@ std::pair<std::array<int,3>, std::vector<float> *> _getChunkAt(float x, float y,
   return std::pair<std::array<int,3>, std::vector<float> *>(std::array<int,3>{0, 0, 0}, nullptr);
 }
 
-void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int width, int height, int depth, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
+void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
   std::vector<std::vector<float>> workingPotentialsArray;
   workingPotentialsArray.reserve(numChunkCoords);
   std::vector<int> dirtyWorkingPotentials;
@@ -410,10 +413,7 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
             workingPotentials[_getPotentialIndex(
               (int)std::floor(localVector[0]),
               (int)std::floor(localVector[1]),
-              (int)std::floor(localVector[2]),
-              width,
-              height,
-              depth
+              (int)std::floor(localVector[2])
             )] = potentialSetValue;
             dirty = 1;
           }
@@ -446,7 +446,7 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
                 for (int dx = -1; dx <= 1; dx++) {
                   const int ax = x + dx;
                   if (ax >= 0 && ax < width && ay >= 0 && ay < height && az >= 0 && az < depth) {
-                    sum += workingPotentials[_getPotentialIndex(ax, ay, az, width, height, depth)];
+                    sum += workingPotentials[_getPotentialIndex(ax, ay, az)];
                   } else {
                     std::pair<std::array<int,3>, std::vector<float> *> chunk = _getChunkAt(
                       (float)(chunkPosition[0]) + ((float)ax)*voxelSize,
@@ -469,7 +469,7 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
                       const int lax = ax + chunkOffset[0]*width;
                       const int lay = ay + chunkOffset[1]*height;
                       const int laz = az + chunkOffset[2]*depth;
-                      sum += workingPotentials[_getPotentialIndex(lax, lay, laz, width, height, depth)];
+                      sum += workingPotentials[_getPotentialIndex(lax, lay, laz)];
                     } else {
                       sum += potentialClearValue;
                     }
