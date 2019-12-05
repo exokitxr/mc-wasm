@@ -349,7 +349,7 @@ std::pair<std::array<int,3>, std::vector<float> *> _getChunkAt(float x, float y,
   }
   return std::pair<std::array<int,3>, std::vector<float> *>(std::array<int,3>{0, 0, 0}, nullptr);
 }
-void smoothedPotentials(int *chunkCoords, float *colorTargetCoordBuf, unsigned int numChunkCoords, unsigned int numColorTargetCoords, int width, int height, int depth, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
+void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int width, int height, int depth, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
   std::vector<std::vector<float>> workingPotentialsArray;
   for (unsigned int i = 0; i < numChunkCoords; i++) {
     std::array<int,3> chunkPosition = {
