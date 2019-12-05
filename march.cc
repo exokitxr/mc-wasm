@@ -565,16 +565,16 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float marchCub
       const float cy = std::floor((float)baseI/2.0f/(marchCubesTexSquares));
       uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs[baseIndex2+3] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+4] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+4] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
 
       uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+2] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs2[baseIndex2+3] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+4] = (cx+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+4] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
     } else {
       const float cx = std::fmod((((float)baseI-1.0f)/2.0f), (marchCubesTexSquares));
@@ -582,16 +582,16 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float marchCub
       uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+3] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+3] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs[baseIndex2+4] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+5] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
 
       uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+3] = (cy+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+3] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
       uvs2[baseIndex2+4] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+5] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+      uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
     }
   }
   positionIndex = faceIndex*3;
