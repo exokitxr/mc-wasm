@@ -756,14 +756,11 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
       float *uvs = &uvsBuffer[uvIndex];
       float *uvs2 = &uvs2Buffer[uvIndex2];
 
-      std::vector<float> positions2(1024 * 1024);
-      unsigned int positionIndex2 = 0;
-      std::vector<unsigned int> faces(1024 * 1024);
       unsigned int faceIndex = 0;
 
       int n = 0;
       float grid[8] = {0};
-      int edges[12] = {0};
+      std::array<std::array<float, 3>, 12> edges;
       int x[3] = {0};
 
       //March over the volume
@@ -793,7 +790,6 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
           if((edge_mask & (1<<i)) == 0) {
             continue;
           }
-          edges[i] = positionIndex2 / 3;
           int *e = edgeIndex[i];
           int *p0 = cubeVerts[e[0]];
           int *p1 = cubeVerts[e[1]];
@@ -801,85 +797,76 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
           float b = grid[e[1]];
           float d = a - b;
           float t = a / d;
+          std::array<float, 3> &v = edges[i];
           for(int j=0; j<3; ++j) {
-            positions2[positionIndex2 + j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])); // + shift[j];
+            v[j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])); // + shift[j];
           }
-          positionIndex2 += 3;
         }
         //Add faces
         int *f = triTable[cube_index];
         for(int i=0;f[i]!=-1;i+=3) {
-          faces[faceIndex] = edges[f[i]];
-          faces[faceIndex + 1] = edges[f[i+2]];
-          faces[faceIndex + 2] = edges[f[i+1]];
+          std::array<float, 3> &a = edges[f[i]];
+          std::array<float, 3> &b = edges[f[i+2]];
+          std::array<float, 3> &c = edges[f[i+1]];
+
+          const int baseIndex = faceIndex*3;
+          positions[baseIndex] = a[0];
+          positions[baseIndex+1] = a[1];
+          positions[baseIndex+2] = a[2];
+          positions[baseIndex+3] = b[0];
+          positions[baseIndex+4] = b[1];
+          positions[baseIndex+5] = b[2];
+          positions[baseIndex+6] = c[0];
+          positions[baseIndex+7] = c[1];
+          positions[baseIndex+8] = c[2];
+
+          barycentrics[baseIndex] = 1;
+          barycentrics[baseIndex+1] = 0;
+          barycentrics[baseIndex+2] = 0;
+          barycentrics[baseIndex+3] = 0;
+          barycentrics[baseIndex+4] = 1;
+          barycentrics[baseIndex+5] = 0;
+          barycentrics[baseIndex+6] = 0;
+          barycentrics[baseIndex+7] = 0;
+          barycentrics[baseIndex+8] = 1;
+
+          const int gridI = faceIndex/3;
+          const int baseIndex2 = faceIndex*2;
+          if ((gridI%2) == 0) {
+            const float cx = std::fmod(((float)gridI/2.0f), (marchCubesTexSquares));
+            const float cy = std::floor((float)gridI/2.0f/(marchCubesTexSquares));
+            uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+3] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+4] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+
+            uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+3] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+4] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+          } else {
+            const float cx = std::fmod((((float)gridI-1.0f)/2.0f), (marchCubesTexSquares));
+            const float cy = std::floor(((float)gridI-1.0f)/2.0f/(marchCubesTexSquares));
+            uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+3] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+4] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+
+            uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+3] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+4] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
+            uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
+          }
+
           faceIndex += 3;
-        }
-      }
-
-      for (int i = 0; i < faceIndex; i += 3) {
-        const unsigned int ai = faces[i];
-        const unsigned int bi = faces[i+1];
-        const unsigned int ci = faces[i+2];
-
-        const unsigned int baseA = ai*3;
-        const unsigned int baseB = bi*3;
-        const unsigned int baseC = ci*3;
-
-        const int baseIndex = i*3;
-        positions[baseIndex] = positions2[baseA];
-        positions[baseIndex+1] = positions2[baseA+1];
-        positions[baseIndex+2] = positions2[baseA+2];
-        positions[baseIndex+3] = positions2[baseB];
-        positions[baseIndex+4] = positions2[baseB+1];
-        positions[baseIndex+5] = positions2[baseB+2];
-        positions[baseIndex+6] = positions2[baseC];
-        positions[baseIndex+7] = positions2[baseC+1];
-        positions[baseIndex+8] = positions2[baseC+2];
-
-        barycentrics[baseIndex] = 1;
-        barycentrics[baseIndex+1] = 0;
-        barycentrics[baseIndex+2] = 0;
-        barycentrics[baseIndex+3] = 0;
-        barycentrics[baseIndex+4] = 1;
-        barycentrics[baseIndex+5] = 0;
-        barycentrics[baseIndex+6] = 0;
-        barycentrics[baseIndex+7] = 0;
-        barycentrics[baseIndex+8] = 1;
-
-        const int baseI = i/3;
-        const int baseIndex2 = i*2;
-        if ((baseI%2) == 0) {
-          const float cx = std::fmod(((float)baseI/2.0f), (marchCubesTexSquares));
-          const float cy = std::floor((float)baseI/2.0f/(marchCubesTexSquares));
-          uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+3] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+4] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-
-          uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+3] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+4] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-        } else {
-          const float cx = std::fmod((((float)baseI-1.0f)/2.0f), (marchCubesTexSquares));
-          const float cy = std::floor(((float)baseI-1.0f)/2.0f/(marchCubesTexSquares));
-          uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+3] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+4] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-
-          uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+3] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+4] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-          uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
         }
       }
 
