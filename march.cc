@@ -363,6 +363,14 @@ std::pair<std::array<int,3>, std::vector<float> *> _getChunkAt(float x, float y,
   }
   return std::pair<std::array<int,3>, std::vector<float> *>(std::array<int,3>{0, 0, 0}, nullptr);
 }
+int _getChunkIndexAt(int x, int y, int z, int *chunkCoords, unsigned int numChunkCoords) {
+  for (unsigned int i = 0; i < numChunkCoords; i++) {
+    if (chunkCoords[i*3] == x && chunkCoords[i*3+1] == y && chunkCoords[i*3+2] == z) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
   std::vector<std::vector<float>> workingPotentialsArray;
@@ -623,8 +631,7 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
   // working potentials
   std::vector<std::vector<float>> workingPotentialsArray;
   workingPotentialsArray.reserve(numChunkCoords);
-  std::vector<int> dirtyWorkingPotentials;
-  dirtyWorkingPotentials.reserve(numChunkCoords);
+  std::vector<int> dirtyWorkingPotentials(numChunkCoords);
   const unsigned int potentialsBlockSize = (width+1)*(height+1)*(depth+1);
 
   for (unsigned int i = 0; i < numChunkCoords; i++) {
@@ -636,9 +643,7 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
 
     workingPotentialsArray.push_back(std::vector<float>(potentialsBlockSize));
     std::vector<float> &workingPotentials = workingPotentialsArray.back();
-    dirtyWorkingPotentials.push_back(false);
-    int &dirty = dirtyWorkingPotentials.back();
-    dirty = 0;
+    // int &dirty = dirtyWorkingPotentials[i];
 
     std::fill(workingPotentials.begin(), workingPotentials.end(), potentialClearValue);
 
@@ -665,12 +670,30 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
           localVector[1] >= 0 && localVector[1] < (height+1) &&
           localVector[2] >= 0 && localVector[2] < (depth+1)
         ) {
-          workingPotentials[_getPotentialIndex(
+          std::array<int,3> point = {
             (int)std::floor(localVector[0]),
             (int)std::floor(localVector[1]),
             (int)std::floor(localVector[2])
-          )] = potentialSetValue;
-          dirty = 1;
+          };
+          workingPotentials[_getPotentialIndex(point[0], point[1], point[2])] = potentialSetValue;
+          // dirty = 1;
+
+          int minDx = point[0] <= 1 ? -1 : 0;
+          int maxDx = point[0] >= (width-1) ? 1 : 0;
+          int minDy = point[1] <= 1 ? -1 : 0;
+          int maxDy = point[1] >= (height-1) ? 1 : 0;
+          int minDz = point[2] <= 1 ? -1 : 0;
+          int maxDz = point[2] >= (depth-1) ? 1 : 0;
+          for (int dz = minDz; dz <= maxDz; dz++) {
+            for (int dy = minDy; dy <= maxDy; dy++) {
+              for (int dx = minDx; dx <= maxDx; dx++) {
+                int otherChunkIndex = _getChunkIndexAt(chunkPosition[0]+dx, chunkPosition[1]+dy, chunkPosition[2]+dz, chunkCoords, numChunkCoords);
+                if (otherChunkIndex != -1) {
+                  dirtyWorkingPotentials[otherChunkIndex] = 1;
+                }
+              }
+            }
+          }
         }
         index += 3;
       }
