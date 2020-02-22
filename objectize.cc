@@ -98,19 +98,19 @@ EMSCRIPTEN_KEEPALIVE void cllideBoxEther(int dims[3], float *potential, int shif
 
 /* EMSCRIPTEN_KEEPALIVE void doSmoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float *potentialsBuffer) {
   smoothedPotentials(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, potentialsBuffer);
-}
-
-EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, float shift[3], float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int *positionIndex, unsigned int *barycentricIndex, unsigned int *uvIndex, unsigned int *uvIndex2) {
-  marchingCubes(dims, potential, shift, marchCubesTexSize, marchCubesTexSquares, marchCubesTexTriangleSize, positions, barycentrics, uvs, uvs2, *positionIndex, *barycentricIndex, *uvIndex, *uvIndex2);
-}
-
-EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int *indices, unsigned int numPositions, unsigned int numIndices, float origin[3], float direction[3], float *positionSpec) {
-  collide(positions, indices, numPositions, numIndices, origin, direction, positionSpec);
 } */
+
+EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, float shift[3], float scale[3], float *positions, float *barycentrics, unsigned int *positionIndex, unsigned int *barycentricIndex) {
+  marchingCubes(dims, potential, shift, scale, positions, barycentrics, *positionIndex, *barycentricIndex);
+}
+
+/* EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int *indices, unsigned int numPositions, unsigned int numIndices, float origin[3], float direction[3], float *positionSpec) {
+  collide(positions, indices, numPositions, numIndices, origin, direction, positionSpec);
+}
 
 EMSCRIPTEN_KEEPALIVE void doComputeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int *positionIndex, unsigned int *barycentricIndex, unsigned int *uvIndex, unsigned int *uvIndex2) {
   computeGeometry(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, marchCubesTexSize, marchCubesTexSquares, marchCubesTexTriangleSize, potentialsBuffer, positions, barycentrics, uvs, uvs2, positionIndex, barycentricIndex, uvIndex, uvIndex2);
-}
+} */
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
   return malloc(size);

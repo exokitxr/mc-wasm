@@ -495,7 +495,7 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
   }
 }
 
-void marchingCubes(int dims[3], float *potential, float shift[3], float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int &positionIndex, unsigned int &barycentricIndex, unsigned int &uvIndex, unsigned int &uvIndex2) {
+void marchingCubes(int dims[3], float *potential, float shift[3], float scale[3], float *positions, float *barycentrics, unsigned int &positionIndex, unsigned int &barycentricIndex) {
   std::vector<float> positions2(1024 * 1024);
   unsigned int positionIndex2 = 0;
   std::vector<unsigned int> faces(1024 * 1024);
@@ -541,7 +541,7 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float marchCub
       float d = a - b;
       float t = a / d;
       for(int j=0; j<3; ++j) {
-        positions2[positionIndex2 + j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) + shift[j];
+        positions2[positionIndex2 + j] = (((x[j] + p0[j]) + t * (p1[j] - p0[j])) + shift[j]) * scale[j];
       }
       positionIndex2 += 3;
     }
@@ -549,8 +549,8 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float marchCub
     int *f = triTable[cube_index];
     for(int i=0;f[i]!=-1;i+=3) {
       faces[faceIndex] = edges[f[i]];
-      faces[faceIndex + 1] = edges[f[i+2]];
-      faces[faceIndex + 2] = edges[f[i+1]];
+      faces[faceIndex + 1] = edges[f[i+1]];
+      faces[faceIndex + 2] = edges[f[i+2]];
       faceIndex += 3;
     }
   }
@@ -584,47 +584,9 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float marchCub
     barycentrics[baseIndex+6] = 0;
     barycentrics[baseIndex+7] = 0;
     barycentrics[baseIndex+8] = 1;
-
-    const int baseI = i/3;
-    const int baseIndex2 = i*2;
-    if ((baseI%2) == 0) {
-      const float cx = std::fmod(((float)baseI/2.0f), (marchCubesTexSquares));
-      const float cy = std::floor((float)baseI/2.0f/(marchCubesTexSquares));
-      uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+3] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+4] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-
-      uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+3] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+4] = (cx+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-    } else {
-      const float cx = std::fmod((((float)baseI-1.0f)/2.0f), (marchCubesTexSquares));
-      const float cy = std::floor(((float)baseI-1.0f)/2.0f/(marchCubesTexSquares));
-      uvs[baseIndex2] = cx*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+1] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+2] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+3] = cy*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+4] = (cx+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs[baseIndex2+5] = (cy+1.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-
-      uvs2[baseIndex2] = (cx+1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+1] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+2] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+3] = (cy+1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+4] = (cx+1.0f-1.0f/marchCubesTexTriangleSize)*marchCubesTexTriangleSize/marchCubesTexSize;
-      uvs2[baseIndex2+5] = (cy+1.0f-1.0f/marchCubesTexTriangleSize*2.0f)*marchCubesTexTriangleSize/marchCubesTexSize;
-    }
   }
   positionIndex = faceIndex*3;
   barycentricIndex = faceIndex*3;
-  uvIndex = faceIndex*2;
-  uvIndex2 = faceIndex*2;
 }
 
 void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positionsBuffer, float *barycentricsBuffer, float *uvsBuffer, float *uvs2Buffer, unsigned int *positionIndexBuffer, unsigned int *barycentricIndexBuffer, unsigned int *uvIndexBuffer, unsigned int *uvIndex2Buffer) {
