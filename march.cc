@@ -495,9 +495,11 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
   }
 }
 
-void marchingCubes(int dims[3], float *potential, float shift[3], float scale[3], float *positions, float *barycentrics, unsigned int &positionIndex, unsigned int &barycentricIndex) {
+void marchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3], float scale[3], float *positions, float *colors, float *barycentrics, unsigned int &positionIndex, unsigned int &colorIndex, unsigned int &barycentricIndex) {
   std::vector<float> positions2(1024 * 1024);
   unsigned int positionIndex2 = 0;
+  std::vector<float> colors2(1024 * 1024);
+  unsigned int colorIndex2 = 0;
   std::vector<unsigned int> faces(1024 * 1024);
   unsigned int faceIndex = 0;
 
@@ -514,12 +516,10 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float scale[3]
     int cube_index = 0;
     for(int i=0; i<8; ++i) {
       int *v = cubeVerts[i];
-      float s = potential[
-        (x[0]+v[0]) +
+      int potentialIndex = (x[0]+v[0]) +
         (((x[2]+v[2])) * dims[0]) +
-        ((x[1]+v[1]) * dims[0] * dims[1])
-      ];
-
+        ((x[1]+v[1]) * dims[0] * dims[1]);
+      float s = potential[potentialIndex];
       grid[i] = s;
       cube_index |= (s > 0) ? 1 << i : 0;
     }
@@ -543,7 +543,16 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float scale[3]
       for(int j=0; j<3; ++j) {
         positions2[positionIndex2 + j] = (((x[j] + p0[j]) + t * (p1[j] - p0[j])) + shift[j]) * scale[j];
       }
+
+      int brushIndex = (x[0]) +
+        (((x[2])) * dims[0]) +
+        ((x[1]) * dims[0] * dims[1]);
+      colors2[colorIndex2] = (float)brush[brushIndex*3] / 255.0f;
+      colors2[colorIndex2+1] = (float)brush[brushIndex*3+1] / 255.0f;
+      colors2[colorIndex2+2] = (float)brush[brushIndex*3+2] / 255.0f;
+
       positionIndex2 += 3;
+      colorIndex2 += 3;
     }
     //Add faces
     int *f = triTable[cube_index];
@@ -575,6 +584,16 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float scale[3]
     positions[baseIndex+7] = positions2[baseC+1];
     positions[baseIndex+8] = positions2[baseC+2];
 
+    colors[baseIndex] = colors2[baseA];
+    colors[baseIndex+1] = colors2[baseA+1];
+    colors[baseIndex+2] = colors2[baseA+2];
+    colors[baseIndex+3] = colors2[baseB];
+    colors[baseIndex+4] = colors2[baseB+1];
+    colors[baseIndex+5] = colors2[baseB+2];
+    colors[baseIndex+6] = colors2[baseC];
+    colors[baseIndex+7] = colors2[baseC+1];
+    colors[baseIndex+8] = colors2[baseC+2];
+
     barycentrics[baseIndex] = 1;
     barycentrics[baseIndex+1] = 0;
     barycentrics[baseIndex+2] = 0;
@@ -586,6 +605,7 @@ void marchingCubes(int dims[3], float *potential, float shift[3], float scale[3]
     barycentrics[baseIndex+8] = 1;
   }
   positionIndex = faceIndex*3;
+  colorIndex = faceIndex*3;
   barycentricIndex = faceIndex*3;
 }
 

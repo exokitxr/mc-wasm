@@ -100,8 +100,8 @@ EMSCRIPTEN_KEEPALIVE void cllideBoxEther(int dims[3], float *potential, int shif
   smoothedPotentials(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, potentialsBuffer);
 } */
 
-EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, float shift[3], float scale[3], float *positions, float *barycentrics, unsigned int *positionIndex, unsigned int *barycentricIndex) {
-  marchingCubes(dims, potential, shift, scale, positions, barycentrics, *positionIndex, *barycentricIndex);
+EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3], float scale[3], float *positions, float *colors, float *barycentrics, unsigned int *positionIndex, unsigned int *colorIndex, unsigned int *barycentricIndex) {
+  marchingCubes(dims, potential, brush, shift, scale, positions, colors, barycentrics, *positionIndex, *colorIndex, *barycentricIndex);
 }
 
 /* EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int *indices, unsigned int numPositions, unsigned int numIndices, float origin[3], float direction[3], float *positionSpec) {
