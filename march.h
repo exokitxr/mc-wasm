@@ -5,6 +5,9 @@
 #include <cstdlib>
 #include <limits>
 #include <array>
+#include <deque>
+#include <map>
+#include <set>
 
 void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float *potentialsBuffer);
 void marchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3], float scale[3], float *positions, float *colors, float *barycentrics, unsigned int &positionIndex, unsigned int &colorIndex, unsigned int &barycentricIndex);

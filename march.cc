@@ -898,6 +898,7 @@ void collide(float *positions, unsigned int numPositions, float origin[3], float
   collision[1] = std::numeric_limits<float>::quiet_NaN();
   collision[2] = std::numeric_limits<float>::quiet_NaN();
   rangePositionIndex = 0;
+  unsigned int collisionIndex = 0;
 
   float closestDistance = std::numeric_limits<float>::infinity();
 
@@ -916,7 +917,38 @@ void collide(float *positions, unsigned int numPositions, float origin[3], float
         collision[1] = intersectionVector.y;
         collision[2] = intersectionVector.z;
         closestDistance = distance;
+        collisionIndex = i;
       }
+    }
+  }
+
+  if (!std::isnan(collision[0]) && range > 0) {
+    std::map<float, std::vector<unsigned int>> pointsMap;
+    for (unsigned int i = 0; i < numPositions; i += 3) {
+      pointsMap[positions[i]].push_back(i/3);
+      pointsMap[positions[i+1]].push_back(i/3);
+      pointsMap[positions[i+2]].push_back(i/3);
+    }
+    std::deque<unsigned int> queue;
+    queue.push_back(collisionIndex);
+    std::set<unsigned int> seenTriIndices;
+    while (seenTriIndices.size() < range && queue.size() > 0) {
+      unsigned int triIndex = queue.front();
+      queue.pop_front();
+      if (seenTriIndices.find(triIndex) == seenTriIndices.end()) {
+        seenTriIndices.insert(triIndex);
+
+        const std::vector<unsigned int> &neighborTriIndices = pointsMap[triIndex];
+        for (unsigned int neighborTriIndex : neighborTriIndices) {
+          queue.push_back(neighborTriIndex);
+        }
+      }
+    }
+    for (auto iter = seenTriIndices.begin(); iter != seenTriIndices.end(); iter++) {
+      const unsigned int &triIndex = *iter;
+      rangePositions[rangePositionIndex++] = positions[triIndex*3];
+      rangePositions[rangePositionIndex++] = positions[triIndex*3+1];
+      rangePositions[rangePositionIndex++] = positions[triIndex*3+2];
     }
   }
 }
