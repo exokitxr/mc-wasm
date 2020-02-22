@@ -893,11 +893,10 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
   }
 }
 
-void collide(float *positions, unsigned int numPositions, float origin[3], float direction[3], unsigned int range, float *collision, float *rangeIndexFlags, unsigned int &rangePositionIndex) {
+void collide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *collision, unsigned int *collisionIndex) {
   collision[0] = std::numeric_limits<float>::quiet_NaN();
   collision[1] = std::numeric_limits<float>::quiet_NaN();
   collision[2] = std::numeric_limits<float>::quiet_NaN();
-  unsigned int collisionIndex = 0;
 
   float closestDistance = std::numeric_limits<float>::infinity();
 
@@ -916,67 +915,8 @@ void collide(float *positions, unsigned int numPositions, float origin[3], float
         collision[1] = intersectionVector.y;
         collision[2] = intersectionVector.z;
         closestDistance = distance;
-        collisionIndex = i;
+        *collisionIndex = i;
       }
     }
-  }
-
-  if (!std::isnan(collision[0]) && range > 0) {
-    memset(rangeIndexFlags, 0, numPositions * sizeof(float));
-
-    std::map<float, std::shared_ptr<std::set<unsigned int>>> pointsMap;
-    for (unsigned int i = 0; i < numPositions; i += 3) {
-      std::shared_ptr<std::set<unsigned int>> iter1 = pointsMap[positions[i]];
-      std::shared_ptr<std::set<unsigned int>> iter2 = pointsMap[positions[i+1]];
-      std::shared_ptr<std::set<unsigned int>> iter3 = pointsMap[positions[i+2]];
-      int numValidIters = (int)(iter1 != nullptr) + (int)(iter2 != nullptr) + (int)(iter3 != nullptr);
-      std::shared_ptr<std::set<unsigned int>> object;
-      if (numValidIters == 1) {
-        if (iter1 != nullptr) {
-          object = iter1;
-        } else if (iter2 != nullptr) {
-          object = iter2;
-        } else if (iter3 != nullptr) {
-          object = iter3;
-        }
-      } else if (numValidIters > 1) {
-        object = std::shared_ptr<std::set<unsigned int>>(new std::set<unsigned int>());
-        if (iter1 != nullptr) {
-          for (unsigned int index : *iter1) {
-            object->insert(index);
-          }
-        }
-        if (iter2 != nullptr) {
-          for (unsigned int index : *iter2) {
-            object->insert(index);
-          }
-        }
-        if (iter3 != nullptr) {
-          for (unsigned int index : *iter3) {
-            object->insert(index);
-          }
-        }
-      } else {
-        object = std::shared_ptr<std::set<unsigned int>>(new std::set<unsigned int>());
-      }
-
-      object->insert(i);
-      object->insert(i+1);
-      object->insert(i+2);
-
-      pointsMap[positions[i]] = object;
-      pointsMap[positions[i+1]] = object;
-      pointsMap[positions[i+2]] = object;
-    }
-
-    std::shared_ptr<std::set<unsigned int>> blobPtr = pointsMap[positions[collisionIndex]];
-    if (blobPtr) {
-      for (unsigned int blobIndex : *blobPtr) {
-        rangeIndexFlags[blobIndex] = 1.0f;
-      }
-    }
-    rangePositionIndex = numPositions;
-  } else {
-    rangePositionIndex = 0;
   }
 }
