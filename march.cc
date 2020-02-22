@@ -893,26 +893,20 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
   }
 }
 
-void collide(float *positions, unsigned int *indices, unsigned int numPositions, unsigned int numIndices, float origin[3], float direction[3], float *positionSpec) {
+void collide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *positionSpec) {
   positionSpec[0] = std::numeric_limits<float>::quiet_NaN();
   positionSpec[1] = std::numeric_limits<float>::quiet_NaN();
   positionSpec[2] = std::numeric_limits<float>::quiet_NaN();
 
   float closestDistance = std::numeric_limits<float>::infinity();
 
-  std::vector<Tri> triangles;
-  triangles.reserve(numIndices / 3);
-  for (unsigned int i = 0; i < numIndices; i += 3) {
-    triangles.push_back(Tri(
-      Vec(positions[indices[i + 0] * 3 + 0], positions[indices[i + 0] * 3 + 1], positions[indices[i + 0] * 3 + 2]),
-      Vec(positions[indices[i + 1] * 3 + 0], positions[indices[i + 1] * 3 + 1], positions[indices[i + 1] * 3 + 2]),
-      Vec(positions[indices[i + 2] * 3 + 0], positions[indices[i + 2] * 3 + 1], positions[indices[i + 2] * 3 + 2])
-    ));
-  }
-
   const Ray ray(Vec(origin[0], origin[1], origin[2]), Vec(direction[0], direction[1], direction[2]));
-
-  for (const Tri &triangle : triangles) {
+  for (unsigned int i = 0; i < numPositions; i += 9) {
+    Tri triangle(
+      Vec(positions[i], positions[i+1], positions[i+2]),
+      Vec(positions[i+3], positions[i+4], positions[i+5]),
+      Vec(positions[i+6], positions[i+7], positions[i+8])
+    );
     Vec intersectionVector;
     if (ray.intersectTriangle(triangle, intersectionVector)) {
       const float distance = intersectionVector.magnitude();
