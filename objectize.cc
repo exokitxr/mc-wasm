@@ -104,8 +104,8 @@ EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, uint8_t
   marchingCubes(dims, potential, brush, shift, scale, positions, colors, barycentrics, *positionIndex, *colorIndex, *barycentricIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *positionSpec) {
-  collide(positions, numPositions, origin, direction, positionSpec);
+EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions, float origin[3], float direction[3], unsigned int range, float *collision, float *rangePositions, unsigned int *rangePositionIndex) {
+  collide(positions, numPositions, origin, direction, range, collision, rangePositions, *rangePositionIndex);
 }
 
 /* EMSCRIPTEN_KEEPALIVE void doComputeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int *positionIndex, unsigned int *barycentricIndex, unsigned int *uvIndex, unsigned int *uvIndex2) {

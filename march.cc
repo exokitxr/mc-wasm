@@ -893,10 +893,11 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
   }
 }
 
-void collide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *positionSpec) {
-  positionSpec[0] = std::numeric_limits<float>::quiet_NaN();
-  positionSpec[1] = std::numeric_limits<float>::quiet_NaN();
-  positionSpec[2] = std::numeric_limits<float>::quiet_NaN();
+void collide(float *positions, unsigned int numPositions, float origin[3], float direction[3], unsigned int range, float *collision, float *rangePositions, unsigned int &rangePositionIndex) {
+  collision[0] = std::numeric_limits<float>::quiet_NaN();
+  collision[1] = std::numeric_limits<float>::quiet_NaN();
+  collision[2] = std::numeric_limits<float>::quiet_NaN();
+  rangePositionIndex = 0;
 
   float closestDistance = std::numeric_limits<float>::infinity();
 
@@ -911,9 +912,9 @@ void collide(float *positions, unsigned int numPositions, float origin[3], float
     if (ray.intersectTriangle(triangle, intersectionVector)) {
       const float distance = intersectionVector.magnitude();
       if (distance < closestDistance) {
-        positionSpec[0] = intersectionVector.x;
-        positionSpec[1] = intersectionVector.y;
-        positionSpec[2] = intersectionVector.z;
+        collision[0] = intersectionVector.x;
+        collision[1] = intersectionVector.y;
+        collision[2] = intersectionVector.z;
         closestDistance = distance;
       }
     }
