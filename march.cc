@@ -893,11 +893,10 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
   }
 }
 
-void collide(float *positions, unsigned int numPositions, float origin[3], float direction[3], unsigned int range, float *collision, float *rangePositions, unsigned int &rangePositionIndex) {
+void collide(float *positions, unsigned int numPositions, float origin[3], float direction[3], unsigned int range, float *collision, float *rangeIndexFlags, unsigned int &rangePositionIndex) {
   collision[0] = std::numeric_limits<float>::quiet_NaN();
   collision[1] = std::numeric_limits<float>::quiet_NaN();
   collision[2] = std::numeric_limits<float>::quiet_NaN();
-  rangePositionIndex = 0;
   unsigned int collisionIndex = 0;
 
   float closestDistance = std::numeric_limits<float>::infinity();
@@ -923,32 +922,61 @@ void collide(float *positions, unsigned int numPositions, float origin[3], float
   }
 
   if (!std::isnan(collision[0]) && range > 0) {
-    std::map<float, std::vector<unsigned int>> pointsMap;
-    for (unsigned int i = 0; i < numPositions; i += 3) {
-      pointsMap[positions[i]].push_back(i/3);
-      pointsMap[positions[i+1]].push_back(i/3);
-      pointsMap[positions[i+2]].push_back(i/3);
-    }
-    std::deque<unsigned int> queue;
-    queue.push_back(collisionIndex);
-    std::set<unsigned int> seenTriIndices;
-    while (seenTriIndices.size() < range && queue.size() > 0) {
-      unsigned int triIndex = queue.front();
-      queue.pop_front();
-      if (seenTriIndices.find(triIndex) == seenTriIndices.end()) {
-        seenTriIndices.insert(triIndex);
+    memset(rangeIndexFlags, 0, numPositions * sizeof(float));
 
-        const std::vector<unsigned int> &neighborTriIndices = pointsMap[triIndex];
-        for (unsigned int neighborTriIndex : neighborTriIndices) {
-          queue.push_back(neighborTriIndex);
+    std::map<float, std::shared_ptr<std::set<unsigned int>>> pointsMap;
+    for (unsigned int i = 0; i < numPositions; i += 3) {
+      std::shared_ptr<std::set<unsigned int>> iter1 = pointsMap[positions[i]];
+      std::shared_ptr<std::set<unsigned int>> iter2 = pointsMap[positions[i+1]];
+      std::shared_ptr<std::set<unsigned int>> iter3 = pointsMap[positions[i+2]];
+      int numValidIters = (int)(iter1 != nullptr) + (int)(iter2 != nullptr) + (int)(iter3 != nullptr);
+      std::shared_ptr<std::set<unsigned int>> object;
+      if (numValidIters == 1) {
+        if (iter1 != nullptr) {
+          object = iter1;
+        } else if (iter2 != nullptr) {
+          object = iter2;
+        } else if (iter3 != nullptr) {
+          object = iter3;
         }
+      } else if (numValidIters > 1) {
+        object = std::shared_ptr<std::set<unsigned int>>(new std::set<unsigned int>());
+        if (iter1 != nullptr) {
+          for (unsigned int index : *iter1) {
+            object->insert(index);
+          }
+        }
+        if (iter2 != nullptr) {
+          for (unsigned int index : *iter2) {
+            object->insert(index);
+          }
+        }
+        if (iter3 != nullptr) {
+          for (unsigned int index : *iter3) {
+            object->insert(index);
+          }
+        }
+      } else {
+        object = std::shared_ptr<std::set<unsigned int>>(new std::set<unsigned int>());
+      }
+
+      object->insert(i);
+      object->insert(i+1);
+      object->insert(i+2);
+
+      pointsMap[positions[i]] = object;
+      pointsMap[positions[i+1]] = object;
+      pointsMap[positions[i+2]] = object;
+    }
+
+    std::shared_ptr<std::set<unsigned int>> blobPtr = pointsMap[positions[collisionIndex]];
+    if (blobPtr) {
+      for (unsigned int blobIndex : *blobPtr) {
+        rangeIndexFlags[blobIndex] = 1.0f;
       }
     }
-    for (auto iter = seenTriIndices.begin(); iter != seenTriIndices.end(); iter++) {
-      const unsigned int &triIndex = *iter;
-      rangePositions[rangePositionIndex++] = positions[triIndex*3];
-      rangePositions[rangePositionIndex++] = positions[triIndex*3+1];
-      rangePositions[rangePositionIndex++] = positions[triIndex*3+2];
-    }
+    rangePositionIndex = numPositions;
+  } else {
+    rangePositionIndex = 0;
   }
 }
