@@ -909,7 +909,7 @@ void collide(float *positions, unsigned int numPositions, float origin[3], float
     );
     Vec intersectionVector;
     if (ray.intersectTriangle(triangle, intersectionVector)) {
-      const float distance = intersectionVector.magnitude();
+      const float distance = (intersectionVector - ray.origin).magnitude();
       if (distance < closestDistance) {
         collision[0] = intersectionVector.x;
         collision[1] = intersectionVector.y;
