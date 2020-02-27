@@ -48,7 +48,7 @@ Copyright (c) 2012 Brandon Pelfrey
 #include "xatlas.h"
 
 #define XA_MULTITHREADED 0
-// #define XA_DEBUG 1
+#define XA_DEFAULT_CHART_TYPE "planar"
 
 #ifndef XA_DEBUG
 #ifdef NDEBUG
@@ -9794,7 +9794,7 @@ void ParameterizeCharts(Atlas *atlas, ParameterizeOptions options)
 					chart->unifiedMesh()->writeObjFile(filename);
 				}
 #endif
-				const char *type = "LSCM";
+				const char *type = XA_DEFAULT_CHART_TYPE;
 				if (chart->type() == ChartType::Planar)
 					type = "planar";
 				else if (chart->type() == ChartType::Ortho)
