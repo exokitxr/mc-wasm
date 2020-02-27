@@ -3,6 +3,7 @@
 // #include "util.h"
 // #include "compose.h"
 #include "march.h"
+#include "uv.h"
 // #include "light.h"
 // #include "heightfield.h"
 // #include "cull.h"
@@ -111,6 +112,10 @@ EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions,
 /* EMSCRIPTEN_KEEPALIVE void doComputeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int *positionIndex, unsigned int *barycentricIndex, unsigned int *uvIndex, unsigned int *uvIndex2) {
   computeGeometry(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, marchCubesTexSize, marchCubesTexSquares, marchCubesTexTriangleSize, potentialsBuffer, positions, barycentrics, uvs, uvs2, positionIndex, barycentricIndex, uvIndex, uvIndex2);
 } */
+
+EMSCRIPTEN_KEEPALIVE void doUvParameterize(float *positions, unsigned int numPositions) {
+  uvParameterize(positions, numPositions);
+}
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
   return malloc(size);
