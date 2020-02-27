@@ -101,8 +101,8 @@ EMSCRIPTEN_KEEPALIVE void cllideBoxEther(int dims[3], float *potential, int shif
   smoothedPotentials(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, potentialsBuffer);
 } */
 
-EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3], float scale[3], float *positions, float *colors, float *barycentrics, unsigned int *positionIndex, unsigned int *colorIndex, unsigned int *barycentricIndex) {
-  marchingCubes(dims, potential, brush, shift, scale, positions, colors, barycentrics, *positionIndex, *colorIndex, *barycentricIndex);
+EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3], float scale[3], float *positions, float *colors, unsigned int *faces, unsigned int *positionIndex, unsigned int *colorIndex, unsigned int *faceIndex) {
+  marchingCubes(dims, potential, brush, shift, scale, positions, colors, faces, *positionIndex, *colorIndex, *faceIndex);
 }
 
 EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *collision, unsigned int *collisionIndex) {
@@ -113,8 +113,8 @@ EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions,
   computeGeometry(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, marchCubesTexSize, marchCubesTexSquares, marchCubesTexTriangleSize, potentialsBuffer, positions, barycentrics, uvs, uvs2, positionIndex, barycentricIndex, uvIndex, uvIndex2);
 } */
 
-EMSCRIPTEN_KEEPALIVE void doUvParameterize(float *positions, unsigned int numPositions, float *uvs, unsigned int *numUvs) {
-  uvParameterize(positions, numPositions, uvs, *numUvs);
+EMSCRIPTEN_KEEPALIVE void doUvParameterize(float *positions, unsigned int numPositions, unsigned int *faces, unsigned int numFaces, float *uvs, unsigned int *numUvs) {
+  uvParameterize(positions, numPositions, faces, numFaces, uvs, *numUvs);
 }
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {

@@ -5,11 +5,11 @@
   return true;
 } */
 
-void uvParameterize(float *positions, unsigned int numPositions, float *uvs, unsigned int &numUVs) {
+void uvParameterize(float *positions, unsigned int numPositions, unsigned int *faces, unsigned int numFaces, float *uvs, unsigned int &numUVs) {
   xatlas::Atlas *atlas = xatlas::Create();
   // xatlas::SetProgressCallback(atlas, ProgressCallback, nullptr);
 
-  uint32_t totalVertices = 0, totalFaces = 0;
+  // uint32_t totalVertices = 0, totalFaces = 0;
   {
     // std::cout << "uv 4" << std::endl;
 
@@ -19,9 +19,9 @@ void uvParameterize(float *positions, unsigned int numPositions, float *uvs, uns
     meshDecl.vertexPositionStride = sizeof(float) * 3;
     meshDecl.indexCount = 0;
     meshDecl.indexData = nullptr;
-    /* meshDecl.indexCount = (uint32_t)objMesh.indices.size();
-    meshDecl.indexData = objMesh.indices.data();
-    meshDecl.indexFormat = xatlas::IndexFormat::UInt32; */
+    meshDecl.indexCount = numFaces;
+    meshDecl.indexData = faces;
+    meshDecl.indexFormat = xatlas::IndexFormat::UInt32;
     // std::cout << "input vertex count " << meshDecl.vertexCount << std::endl;
     xatlas::AddMeshError::Enum error = xatlas::AddMesh(atlas, meshDecl, 1);
     if (error != xatlas::AddMeshError::Success) {
@@ -30,8 +30,8 @@ void uvParameterize(float *positions, unsigned int numPositions, float *uvs, uns
       return;
     }
     // std::cout << "uv 6" << std::endl;
-    totalVertices += meshDecl.vertexCount;
-    totalFaces += meshDecl.indexCount / 3;
+    // totalVertices += meshDecl.vertexCount;
+    // totalFaces += meshDecl.indexCount / 3;
   }
 
   xatlas::Generate(atlas);

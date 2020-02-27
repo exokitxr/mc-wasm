@@ -495,13 +495,10 @@ void smoothedPotentials(int *chunkCoords, unsigned int numChunkCoords, float *co
   }
 }
 
-void marchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3], float scale[3], float *positions, float *colors, float *barycentrics, unsigned int &positionIndex, unsigned int &colorIndex, unsigned int &barycentricIndex) {
-  std::vector<float> positions2(1024 * 1024);
-  unsigned int positionIndex2 = 0;
-  std::vector<float> colors2(1024 * 1024);
-  unsigned int colorIndex2 = 0;
-  std::vector<unsigned int> faces(1024 * 1024);
-  unsigned int faceIndex = 0;
+void marchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3], float scale[3], float *positions, float *colors, unsigned int *faces, unsigned int &positionIndex, unsigned int &colorIndex, unsigned int &faceIndex) {
+  positionIndex = 0;
+  colorIndex = 0;
+  faceIndex = 0;
 
   int n = 0;
   float grid[8] = {0};
@@ -532,7 +529,7 @@ void marchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3]
       if((edge_mask & (1<<i)) == 0) {
         continue;
       }
-      edges[i] = positionIndex2 / 3;
+      edges[i] = positionIndex / 3;
       int *e = edgeIndex[i];
       int *p0 = cubeVerts[e[0]];
       int *p1 = cubeVerts[e[1]];
@@ -541,72 +538,27 @@ void marchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3]
       float d = a - b;
       float t = a / d;
       for(int j=0; j<3; ++j) {
-        positions2[positionIndex2 + j] = (((x[j] + p0[j]) + t * (p1[j] - p0[j])) + shift[j]) * scale[j];
+        positions[positionIndex + j] = (((x[j] + p0[j]) + t * (p1[j] - p0[j])) + shift[j]) * scale[j];
       }
 
       int brushIndex = (x[0]) +
         (((x[2])) * dims[0]) +
         ((x[1]) * dims[0] * dims[1]);
-      colors2[colorIndex2] = (float)brush[brushIndex*3] / 255.0f;
-      colors2[colorIndex2+1] = (float)brush[brushIndex*3+1] / 255.0f;
-      colors2[colorIndex2+2] = (float)brush[brushIndex*3+2] / 255.0f;
+      colors[colorIndex] = (float)brush[brushIndex*3] / 255.0f;
+      colors[colorIndex+1] = (float)brush[brushIndex*3+1] / 255.0f;
+      colors[colorIndex+2] = (float)brush[brushIndex*3+2] / 255.0f;
 
-      positionIndex2 += 3;
-      colorIndex2 += 3;
+      positionIndex += 3;
+      colorIndex += 3;
     }
     //Add faces
     int *f = triTable[cube_index];
     for(int i=0;f[i]!=-1;i+=3) {
-      faces[faceIndex] = edges[f[i]];
-      faces[faceIndex + 1] = edges[f[i+1]];
-      faces[faceIndex + 2] = edges[f[i+2]];
-      faceIndex += 3;
+      faces[faceIndex++] = edges[f[i]];
+      faces[faceIndex++] = edges[f[i+1]];
+      faces[faceIndex++] = edges[f[i+2]];
     }
   }
-
-  for (int i = 0; i < faceIndex; i += 3) {
-    const unsigned int ai = faces[i];
-    const unsigned int bi = faces[i+1];
-    const unsigned int ci = faces[i+2];
-
-    const unsigned int baseA = ai*3;
-    const unsigned int baseB = bi*3;
-    const unsigned int baseC = ci*3;
-
-    const int baseIndex = i*3;
-    positions[baseIndex] = positions2[baseA];
-    positions[baseIndex+1] = positions2[baseA+1];
-    positions[baseIndex+2] = positions2[baseA+2];
-    positions[baseIndex+3] = positions2[baseB];
-    positions[baseIndex+4] = positions2[baseB+1];
-    positions[baseIndex+5] = positions2[baseB+2];
-    positions[baseIndex+6] = positions2[baseC];
-    positions[baseIndex+7] = positions2[baseC+1];
-    positions[baseIndex+8] = positions2[baseC+2];
-
-    colors[baseIndex] = colors2[baseA];
-    colors[baseIndex+1] = colors2[baseA+1];
-    colors[baseIndex+2] = colors2[baseA+2];
-    colors[baseIndex+3] = colors2[baseB];
-    colors[baseIndex+4] = colors2[baseB+1];
-    colors[baseIndex+5] = colors2[baseB+2];
-    colors[baseIndex+6] = colors2[baseC];
-    colors[baseIndex+7] = colors2[baseC+1];
-    colors[baseIndex+8] = colors2[baseC+2];
-
-    barycentrics[baseIndex] = 1;
-    barycentrics[baseIndex+1] = 0;
-    barycentrics[baseIndex+2] = 0;
-    barycentrics[baseIndex+3] = 0;
-    barycentrics[baseIndex+4] = 1;
-    barycentrics[baseIndex+5] = 0;
-    barycentrics[baseIndex+6] = 0;
-    barycentrics[baseIndex+7] = 0;
-    barycentrics[baseIndex+8] = 1;
-  }
-  positionIndex = faceIndex*3;
-  colorIndex = faceIndex*3;
-  barycentricIndex = faceIndex*3;
 }
 
 void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positionsBuffer, float *barycentricsBuffer, float *uvsBuffer, float *uvs2Buffer, unsigned int *positionIndexBuffer, unsigned int *barycentricIndexBuffer, unsigned int *uvIndexBuffer, unsigned int *uvIndex2Buffer) {
