@@ -1,16 +1,13 @@
 #include "uv.h"
 
-bool ProgressCallback(xatlas::ProgressCategory::Enum category, int progress, void *userData) {
+/* bool ProgressCallback(xatlas::ProgressCategory::Enum category, int progress, void *userData) {
   std::cerr << xatlas::StringForEnum(category) << std::endl;
   return true;
-}
+} */
 
 void uvParameterize(float *positions, unsigned int numPositions, float *uvs, unsigned int &numUVs) {
-  // std::cout << "uv 1" << std::endl;
   xatlas::Atlas *atlas = xatlas::Create();
-  // std::cout << "uv 2" << std::endl;
-  xatlas::SetProgressCallback(atlas, ProgressCallback, nullptr);
-  // std::cout << "uv 3" << std::endl;
+  // xatlas::SetProgressCallback(atlas, ProgressCallback, nullptr);
 
   uint32_t totalVertices = 0, totalFaces = 0;
   {
