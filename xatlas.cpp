@@ -47,6 +47,9 @@ Copyright (c) 2012 Brandon Pelfrey
 #include <string.h>
 #include "xatlas.h"
 
+#define XA_MULTITHREADED 0
+// #define XA_DEBUG 1
+
 #ifndef XA_DEBUG
 #ifdef NDEBUG
 #define XA_DEBUG 0
