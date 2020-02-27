@@ -113,8 +113,8 @@ EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions,
   computeGeometry(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, marchCubesTexSize, marchCubesTexSquares, marchCubesTexTriangleSize, potentialsBuffer, positions, barycentrics, uvs, uvs2, positionIndex, barycentricIndex, uvIndex, uvIndex2);
 } */
 
-EMSCRIPTEN_KEEPALIVE void doUvParameterize(float *positions, unsigned int numPositions) {
-  uvParameterize(positions, numPositions);
+EMSCRIPTEN_KEEPALIVE void doUvParameterize(float *positions, unsigned int numPositions, float *uvs, unsigned int *numUvs) {
+  uvParameterize(positions, numPositions, uvs, *numUvs);
 }
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {

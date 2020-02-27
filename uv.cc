@@ -5,12 +5,17 @@ bool ProgressCallback(xatlas::ProgressCategory::Enum category, int progress, voi
   return true;
 }
 
-void uvParameterize(float *positions, unsigned int numPositions) {
+void uvParameterize(float *positions, unsigned int numPositions, float *uvs, unsigned int &numUVs) {
+  // std::cout << "uv 1" << std::endl;
   xatlas::Atlas *atlas = xatlas::Create();
+  // std::cout << "uv 2" << std::endl;
   xatlas::SetProgressCallback(atlas, ProgressCallback, nullptr);
+  // std::cout << "uv 3" << std::endl;
 
   uint32_t totalVertices = 0, totalFaces = 0;
   {
+    // std::cout << "uv 4" << std::endl;
+
     xatlas::MeshDecl meshDecl;
     meshDecl.vertexCount = numPositions / 3;
     meshDecl.vertexPositionData = positions;
@@ -20,28 +25,38 @@ void uvParameterize(float *positions, unsigned int numPositions) {
     /* meshDecl.indexCount = (uint32_t)objMesh.indices.size();
     meshDecl.indexData = objMesh.indices.data();
     meshDecl.indexFormat = xatlas::IndexFormat::UInt32; */
+    // std::cout << "input vertex count " << meshDecl.vertexCount << std::endl;
     xatlas::AddMeshError::Enum error = xatlas::AddMesh(atlas, meshDecl, 1);
     if (error != xatlas::AddMeshError::Success) {
       xatlas::Destroy(atlas);
       std::cerr << "Error adding mesh " << xatlas::StringForEnum(error) << std::endl;
       return;
     }
+    // std::cout << "uv 6" << std::endl;
     totalVertices += meshDecl.vertexCount;
     totalFaces += meshDecl.indexCount / 3;
   }
 
-  uint32_t firstVertex = 0;
+  xatlas::Generate(atlas);
+
+  // std::cout << "uv 7" << std::endl;
+
+  // std::cout << "mesh count " << atlas->chartCount << " " << atlas->atlasCount << " " << atlas->width << " " << atlas->height << " " << atlas->meshCount << std::endl;
+
+  numUVs = 0;
   for (uint32_t i = 0; i < atlas->meshCount; i++) {
     const xatlas::Mesh &mesh = atlas->meshes[i];
     for (uint32_t v = 0; v < mesh.vertexCount; v++) {
       const xatlas::Vertex &vertex = mesh.vertexArray[v];
-      const float *pos = &positions[vertex.xref * 3];
-      std::cout << "v " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+      // const float *pos = &positions[vertex.xref * 3];
+      // std::cout << "v " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
       /* if (!shapes[i].mesh.normals.empty()) {
         const float *normal = &shapes[i].mesh.normals[vertex.xref * 3];
         fprintf(file, "vn %g %g %g\n", normal[0], normal[1], normal[2]);
       } */
-      std::cout << "vt " << (vertex.uv[0] / atlas->width) << " " << (vertex.uv[1] / atlas->height) << std::endl;
+      // std::cout << "vt " << (vertex.uv[0] / atlas->width) << " " << (vertex.uv[1] / atlas->height) << std::endl;
+      uvs[numUVs++] = vertex.uv[0] / atlas->width;
+      uvs[numUVs++] = vertex.uv[1] / atlas->height;
     }
     // std::cout << "o " << shapes[i].name.c_str() << std::endl;
     /* for (uint32_t f = 0; f < mesh.indexCount; f += 3) {
@@ -51,6 +66,10 @@ void uvParameterize(float *positions, unsigned int numPositions) {
         fprintf(file, "%d/%d/%d%c", index, index, index, j == 2 ? '\n' : ' ');
       }
     } */
-    firstVertex += mesh.vertexCount;
+    // numUVs += mesh.vertexCount * 2;
   }
+
+  xatlas::Destroy(atlas);
+
+  // std::cout << "vertex count " << numUVs << std::endl;
 }
