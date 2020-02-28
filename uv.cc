@@ -34,7 +34,15 @@ void uvParameterize(float *positions, unsigned int numPositions, float *normals,
     // totalFaces += meshDecl.indexCount / 3;
   }
 
-  xatlas::Generate(atlas);
+  xatlas::ChartOptions chartOptions;
+  // chartOptions.maxIterations = 10;
+  xatlas::ParameterizeOptions parameterizeOptions;
+  parameterizeOptions.fixTJunctions = false;
+  xatlas::PackOptions packOptions;
+  packOptions.texelsPerUnit = 2048;
+  packOptions.resolution = 2048;
+  // packOptions.bruteForce = true;
+  xatlas::Generate(atlas, chartOptions, parameterizeOptions, packOptions);
 
   // std::cout << "uv 7" << std::endl;
 
