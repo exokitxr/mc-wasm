@@ -44,6 +44,8 @@ class TriangleMesh
     template <typename Vertex_Cont, typename Facet_Cont>
     TriangleMesh(const Vertex_Cont& vertices, const Facet_Cont& facets) : TriangleMesh(vertices.data(), facets.data(), facets.size()) {}
 
+    TriangleMesh(const float *vertices, const unsigned int *facets, unsigned int numFacets) : TriangleMesh((Pointf3 *)vertices, (Point3 *)facets, numFacets/3) {}
+
     TriangleMesh(const TriangleMesh &other);
     ///  copy assignment
     TriangleMesh& operator= (const TriangleMesh& other);

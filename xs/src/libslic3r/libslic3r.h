@@ -60,13 +60,15 @@ constexpr auto SLIC3R_VERSION = "1.3.1-dev";
 const auto SLIC3R_GIT_STR = std::string(BUILD_COMMIT);
 const auto SLIC3R_GIT = SLIC3R_GIT_STR.c_str();
 
-#ifdef _WIN32
+/* #ifdef _WIN32
 typedef int64_t coord_t;
 typedef double coordf_t;
 #else 
 typedef long coord_t;
 typedef double coordf_t;
-#endif
+#endif */
+typedef long coord_t;
+typedef float coordf_t;
 
 // Scaling factor for a conversion from coord_t to coordf_t: 10e-6
 // This scaling generates a following fixed point representation with for a 32bit integer:
