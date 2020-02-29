@@ -17,7 +17,7 @@ void cut(
 ) {
   TriangleMesh mesh(positions, faces, numFaces);
   TransformationMatrix matrix = TransformationMatrix::multiply(
-    TransformationMatrix::mat_translation(-position[0], -position[1], -position[2]),
+    TransformationMatrix::mat_translation(position[0], position[1], position[2]),
     TransformationMatrix::multiply(
       TransformationMatrix::mat_rotation(quaternion[0], quaternion[1], quaternion[2], quaternion[3]),
       TransformationMatrix::mat_scale(scale[0], scale[1], scale[2])
