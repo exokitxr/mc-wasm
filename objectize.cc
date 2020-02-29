@@ -4,6 +4,7 @@
 // #include "compose.h"
 #include "march.h"
 #include "uv.h"
+#include "cut.h"
 // #include "light.h"
 // #include "heightfield.h"
 // #include "cull.h"
@@ -115,6 +116,34 @@ EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions,
 
 EMSCRIPTEN_KEEPALIVE void doUvParameterize(float *positions, unsigned int numPositions, float *normals, unsigned int numNormals, unsigned int *faces, unsigned int numFaces, float *outPositions, unsigned int *numOutPositions, float *outNormals, unsigned int *numOutNormals, unsigned int *outFaces, float *uvs, unsigned int *numUvs) {
   uvParameterize(positions, numPositions, normals, numNormals, faces, numFaces, outPositions, *numOutPositions, outNormals, *numOutNormals, outFaces, uvs, *numUvs);
+}
+
+EMSCRIPTEN_KEEPALIVE void doCut(
+  float *positions,
+  unsigned int numPositions,
+  unsigned int *faces,
+  unsigned int numFaces,
+  float *position,
+  float *quaternion,
+  float *scale,
+  float *outPositions,
+  unsigned int *numOutPositions,
+  unsigned int *outFaces,
+  unsigned int *numOutFaces
+) {
+  cut(
+    positions,
+    numPositions,
+    faces,
+    numFaces,
+    position,
+    quaternion,
+    scale,
+    outPositions,
+    numOutPositions,
+    outFaces,
+    numOutFaces
+  );
 }
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
