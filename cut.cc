@@ -16,13 +16,14 @@ void cut(
   unsigned int *numOutFaces
 ) {
   TriangleMesh mesh(positions, faces, numFaces);
-  /* TransformationMatrix matrix = TransformationMatrix::multiply(
-    TransformationMatrix::mat_translation(position[0], position[1], position[2]),
+  TransformationMatrix matrix = TransformationMatrix::multiply(
+    TransformationMatrix::mat_translation(-position[0], -position[1], -position[2]),
     TransformationMatrix::multiply(
       TransformationMatrix::mat_rotation(quaternion[0], quaternion[1], quaternion[2], quaternion[3]),
       TransformationMatrix::mat_scale(scale[0], scale[1], scale[2])
-    )); */
-  // mesh.transform(matrix);
+    ));
+  TransformationMatrix matrixInverse = matrix.inverse();
+  mesh.transform(matrixInverse);
 
   TriangleMesh upper;
   TriangleMesh lower;
@@ -30,17 +31,14 @@ void cut(
   upper.repair();
   lower.repair();
 
-  // matrix = matrix.inverse();
-
   {
     const std::vector<Pointf3> &upperPositions = upper.vertices();
     numOutPositions[0] = 0;
     for (size_t i = 0; i < upperPositions.size(); i++) {
-      const Pointf3 &p = upperPositions[i];
-      const Pointf3 &p2 = p;//matrix.transform(p);
-      outPositions[numOutPositions[0]++] = p2.x;
-      outPositions[numOutPositions[0]++] = p2.y;
-      outPositions[numOutPositions[0]++] = p2.z;
+      const Pointf3 &p = matrix.transform(upperPositions[i]);
+      outPositions[numOutPositions[0]++] = p.x;
+      outPositions[numOutPositions[0]++] = p.y;
+      outPositions[numOutPositions[0]++] = p.z;
     }
 
     const std::vector<Point3> &upperIndices = upper.facets();
@@ -51,11 +49,10 @@ void cut(
     const std::vector<Pointf3> &upperPositions = lower.vertices();
     numOutPositions[1] = 0;
     for (size_t i = 0; i < upperPositions.size(); i++) {
-      const Pointf3 &p = upperPositions[i];
-      const Pointf3 &p2 = p;//matrix.transform(p);
-      outPositions[numOutPositions[0] + numOutPositions[1]++] = p2.x;
-      outPositions[numOutPositions[0] + numOutPositions[1]++] = p2.y;
-      outPositions[numOutPositions[0] + numOutPositions[1]++] = p2.z;
+      const Pointf3 &p = matrix.transform(upperPositions[i]);
+      outPositions[numOutPositions[0] + numOutPositions[1]++] = p.x;
+      outPositions[numOutPositions[0] + numOutPositions[1]++] = p.y;
+      outPositions[numOutPositions[0] + numOutPositions[1]++] = p.z;
     }
 
     const std::vector<Point3> &upperIndices = lower.facets();
