@@ -84,11 +84,11 @@ void chunk(
   float *maxs,
   float *scale,
   float **outPositions,
-  unsigned int **numOutPositions,
+  unsigned int *numOutPositions,
   float **outNormals,
-  unsigned int **numOutNormals,
+  unsigned int *numOutNormals,
   float **outColors,
-  unsigned int **numOutColors
+  unsigned int *numOutColors
 ) {
   unsigned int numFaces = numPositions/3;
   std::vector<unsigned int> faces(numFaces);
@@ -100,6 +100,8 @@ void chunk(
   for (float x = mins[0]; x < maxs[0]; x++) {
     float ax = x * scale[0];
     ax *= scale[0];
+
+    std::cerr << "cut 1 " << ax << std::endl;
     
     /* TransformationMatrix matrix = TransformationMatrix::multiply(
       TransformationMatrix::mat_translation(position[0], position[1], position[2]),
@@ -121,6 +123,8 @@ void chunk(
       float az = z * scale[2];
       az *= scale[2];
 
+      std::cerr << "cut 2 " << az << " " << mins[0] << " " << mins[1] << " " << mins[2] << " " << scale[0] << " " << scale[1] << " " << scale[2] << std::endl;
+
       TriangleMesh top;
       TriangleMesh bottom;
       right.cut(Axis::Z, az, &top, &bottom);
@@ -128,16 +132,19 @@ void chunk(
       bottom.repair();
 
       float *outP = outPositions[meshIndex];
-      unsigned int *numOutP = numOutPositions[meshIndex];
+      unsigned int *numOutP = &numOutPositions[meshIndex];
       float *outN = outNormals[meshIndex];
-      unsigned int *numOutN = numOutNormals[meshIndex];
+      unsigned int *numOutN = &numOutNormals[meshIndex];
       float *outC = outColors[meshIndex];
-      unsigned int *numOutC = numOutColors[meshIndex];
+      unsigned int *numOutC = &numOutColors[meshIndex];
       meshIndex++;
 
       {
         const std::vector<Pointf3> &topPositions = top.vertices();
         numOutP[0] = 0;
+        numOutN[0] = 0;
+        numOutC[0] = 0;
+
         for (size_t i = 0; i < topPositions.size(); i++) {
           // const Pointf3 &p = matrix.transform(topPositions[i]);
           const Pointf3 &p = topPositions[i];
@@ -181,4 +188,5 @@ void chunk(
 
     mesh = right;
   }
+  std::cerr << "cut 11" << std::endl;
 }

@@ -169,7 +169,7 @@ EMSCRIPTEN_KEEPALIVE void doCompress(
   );
 }
 
-void doChunk(
+EMSCRIPTEN_KEEPALIVE void doChunk(
   float *positions,
   unsigned int numPositions,
   float *normals,
@@ -180,11 +180,11 @@ void doChunk(
   float *maxs,
   float *scale,
   float **outPositions,
-  unsigned int **numOutPositions,
+  unsigned int *numOutPositions,
   float **outNormals,
-  unsigned int **numOutNormals,
+  unsigned int *numOutNormals,
   float **outColors,
-  unsigned int **numOutColors
+  unsigned int *numOutColors
 ) {
   chunk(
     positions,
