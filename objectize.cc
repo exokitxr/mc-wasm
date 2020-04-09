@@ -169,6 +169,42 @@ EMSCRIPTEN_KEEPALIVE void doCompress(
   );
 }
 
+void doChunk(
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors,
+  float *mins,
+  float *maxs,
+  float *scale,
+  float **outPositions,
+  unsigned int **numOutPositions,
+  float **outNormals,
+  unsigned int **numOutNormals,
+  float **outColors,
+  unsigned int **numOutColors
+) {
+  chunk(
+    positions,
+    numPositions,
+    normals,
+    numNormals,
+    colors,
+    numColors,
+    mins,
+    maxs,
+    scale,
+    outPositions,
+    numOutPositions,
+    outNormals,
+    numOutNormals,
+    outColors,
+    numOutColors
+  );
+}
+
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
   return malloc(size);
 }

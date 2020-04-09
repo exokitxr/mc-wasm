@@ -16,3 +16,21 @@ void cut(
   unsigned int *outFaces,
   unsigned int *numOutFaces
 );
+
+void chunk(
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors,
+  float *mins,
+  float *maxs,
+  float *scale,
+  float **outPositions,
+  unsigned int **numOutPositions,
+  float **outNormals,
+  unsigned int **numOutNormals,
+  float **outColors,
+  unsigned int **numOutColors
+);
