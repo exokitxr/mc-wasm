@@ -5,6 +5,7 @@
 #include "march.h"
 #include "uv.h"
 #include "cut.h"
+#include "cmprs.h"
 // #include "light.h"
 // #include "heightfield.h"
 // #include "cull.h"
@@ -143,6 +144,28 @@ EMSCRIPTEN_KEEPALIVE void doCut(
     numOutPositions,
     outFaces,
     numOutFaces
+  );
+}
+
+EMSCRIPTEN_KEEPALIVE void doCompress(
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors,
+  uint8_t *outData,
+  unsigned int *outSize
+) {
+  compress(
+    positions,
+    numPositions,
+    normals,
+    numNormals,
+    colors,
+    numColors,
+    outData,
+    outSize
   );
 }
 
