@@ -121,6 +121,9 @@ class TriangleMesh
     /// Return a copy of the facet array defining this mesh.
     Point3s facets();
 
+    /// Return a copy of the facet array defining this mesh.
+    std::vector<int> originalFacets();
+
     /// Return a copy of the normals array defining this mesh.
     Pointf3s normals() const;
 

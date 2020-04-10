@@ -65,6 +65,8 @@ TriangleMesh::TriangleMesh(const Pointf3* points, const Point3* facets, size_t n
         facet.extra[0] = 0;
         facet.extra[1] = 0;
 
+        facet.originalIndex = i;
+
         stl.facet_start[i] = facet;
     }
     stl_get_size(&stl);
@@ -451,6 +453,22 @@ Point3s TriangleMesh::facets()
     return tmp;
 }
 
+std::vector<int> TriangleMesh::originalFacets() 
+{
+    std::vector<int> tmp {};
+    if (this->repaired) {
+        if (this->stl.v_shared == nullptr) 
+            stl_generate_shared_vertices(&stl); // build the list of vertices
+        for (auto i = 0; i < stl.stats.number_of_facets; i++) {
+            const auto& v = stl.facet_start[i];
+            tmp.push_back(v.originalIndex);
+        }
+    } else {
+        Slic3r::Log::warn("TriangleMesh", "originalFacets() requires repair()");
+    }
+    return tmp;
+}
+
 Pointf3s TriangleMesh::normals() const
 {
     Pointf3s tmp {};
@@ -758,6 +776,7 @@ TriangleMesh::extrude_tin(float offset)
                 new_facet.normal.x = normal[0];
                 new_facet.normal.y = normal[1];
                 new_facet.normal.z = normal[2];
+                new_facet.originalIndex = facet.originalIndex;
                 stl_add_facet(&this->stl, &new_facet);
                 
                 // second triangle
@@ -767,6 +786,7 @@ TriangleMesh::extrude_tin(float offset)
                 new_facet.normal.x = normal[0];
                 new_facet.normal.y = normal[1];
                 new_facet.normal.z = normal[2];
+                new_facet.originalIndex = facet.originalIndex;
                 stl_add_facet(&this->stl, &new_facet);
             }
         }
@@ -1499,6 +1519,7 @@ TriangleMeshSlicer<A>::cut(float z, TriangleMesh* upper, TriangleMesh* lower) co
             triangle.vertex[0] = *v0;
             triangle.vertex[1] = v0v1;
             triangle.vertex[2] = v2v0;
+            triangle.originalIndex = facet->originalIndex;
             
             // build the facets forming a quadrilateral on the other side
             stl_facet quadrilateral[2];
@@ -1506,10 +1527,12 @@ TriangleMeshSlicer<A>::cut(float z, TriangleMesh* upper, TriangleMesh* lower) co
             quadrilateral[0].vertex[0] = *v1;
             quadrilateral[0].vertex[1] = *v2;
             quadrilateral[0].vertex[2] = v0v1;
+            quadrilateral[0].originalIndex = facet->originalIndex;
             quadrilateral[1].normal = facet->normal;
             quadrilateral[1].vertex[0] = *v2;
             quadrilateral[1].vertex[1] = v2v0;
             quadrilateral[1].vertex[2] = v0v1;
+            quadrilateral[1].originalIndex = facet->originalIndex;
             
             if (_z(*v0) > z) {
                 if (upper != NULL) stl_add_facet(&upper->stl, &triangle);
@@ -1551,6 +1574,7 @@ TriangleMeshSlicer<A>::cut(float z, TriangleMesh* upper, TriangleMesh* lower) co
                 _y(facet.vertex[i]) = unscale(p.points[i].y);
                 _z(facet.vertex[i]) = z;
             }
+            facet.originalIndex = -1;
             stl_add_facet(&upper->stl, &facet);
         }
     }
@@ -1577,6 +1601,7 @@ TriangleMeshSlicer<A>::cut(float z, TriangleMesh* upper, TriangleMesh* lower) co
                 _y(facet.vertex[i]) = unscale(polygon->points[i].y);
                 _z(facet.vertex[i]) = z;
             }
+            facet.originalIndex = -1;
             stl_add_facet(&lower->stl, &facet);
         }
     }
