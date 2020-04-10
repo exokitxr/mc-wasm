@@ -95,6 +95,8 @@ void chunk(
   unsigned int numNormals,
   float *colors,
   unsigned int numColors,
+  float *uvs,
+  unsigned int numUvs,
   float *mins,
   float *maxs,
   float *scale,
@@ -103,7 +105,9 @@ void chunk(
   float **outNormals,
   unsigned int *numOutNormals,
   float **outColors,
-  unsigned int *numOutColors
+  unsigned int *numOutColors,
+  float **outUvs,
+  unsigned int *numOutUvs
 ) {
   unsigned int numFaces = numPositions/3;
   std::vector<unsigned int> faces(numFaces);
@@ -113,12 +117,6 @@ void chunk(
   TriangleMesh hMesh(positions, faces.data(), numFaces);
 
   int meshIndex = 0;
-
-  std::vector<float> hNormalsVector(numNormals);
-  memcpy(hNormalsVector.data(), normals, numNormals*sizeof(float));
-  std::vector<float> hColorsVector(numColors);
-  memcpy(hColorsVector.data(), colors, numColors*sizeof(float));
-
   for (float x = mins[0]; x < maxs[0]; x += scale[0]) {
     float ax = x + scale[0];
 
@@ -128,14 +126,7 @@ void chunk(
     left.repair();
     right.repair();
 
-    /* std::vector<float> leftNormals = getMeshVector(left, hNormalsVector);
-    std::vector<float> leftColors = getMeshVector(left, hColorsVector);
-    std::vector<float> rightNormals = getMeshVector(right, hNormalsVector);
-    std::vector<float> rightColors = getMeshVector(right, hColorsVector); */
-
     TriangleMesh &vMesh = left;
-    // std::vector<float> &vNormalsVector = leftNormals;
-    // std::vector<float> &vColorsVector = leftColors;
 
     for (float z = mins[2]; z < maxs[2]; z += scale[2]) {
       float az = z + scale[2];
@@ -158,11 +149,14 @@ void chunk(
       unsigned int *numOutN = &numOutNormals[meshIndex];
       float *outC = outColors[meshIndex];
       unsigned int *numOutC = &numOutColors[meshIndex];
+      float *outU = outUvs[meshIndex];
+      unsigned int *numOutU = &numOutUvs[meshIndex];
       meshIndex++;
 
       numOutP[0] = 0;
       numOutN[0] = 0;
       numOutC[0] = 0;
+      numOutU[0] = 0;
       
       /* TransformationMatrix matrix = TransformationMatrix::multiply(
         TransformationMatrix::mat_translation(position[0], position[1], position[2]),
@@ -227,6 +221,16 @@ void chunk(
           outC[numOutC[0]++] = colors[originalIndex*9+6];
           outC[numOutC[0]++] = colors[originalIndex*9+7];
           outC[numOutC[0]++] = colors[originalIndex*9+8];
+
+          // uvs
+          outU[numOutU[0]++] = uvs[originalIndex*6];
+          outU[numOutU[0]++] = uvs[originalIndex*6+1];
+
+          outU[numOutU[0]++] = uvs[originalIndex*6+2];
+          outU[numOutU[0]++] = uvs[originalIndex*6+3];
+
+          outU[numOutU[0]++] = uvs[originalIndex*6+4];
+          outU[numOutU[0]++] = uvs[originalIndex*6+5];
         } else {
           // normals
           outN[numOutN[0]++] = 0;
@@ -253,6 +257,16 @@ void chunk(
           outC[numOutC[0]++] = 0;
           outC[numOutC[0]++] = 0;
           outC[numOutC[0]++] = 0;
+
+          // uvs
+          outU[numOutU[0]++] = 0;
+          outU[numOutU[0]++] = 0;
+
+          outU[numOutU[0]++] = 0;
+          outU[numOutU[0]++] = 0;
+
+          outU[numOutU[0]++] = 0;
+          outU[numOutU[0]++] = 0;
         }
       }
 

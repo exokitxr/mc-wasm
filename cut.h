@@ -24,6 +24,8 @@ void chunk(
   unsigned int numNormals,
   float *colors,
   unsigned int numColors,
+  float *uvs,
+  unsigned int numUvs,
   float *mins,
   float *maxs,
   float *scale,
@@ -32,5 +34,7 @@ void chunk(
   float **outNormals,
   unsigned int *numOutNormals,
   float **outColors,
-  unsigned int *numOutColors
+  unsigned int *numOutColors,
+  float **outUvs,
+  unsigned int *numOutUvs
 );
