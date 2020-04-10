@@ -169,6 +169,28 @@ EMSCRIPTEN_KEEPALIVE void doCompress(
   );
 }
 
+EMSCRIPTEN_KEEPALIVE void doDecompress(
+  uint8_t *data,
+  unsigned int size,
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors
+) {
+  decompress(
+    data,
+    size,
+    positions,
+    numPositions,
+    normals,
+    numNormals,
+    colors,
+    numColors
+  );
+}
+
 EMSCRIPTEN_KEEPALIVE void doChunk(
   float *positions,
   unsigned int numPositions,

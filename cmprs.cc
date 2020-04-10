@@ -1,8 +1,10 @@
 #include "cmprs.h"
 #include "draco/mesh/triangle_soup_mesh_builder.h"
 #include "draco/compression/mesh/mesh_edgebreaker_encoder.h"
+#include "draco/src/draco/compression/mesh/mesh_edgebreaker_decoder.h"
 // #include "draco/compression/mesh/mesh_sequential_encoder.h"
 #include "draco/core/encoder_buffer.h"
+#include "draco/core/decoder_buffer.h"
 
 using namespace draco;
 
@@ -45,14 +47,33 @@ void compress(
   encoder.SetMesh(*mesh);
 
   const draco::Status status = encoder.Encode(encoder_options, &buffer);
+  if (status.ok()) {
+    memcpy(outData, buffer.data(), buffer.size());
+    *outSize = buffer.size();
+  } else {
+    std::cerr << "fail" << std::endl;
+    *outSize = 0;
+  }
+}
+
+void decompress(
+  uint8_t *data,
+  unsigned int size,
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors
+) {
+  DecoderBuffer dec_buffer;
+  dec_buffer.Init((const char *)data, size);
+  MeshEdgebreakerDecoder decoder;
+
+  std::unique_ptr<Mesh> decoded_mesh(new Mesh());
+  DecoderOptions dec_options;
+  const draco::Status status = decoder.Decode(dec_options, &dec_buffer, decoded_mesh.get());
   if (!status.ok()) {
     std::cerr << "fail" << std::endl;
   }
-
-  memcpy(outData, buffer.data(), buffer.size());
-  *outSize = buffer.size();
-
-  /* DecoderBuffer dec_buffer;
-  dec_buffer.Init(buffer.data(), buffer.size());
-  MeshEdgebreakerDecoder decoder; */
 }

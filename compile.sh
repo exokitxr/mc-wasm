@@ -17,11 +17,14 @@ emcc -s WASM=1 -O3 -s TOTAL_MEMORY=268435456 -D__linux__ \
   draco/src/draco/compression/point_cloud/point_cloud_encoder.cc \
   draco/src/draco/point_cloud/point_cloud.cc \
   draco/src/draco/core/encoder_buffer.cc \
+  draco/src/draco/core/decoder_buffer.cc \
   draco/src/draco/attributes/geometry_attribute.cc \
   draco/src/draco/mesh/mesh.cc \
   draco/src/draco/core/options.cc \
   draco/src/draco/compression/bit_coders/rans_bit_encoder.cc \
+  draco/src/draco/compression/bit_coders/rans_bit_decoder.cc \
   draco/src/draco/metadata/metadata_encoder.cc \
+  draco/src/draco/metadata/metadata_decoder.cc \
   draco/src/draco/compression/attributes/sequential_attribute_encoders_controller.cc \
   draco/src/draco/mesh/corner_table.cc \
   draco/src/draco/core/divide.cc \
@@ -40,7 +43,19 @@ emcc -s WASM=1 -O3 -s TOTAL_MEMORY=268435456 -D__linux__ \
   draco/src/draco/core/bit_utils.cc \
   draco/src/draco/core/data_buffer.cc \
   draco/src/draco/compression/entropy/symbol_encoding.cc \
+  draco/src/draco/compression/entropy/symbol_decoding.cc \
   draco/src/draco/attributes/attribute_transform.cc \
+  draco/src/draco/compression/mesh/mesh_edgebreaker_decoder.cc \
+  draco/src/draco/compression/point_cloud/point_cloud_decoder.cc \
+  draco/src/draco/compression/mesh/mesh_decoder.cc \
+  draco/src/draco/compression/mesh/mesh_edgebreaker_decoder_impl.cc \
+  draco/src/draco/metadata/geometry_metadata.cc \
+  draco/src/draco/metadata/metadata.cc \
+  draco/src/draco/compression/attributes/sequential_attribute_decoders_controller.cc \
+  draco/src/draco/compression/attributes/attributes_decoder.cc \
+  draco/src/draco/compression/attributes/sequential_attribute_decoder.cc \
+  draco/src/draco/compression/attributes/sequential_integer_attribute_decoder.cc \
+  draco/src/draco/compression/attributes/sequential_quantization_attribute_decoder.cc \
   -Ixs/src/libslic3r -Ixs/src -Isrc/standalone -I/usr/local/Cellar/boost/1.72.0/include \
   -Idraco/src \
   --pre-js prefix.js --post-js postfix.js \
