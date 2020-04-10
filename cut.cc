@@ -73,6 +73,44 @@ void cut(
   plane.splitPolygon(polygon, coplanarFront, coplanarBack, front, back); */
 }
 
+std::vector<float> getMeshVector(TriangleMesh &mesh, const std::vector<float> &v) {
+  const std::vector<int> &originalFacets = mesh.originalFacets();
+  std::vector<float> result(originalFacets.size()*9);
+  int index = 0;
+  for (size_t i = 0; i < originalFacets.size(); i++) {
+    int originalIndex = originalFacets[i];
+
+    if (originalIndex != -1) {
+      memcpy(&result[index], &v[originalIndex*9], 9*sizeof(float));
+      /* result[index++] = v[originalIndex*9];
+      result[index++] = v[originalIndex*9+1];
+      result[index++] = v[originalIndex*9+2];
+
+      result[index++] = v[originalIndex*9+3];
+      result[index++] = v[originalIndex*9+4];
+      result[index++] = v[originalIndex*9+5];
+
+      result[index++] = v[originalIndex*9+6];
+      result[index++] = v[originalIndex*9+7];
+      result[index++] = v[originalIndex*9+8]; */
+    } /* else {
+      result[index++] = 0;
+      result[index++] = 0;
+      result[index++] = 0;
+
+      result[index++] = 0;
+      result[index++] = 0;
+      result[index++] = 0;
+
+      result[index++] = 0;
+      result[index++] = 0;
+      result[index++] = 0;
+    } */
+    index += 9;
+  }
+  return std::move(result);
+}
+
 void chunk(
   float *positions,
   unsigned int numPositions,
@@ -95,61 +133,89 @@ void chunk(
   for (size_t i = 0; i < numFaces; i++) {
     faces[i] = i;
   }
-  TriangleMesh mesh(positions, faces.data(), numFaces);
+  TriangleMesh hMesh(positions, faces.data(), numFaces);
 
   int meshIndex = 0;
-  for (float x = mins[0]; x < maxs[0]; x++) {
-    for (float z = mins[2]; z < maxs[2]; z++) {
-      // float *outP = outPositions[meshIndex];
+
+  std::cerr << "cut 1 " << numNormals << " " << numColors << std::endl;
+
+  std::vector<float> hNormalsVector(numNormals);
+  std::cerr << "cut 1.1 " << numNormals << " " << numColors << std::endl;
+  memcpy(hNormalsVector.data(), normals, numNormals*sizeof(float));
+  std::cerr << "cut 1.2 " << numNormals << " " << numColors << std::endl;
+  std::vector<float> hColorsVector(numColors);
+  std::cerr << "cut 1.3 " << numNormals << " " << numColors << std::endl;
+  memcpy(hColorsVector.data(), colors, numColors*sizeof(float));
+  std::cerr << "cut 1.4 " << numNormals << " " << numColors << std::endl;
+
+  std::cerr << "cut 2" << std::endl;
+
+  for (float x = mins[0]; x < maxs[0]; x += scale[0]) {
+    float ax = x + scale[0];
+
+    std::cerr << "cut 3 " << ax << std::endl;
+
+    TriangleMesh left;
+    TriangleMesh right;
+    // mesh = TriangleMesh(positions, faces.data(), numFaces);
+    hMesh.cut(Axis::X, ax, &right, &left);
+    left.repair();
+    right.repair();
+
+    std::vector<float> leftNormals = getMeshVector(left, hNormalsVector);
+    std::vector<float> leftColors = getMeshVector(left, hColorsVector);
+    std::vector<float> rightNormals = getMeshVector(right, hNormalsVector);
+    std::vector<float> rightColors = getMeshVector(right, hColorsVector);
+
+    TriangleMesh &vMesh = left;
+    std::vector<float> &vNormalsVector = leftNormals;
+    std::vector<float> &vColorsVector = leftColors;
+
+    for (float z = mins[2]; z < maxs[2]; z += scale[2]) {
+      float az = z + scale[2];
+
+      std::cerr << "cut 4 " << az << std::endl;
+
+      TriangleMesh top;
+      TriangleMesh bottom;
+      // mesh = TriangleMesh(positions, faces.data(), numFaces);
+      vMesh.cut(Axis::Z, az, &top, &bottom);
+      top.repair();
+      bottom.repair();
+
+      std::cerr << "cut 5" << std::endl;
+
+      std::vector<float> topNormals = getMeshVector(top, vNormalsVector);
+      std::vector<float> topColors = getMeshVector(top, vColorsVector);
+      std::vector<float> bottomNormals = getMeshVector(bottom, vNormalsVector);
+      std::vector<float> bottomColors = getMeshVector(bottom, vColorsVector);
+
+      std::cerr << "cut 6" << std::endl;
+
+      float *outP = outPositions[meshIndex];
       unsigned int *numOutP = &numOutPositions[meshIndex];
-      // float *outN = outNormals[meshIndex];
+      float *outN = outNormals[meshIndex];
       unsigned int *numOutN = &numOutNormals[meshIndex];
-      // float *outC = outColors[meshIndex];
+      float *outC = outColors[meshIndex];
       unsigned int *numOutC = &numOutColors[meshIndex];
       meshIndex++;
 
       numOutP[0] = 0;
       numOutN[0] = 0;
       numOutC[0] = 0;
-    }
-  }
-  meshIndex = 0;
 
-  for (float x = mins[0]; x < maxs[0]; x++) {
-    float ax = x * scale[0];
-    ax *= scale[0];
+      std::cerr << "cut 7" << std::endl;
+      
+      /* TransformationMatrix matrix = TransformationMatrix::multiply(
+        TransformationMatrix::mat_translation(position[0], position[1], position[2]),
+        TransformationMatrix::multiply(
+          TransformationMatrix::mat_rotation(quaternion[0], quaternion[1], quaternion[2], quaternion[3]),
+          TransformationMatrix::mat_scale(scale[0], scale[1], scale[2])
+        ));
+      TransformationMatrix matrixInverse = matrix.inverse();
+      mesh.transform(matrixInverse); */
 
-    float *outP = outPositions[meshIndex];
-    unsigned int *numOutP = &numOutPositions[meshIndex];
-    float *outN = outNormals[meshIndex];
-    unsigned int *numOutN = &numOutNormals[meshIndex];
-    float *outC = outColors[meshIndex];
-    unsigned int *numOutC = &numOutColors[meshIndex];
-    meshIndex++;
-
-    std::cerr << "cut 1 " << ax << std::endl;
-    
-    /* TransformationMatrix matrix = TransformationMatrix::multiply(
-      TransformationMatrix::mat_translation(position[0], position[1], position[2]),
-      TransformationMatrix::multiply(
-        TransformationMatrix::mat_rotation(quaternion[0], quaternion[1], quaternion[2], quaternion[3]),
-        TransformationMatrix::mat_scale(scale[0], scale[1], scale[2])
-      ));
-    TransformationMatrix matrixInverse = matrix.inverse();
-    mesh.transform(matrixInverse); */
-
-    TriangleMesh left;
-    TriangleMesh right;
-    // mesh = TriangleMesh(positions, faces.data(), numFaces);
-    mesh.cut(Axis::X, ax, &right, &left);
-    left.repair();
-    right.repair();
-
-    {
-      const std::vector<Pointf3> &topPositions = left.vertices();
-      numOutP[0] = 0;
-      numOutN[0] = 0;
-      numOutC[0] = 0;
+      const std::vector<Pointf3> &bottomPositions = bottom.vertices();
 
       /* for (size_t i = 0; i < topPositions.size(); i++) {
         const Pointf3 &topPosition = topPositions[i];
@@ -158,24 +224,24 @@ void chunk(
         outP[numOutP[0]++] = topPosition.z;
       } */
 
-      const std::vector<Point3> &topIndices = left.facets();
-      const std::vector<int> &topOriginalIndices = left.originalFacets();
-      for (size_t i = 0; i < topIndices.size(); i++) {
-        const Slic3r::Point3 &facet = topIndices[i];
-        int originalIndex = topOriginalIndices[i];
+      const std::vector<Point3> &bottomIndices = bottom.facets();
+      const std::vector<int> &bottomOriginalIndices = bottom.originalFacets();
+      for (size_t i = 0; i < bottomIndices.size(); i++) {
+        const Slic3r::Point3 &facet = bottomIndices[i];
+        int originalIndex = bottomOriginalIndices[i];
 
         // positions
-        outP[numOutP[0]++] = topPositions[facet.x].x;
-        outP[numOutP[0]++] = topPositions[facet.x].y;
-        outP[numOutP[0]++] = topPositions[facet.x].z;
+        outP[numOutP[0]++] = bottomPositions[facet.x].x;
+        outP[numOutP[0]++] = bottomPositions[facet.x].y;
+        outP[numOutP[0]++] = bottomPositions[facet.x].z;
 
-        outP[numOutP[0]++] = topPositions[facet.y].x;
-        outP[numOutP[0]++] = topPositions[facet.y].y;
-        outP[numOutP[0]++] = topPositions[facet.y].z;
+        outP[numOutP[0]++] = bottomPositions[facet.y].x;
+        outP[numOutP[0]++] = bottomPositions[facet.y].y;
+        outP[numOutP[0]++] = bottomPositions[facet.y].z;
 
-        outP[numOutP[0]++] = topPositions[facet.z].x;
-        outP[numOutP[0]++] = topPositions[facet.z].y;
-        outP[numOutP[0]++] = topPositions[facet.z].z;
+        outP[numOutP[0]++] = bottomPositions[facet.z].x;
+        outP[numOutP[0]++] = bottomPositions[facet.z].y;
+        outP[numOutP[0]++] = bottomPositions[facet.z].z;
 
         if (originalIndex != -1) {
           // normals
@@ -206,15 +272,15 @@ void chunk(
         } else {
           // normals
           outN[numOutN[0]++] = 0;
-          outN[numOutN[0]++] = 1;
+          outN[numOutN[0]++] = 0;
           outN[numOutN[0]++] = 0;
 
           outN[numOutN[0]++] = 0;
-          outN[numOutN[0]++] = 1;
+          outN[numOutN[0]++] = 0;
           outN[numOutN[0]++] = 0;
 
           outN[numOutN[0]++] = 0;
-          outN[numOutN[0]++] = 1;
+          outN[numOutN[0]++] = 0;
           outN[numOutN[0]++] = 0;
 
           // colors
@@ -231,7 +297,19 @@ void chunk(
           outC[numOutC[0]++] = 0;
         }
       }
+
+      std::cerr << "cut 8" << std::endl;
+
+      vMesh = std::move(top);
+      vNormalsVector = std::move(topNormals);
+      vColorsVector = std::move(topColors);
+
+      std::cerr << "cut 9" << std::endl;
     }
+
+    hMesh = std::move(right);
+    hNormalsVector = std::move(rightNormals);
+    hColorsVector = std::move(rightColors);
   }
   std::cerr << "cut 11" << std::endl;
 }
