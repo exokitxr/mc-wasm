@@ -298,8 +298,10 @@ void decimate(
   unsigned int &numColors,
   float *uvs,
   unsigned int &numUvs,
-  float factor,
-  float target_error,
+  float minTris,
+  float aggressiveness,
+  float base,
+  int iterationOffset,
   unsigned int *faces,
   unsigned int &numFaces
 ) {
@@ -407,8 +409,8 @@ void decimate(
     Simplify::triangles[i/3] = t;
   }
   // int v[3];double err[4];int deleted,dirty,attr;vec3f n;vec3f uvs[3];int material; };
-  size_t target_tri_count = (size_t)(Simplify::triangles.size() * factor);
-  Simplify::simplify_mesh(target_tri_count);
+  size_t target_tri_count = std::min((size_t)minTris, Simplify::triangles.size());
+  Simplify::simplify_mesh(target_tri_count, aggressiveness, base, iterationOffset);
 
   for (size_t i = 0; i < Simplify::vertices.size(); i++) {
     Simplify::Vertex &v = Simplify::vertices[i];

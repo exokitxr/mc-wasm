@@ -244,8 +244,10 @@ EMSCRIPTEN_KEEPALIVE void doDecimate(
   unsigned int *numColors,
   float *uvs,
   unsigned int *numUvs,
-  float factor,
-  float target_error,
+  float minTris,
+  float aggressiveness,
+  float base,
+  int iterationOffset,
   unsigned int *faces,
   unsigned int *numFaces
 ) {
@@ -258,8 +260,10 @@ EMSCRIPTEN_KEEPALIVE void doDecimate(
     *numColors,
     uvs,
     *numUvs,
-    factor,
-    target_error,
+    minTris,
+    aggressiveness,
+    base,
+    iterationOffset,
     faces,
     *numFaces
   );
