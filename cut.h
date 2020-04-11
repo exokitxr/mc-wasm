@@ -2,6 +2,7 @@
 // #include "csgjs.cpp"
 // #include "earcut.hpp"
 #include "TriangleMesh.hpp"
+#include "meshoptimizer/src/meshoptimizer.h"
 
 void cut(
   float *positions,
@@ -37,4 +38,14 @@ void chunk(
   unsigned int *numOutColors,
   float **outUvs,
   unsigned int *numOutUvs
+);
+
+void decimate(
+  float *positions,
+  unsigned int numPositions,
+  unsigned int *faces,
+  unsigned int numFaces,
+  float factor,
+  unsigned int *outFaces,
+  unsigned int *numOutFaces
 );

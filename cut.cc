@@ -279,5 +279,20 @@ void chunk(
     // hNormalsVector = std::move(rightNormals);
     // hColorsVector = std::move(rightColors);
   }
-  std::cerr << "cut 11" << std::endl;
+}
+
+void decimate(
+  float *positions,
+  unsigned int numPositions,
+  unsigned int *faces,
+  unsigned int numFaces,
+  float factor,
+  unsigned int *outFaces,
+  unsigned int *numOutFaces
+) {
+  size_t target_index_count = size_t(numFaces * factor);
+  std::vector<unsigned int> lodIndices(target_index_count);
+  std::cerr << "target indices " << target_index_count << std::endl;
+  *numOutFaces = meshopt_simplifySloppy(outFaces, faces, numFaces, positions, numPositions, 3*sizeof(float), target_index_count);
+  std::cerr << "real indices " << *numOutFaces << std::endl;
 }
