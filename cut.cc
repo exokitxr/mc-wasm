@@ -1,4 +1,5 @@
 #include "cut.h"
+#include "Simplify.h"
 
 using namespace Slic3r;
 
@@ -302,54 +303,152 @@ void decimate(
   unsigned int *faces,
   unsigned int &numFaces
 ) {
-  size_t total_indices = numPositions/3;
-  // std::cerr << "get index count 1 " << numPositions << " " << index_count << std::endl;
-
-  std::vector<unsigned int> remap(total_indices);
-  size_t total_vertices;
   {
-    std::vector<Vertex> vertices(total_indices);
-    for (size_t i = 0; i < total_indices; i++) {
-      vertices[i] = Vertex{
-        {
-          positions[i*3],
-          positions[i*3+1],
-          positions[i*3+2],
-        },
-        {
-          normals[i*3],
-          normals[i*3+1],
-          normals[i*3+2],
-        },
-        {
-          colors[i*3],
-          colors[i*3+1],
-          colors[i*3+2],
-        },
-        {
-          uvs[i*2],
-          uvs[i*2+1]
-        },
-      };
+    size_t total_indices = numPositions/3;
+    std::vector<unsigned int> remap(total_indices);
+    size_t total_vertices;
+    {
+      std::vector<Vertex> vertices(total_indices);
+      for (size_t i = 0; i < total_indices; i++) {
+        vertices[i] = Vertex{
+          {
+            positions[i*3],
+            positions[i*3+1],
+            positions[i*3+2],
+          },
+          {
+            normals[i*3],
+            normals[i*3+1],
+            normals[i*3+2],
+          },
+          {
+            colors[i*3],
+            colors[i*3+1],
+            colors[i*3+2],
+          },
+          {
+            uvs[i*2],
+            uvs[i*2+1]
+          },
+        };
+      }
+      total_vertices = meshopt_generateVertexRemap(remap.data(), NULL, total_indices, vertices.data(), total_indices, sizeof(Vertex));
     }
-    total_vertices = meshopt_generateVertexRemap(remap.data(), NULL, total_indices, vertices.data(), total_indices, sizeof(Vertex));
+
+    meshopt_remapVertexBuffer(positions, positions, total_indices, sizeof(float) * 3, &remap[0]);
+    numPositions = total_vertices * 3;
+
+    meshopt_remapVertexBuffer(normals, normals, total_indices, sizeof(float) * 3, &remap[0]);
+    numNormals = total_vertices * 3;
+
+    meshopt_remapVertexBuffer(colors, colors, total_indices, sizeof(float) * 3, &remap[0]);
+    numColors = total_vertices * 3;
+
+    meshopt_remapVertexBuffer(uvs, uvs, total_indices, sizeof(float) * 2, &remap[0]);
+    numUvs = total_vertices * 2;
+
+    meshopt_remapIndexBuffer(faces, NULL, total_indices, &remap[0]);
+    numFaces = total_indices;
   }
-  // total_vertices = meshopt_generateVertexRemap(remap.data(), NULL, total_indices, positions, total_indices, 3*sizeof(float));
 
-  std::vector<unsigned int> facesTmp(total_indices);
-  meshopt_remapIndexBuffer(facesTmp.data(), NULL, total_indices, &remap[0]);
 
-  meshopt_remapVertexBuffer(positions, positions, total_indices, sizeof(float) * 3, &remap[0]);
-  numPositions = total_vertices * 3;
 
-  meshopt_remapVertexBuffer(normals, normals, total_indices, sizeof(float) * 3, &remap[0]);
-  numNormals = total_vertices * 3;
 
-  meshopt_remapVertexBuffer(colors, colors, total_indices, sizeof(float) * 3, &remap[0]);
-  numColors = total_vertices * 3;
 
-  meshopt_remapVertexBuffer(uvs, uvs, total_indices, sizeof(float) * 2, &remap[0]);
-  numUvs = total_vertices * 2;
+
+  
+
+  Simplify::vertices = std::vector<Simplify::Vertex>(numPositions/3);
+  for (int i = 0; i < Simplify::vertices.size(); i++) {
+    Simplify::Vertex v;
+    v.p.x = positions[i*3];
+    v.p.y = positions[i*3+1];
+    v.p.z = positions[i*3+2];
+    Simplify::vertices[i] = v;
+  }
+  size_t total_indices = numFaces;
+  Simplify::triangles = std::vector<Simplify::Triangle>(total_indices/3);
+  for (int i = 0; i < total_indices; i += 3) {
+    Simplify::Triangle t;
+    t.v[0] = faces[i];
+    t.v[1] = faces[i+1];
+    t.v[2] = faces[i+2];
+    t.attr |= Simplify::Attributes::TEXCOORD | Simplify::Attributes::NORMAL | Simplify::Attributes::COLOR;
+    t.cs[0] = vec3f{
+      colors[faces[i]*3],
+      colors[faces[i]*3+1],
+      colors[faces[i]*3+2],
+    };
+    t.cs[1] = vec3f{
+      colors[faces[i+1]*3],
+      colors[faces[i+1]*3+1],
+      colors[faces[i+1]*3+2],
+    };
+    t.cs[2] = vec3f{
+      colors[faces[i+2]*3],
+      colors[faces[i+2]*3+1],
+      colors[faces[i+2]*3+2],
+    };
+    t.uvs[0] = vec3f{
+      uvs[faces[i]*2],
+      uvs[faces[i]*2+1],
+      0,
+    };
+    t.uvs[1] = vec3f{
+      uvs[faces[i+1]*2],
+      uvs[faces[i+1]*2+1],
+      0,
+    };
+    t.uvs[2] = vec3f{
+      uvs[faces[i+2]*2],
+      uvs[faces[i+2]*2+1],
+      0,
+    };
+    Simplify::triangles[i/3] = t;
+  }
+  // int v[3];double err[4];int deleted,dirty,attr;vec3f n;vec3f uvs[3];int material; };
+  size_t target_tri_count = (size_t)(Simplify::triangles.size() * factor);
+  Simplify::simplify_mesh(target_tri_count);
+
+  for (size_t i = 0; i < Simplify::vertices.size(); i++) {
+    Simplify::Vertex &v = Simplify::vertices[i];
+    positions[i*3] = v.p.x;
+    positions[i*3+1] = v.p.y;
+    positions[i*3+2] = v.p.z;
+  }
+  numPositions = Simplify::vertices.size()*3;
+  numNormals = Simplify::vertices.size()*3;
+  numColors = Simplify::vertices.size()*3;
+  numFaces = Simplify::vertices.size()*2;
+  for (int i = 0; i < Simplify::triangles.size(); i++) {
+    Simplify::Triangle &t = Simplify::triangles[i];
+
+    for (int j = 0; j < 3; j++) {
+      int vi = t.v[j];
+      faces[i*3+j] = vi;
+
+      vec3f &n = t.n;
+      normals[vi*3] = n.x;
+      normals[vi*3+1] = n.y;
+      normals[vi*3+2] = n.z;
+
+      vec3f &c = t.cs[j];
+      colors[vi*3] = c.x;
+      colors[vi*3+1] = c.y;
+      colors[vi*3+2] = c.z;
+
+      vec3f &u = t.uvs[j];
+      uvs[vi*2] = u.x;
+      uvs[vi*2+1] = u.y;
+    }
+  }
+  numFaces = Simplify::triangles.size()*3;
+
+  Simplify::vertices.clear();
+  Simplify::triangles.clear();
+  Simplify::refs.clear();
+
+  /* 
 
   size_t target_index_count = size_t(facesTmp.size() * factor);
   numFaces = meshopt_simplify(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count, target_error);
@@ -367,5 +466,5 @@ void decimate(
     } else {
       numFaces -= 3;
     }
-  }
+  } */
 }
