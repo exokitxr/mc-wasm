@@ -281,27 +281,91 @@ void chunk(
   }
 }
 
+struct Vertex {
+  float position[3];
+  float normal[3];
+  float color[3];
+  float uv[2];
+};
+
 void decimate(
   float *positions,
-  unsigned int numPositions,
+  unsigned int &numPositions,
+  float *normals,
+  unsigned int &numNormals,
+  float *colors,
+  unsigned int &numColors,
+  float *uvs,
+  unsigned int &numUvs,
   float factor,
-  unsigned int *outFaces,
-  unsigned int *numOutFaces
+  float target_error,
+  unsigned int *faces,
+  unsigned int &numFaces
 ) {
-  size_t index_count = numPositions/3;
+  size_t total_indices = numPositions/3;
   // std::cerr << "get index count 1 " << numPositions << " " << index_count << std::endl;
-  std::vector<unsigned int> remap(index_count);
-  size_t vertex_count = meshopt_generateVertexRemap(&remap[0], NULL, index_count, positions, index_count, 3*sizeof(float));
-  // std::cerr << "get index count 2 " << vertex_count << std::endl;
-  remap.resize(vertex_count*3);
 
-  /* memcpy(outFaces, remap.data(), remap.size()*sizeof(unsigned int));
-  *numOutFaces = remap.size(); */
+  std::vector<unsigned int> remap(total_indices);
+  size_t total_vertices;
+  {
+    std::vector<Vertex> vertices(total_indices);
+    for (size_t i = 0; i < total_indices; i++) {
+      vertices[i] = Vertex{
+        {
+          positions[i*3],
+          positions[i*3+1],
+          positions[i*3+2],
+        },
+        {
+          normals[i*3],
+          normals[i*3+1],
+          normals[i*3+2],
+        },
+        {
+          colors[i*3],
+          colors[i*3+1],
+          colors[i*3+2],
+        },
+        {
+          uvs[i*2],
+          uvs[i*2+1]
+        },
+      };
+    }
+    total_vertices = meshopt_generateVertexRemap(remap.data(), NULL, total_indices, vertices.data(), total_indices, sizeof(Vertex));
+  }
+  // total_vertices = meshopt_generateVertexRemap(remap.data(), NULL, total_indices, positions, total_indices, 3*sizeof(float));
 
-  unsigned int *faces = remap.data();
-  unsigned int numFaces = remap.size();
-  float target_error = 1e-2f;
+  std::vector<unsigned int> facesTmp(total_indices);
+  meshopt_remapIndexBuffer(facesTmp.data(), NULL, total_indices, &remap[0]);
 
-  size_t target_index_count = size_t(numFaces * factor);
-  *numOutFaces = meshopt_simplify(outFaces, faces, numFaces, positions, numPositions, 3*sizeof(float), target_index_count, target_error);
+  meshopt_remapVertexBuffer(positions, positions, total_indices, sizeof(float) * 3, &remap[0]);
+  numPositions = total_vertices * 3;
+
+  meshopt_remapVertexBuffer(normals, normals, total_indices, sizeof(float) * 3, &remap[0]);
+  numNormals = total_vertices * 3;
+
+  meshopt_remapVertexBuffer(colors, colors, total_indices, sizeof(float) * 3, &remap[0]);
+  numColors = total_vertices * 3;
+
+  meshopt_remapVertexBuffer(uvs, uvs, total_indices, sizeof(float) * 2, &remap[0]);
+  numUvs = total_vertices * 2;
+
+  size_t target_index_count = size_t(facesTmp.size() * factor);
+  numFaces = meshopt_simplify(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count, target_error);
+  // numFaces = meshopt_simplifySloppy(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count);
+
+  const unsigned int oldNumFaces = numFaces;
+  const unsigned int maxIndex = numPositions/3;
+  unsigned int *faceWrite = faces;
+  for (size_t i = 0; i < oldNumFaces; i += 3) {
+    if (faces[i] < maxIndex && faces[i+1] < maxIndex && faces[i+2] < maxIndex) {
+      faceWrite[0] = faces[i];
+      faceWrite[1] = faces[i+1];
+      faceWrite[2] = faces[i+2];
+      faceWrite += 3;
+    } else {
+      numFaces -= 3;
+    }
+  }
 }
