@@ -57,6 +57,7 @@ emcc -s WASM=1 -O3 -s TOTAL_MEMORY=268435456 -D__linux__ \
   draco/src/draco/compression/attributes/sequential_integer_attribute_decoder.cc \
   draco/src/draco/compression/attributes/sequential_quantization_attribute_decoder.cc \
   meshoptimizer/src/simplifier.cpp \
+  meshoptimizer/src/indexgenerator.cpp \
   -Ixs/src/libslic3r -Ixs/src -Isrc/standalone -I/usr/local/Cellar/boost/1.72.0/include \
   -Idraco/src \
   --pre-js prefix.js --post-js postfix.js \

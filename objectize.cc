@@ -238,8 +238,6 @@ EMSCRIPTEN_KEEPALIVE void doChunk(
 EMSCRIPTEN_KEEPALIVE void doDecimate(
   float *positions,
   unsigned int numPositions,
-  unsigned int *faces,
-  unsigned int numFaces,
   float factor,
   unsigned int *outFaces,
   unsigned int *numOutFaces
@@ -247,8 +245,6 @@ EMSCRIPTEN_KEEPALIVE void doDecimate(
   decimate(
     positions,
     numPositions,
-    faces,
-    numFaces,
     factor,
     outFaces,
     numOutFaces

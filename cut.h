@@ -43,8 +43,6 @@ void chunk(
 void decimate(
   float *positions,
   unsigned int numPositions,
-  unsigned int *faces,
-  unsigned int numFaces,
   float factor,
   unsigned int *outFaces,
   unsigned int *numOutFaces
