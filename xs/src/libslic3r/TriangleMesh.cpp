@@ -1308,7 +1308,7 @@ TriangleMeshSlicer<A>::make_loops(std::vector<IntersectionLine> &lines, Polygons
                 // we can't close this loop!
                 //// push @failed_loops, [@loop];
                 //#ifdef SLIC3R_DEBUG
-                printf("  Unable to close this loop having %d points\n", (int)loop.size());
+                // printf("  Unable to close this loop having %d points\n", (int)loop.size());
                 //#endif
                 goto CYCLE;
             }
