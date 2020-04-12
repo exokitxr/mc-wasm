@@ -315,7 +315,7 @@ namespace Simplify
 		TEXCOORD = 4,
 		COLOR = 8
 	};
-	struct Triangle { int v[3];double err[4];int deleted,dirty,attr;vec3f n;vec3f cs[3];vec3f uvs[3];int material; };
+	struct Triangle { int v[3];double err[4];int deleted,dirty,attr;vec3f n;vec3f cs[3];vec3f uvs[3];int material;double size; };
 	struct Vertex { vec3f p;int tstart,tcount;SymetricMatrix q;int border;};
 	struct Ref { int tid,tvertex; };
 	std::vector<Triangle> triangles;
@@ -342,8 +342,38 @@ namespace Simplify
 	//                 more iterations yield higher quality
 	//
 
+    bool triangleSizeComp(const Triangle &a, const Triangle &b) {
+        return a.size < b.size;
+    }
+
 	void simplify_mesh(int target_count, double agressiveness=7, double base = 0.000000001, int iterationOffset = 3, bool verbose=false)
 	{
+		int halfTargetCount = target_count/2;
+		{
+	        for (size_t i = 0; i < triangles.size(); i++) {
+	        	Triangle &triangle = triangles[i];
+	            vec3f &a = vertices[triangle.v[0]].p;
+	            vec3f &b = vertices[triangle.v[1]].p;
+	            vec3f &c = vertices[triangle.v[2]].p;
+	            const double ab = std::sqrt((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) + (a.z - b.z)*(a.z - b.z));
+	            const double bc = std::sqrt((b.x - c.x)*(b.x - c.x) + (b.y - c.y)*(b.y - c.y) + (b.z - c.z)*(b.z - c.z));
+	            const double ca = std::sqrt((c.x - a.x)*(c.x - a.x) + (c.y - a.y)*(c.y - a.y) + (c.z - a.z)*(c.z - a.z));
+	            const double p = ab + bc + ca;
+	            const double s = p/2.0f;
+	            triangle.size = std::sqrt(s * (s - ab) * (s - bc) * (s - ca));
+	        }
+	        std::vector<Triangle> triangleHeap = triangles;
+	        std::make_heap(triangleHeap.begin(), triangleHeap.end(), triangleSizeComp);
+	        for (size_t i = 0; i < halfTargetCount; i++) {
+	        	std::pop_heap(triangleHeap.begin(), triangleHeap.end(), triangleSizeComp);
+	        	triangles[i] = triangleHeap.back();
+	        	triangleHeap.pop_back();
+	        }
+	        for (size_t i = halfTargetCount; i < triangles.size(); i++) {
+	        	triangles[i] = triangleHeap[i-halfTargetCount];
+	        }
+	    }
+
 		// init
 		loopi(0,triangles.size())
         {
@@ -383,7 +413,7 @@ namespace Simplify
 			}
 
 			// remove vertices & mark deleted triangles
-			loopi(0,triangles.size())
+			loopi(halfTargetCount,triangles.size())
 			{
 				Triangle &t=triangles[i];
 				if(t.err[3]>threshold) continue;
