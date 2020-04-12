@@ -171,66 +171,109 @@ void chunk(
       mesh.transform(matrixInverse); */
 
       const std::vector<Pointf3> &bottomPositions = bottom.vertices();
-      const std::vector<Point3> &bottomIndices = bottom.facets();
-      const std::vector<int> &bottomOriginalFacets = bottom.originalFacets();
-      std::vector<int> vertexSourceIndices(bottomPositions.size());
-      std::fill(vertexSourceIndices.begin(), vertexSourceIndices.end(), -1);
 
+      /* for (size_t i = 0; i < topPositions.size(); i++) {
+        const Pointf3 &topPosition = topPositions[i];
+        outP[numOutP[0]++] = topPosition.x;
+        outP[numOutP[0]++] = topPosition.y;
+        outP[numOutP[0]++] = topPosition.z;
+      } */
+
+      const std::vector<Point3> &bottomIndices = bottom.facets();
+      const std::vector<int> &bottomOriginalIndices = bottom.originalFacets();
       for (size_t i = 0; i < bottomIndices.size(); i++) {
         const Slic3r::Point3 &facet = bottomIndices[i];
-        outI[numOutI[0]++] = facet.x;
-        outI[numOutI[0]++] = facet.y;
-        outI[numOutI[0]++] = facet.z;
-
-        int originalFacet = bottomOriginalFacets[i];
-        if (originalFacet != -1) {
-          if (vertexSourceIndices[facet.x] == -1) {
-            vertexSourceIndices[facet.x] = faces[originalFacet*3];
-          }
-          if (vertexSourceIndices[facet.y] == -1) {
-            vertexSourceIndices[facet.y] = faces[originalFacet*3+1];
-          }
-          if (vertexSourceIndices[facet.z] == -1) {
-            vertexSourceIndices[facet.z] = faces[originalFacet*3+2];
-          }
-        }
-      }
-
-      for (size_t i = 0; i < bottomPositions.size(); i++) {
-        const Pointf3 &p = bottomPositions[i];
+        int originalFacet = bottomOriginalIndices[i];
 
         // positions
-        outP[numOutP[0]++] = p.x;
-        outP[numOutP[0]++] = p.y;
-        outP[numOutP[0]++] = p.z;
+        outP[numOutP[0]++] = bottomPositions[facet.x].x;
+        outP[numOutP[0]++] = bottomPositions[facet.x].y;
+        outP[numOutP[0]++] = bottomPositions[facet.x].z;
 
-        int sourceIndex = vertexSourceIndices[i];
-        if (sourceIndex != -1) {
+        outP[numOutP[0]++] = bottomPositions[facet.y].x;
+        outP[numOutP[0]++] = bottomPositions[facet.y].y;
+        outP[numOutP[0]++] = bottomPositions[facet.y].z;
+
+        outP[numOutP[0]++] = bottomPositions[facet.z].x;
+        outP[numOutP[0]++] = bottomPositions[facet.z].y;
+        outP[numOutP[0]++] = bottomPositions[facet.z].z;
+
+        if (originalFacet != -1) {
+          unsigned int originalIndex[3] = {
+            faces[originalFacet*3],
+            faces[originalFacet*3+1],
+            faces[originalFacet*3+2],
+          };
+
           // normals
-          outN[numOutN[0]++] = normals[sourceIndex*3];
-          outN[numOutN[0]++] = normals[sourceIndex*3+1];
-          outN[numOutN[0]++] = normals[sourceIndex*3+2];
+          outN[numOutN[0]++] = normals[originalIndex[0]*3];
+          outN[numOutN[0]++] = normals[originalIndex[0]*3+1];
+          outN[numOutN[0]++] = normals[originalIndex[0]*3+2];
+
+          outN[numOutN[0]++] = normals[originalIndex[1]*3];
+          outN[numOutN[0]++] = normals[originalIndex[1]*3+1];
+          outN[numOutN[0]++] = normals[originalIndex[1]*3+2];
+
+          outN[numOutN[0]++] = normals[originalIndex[2]*3];
+          outN[numOutN[0]++] = normals[originalIndex[2]*3+1];
+          outN[numOutN[0]++] = normals[originalIndex[2]*3+2];
 
           // colors
-          outC[numOutC[0]++] = colors[sourceIndex*3];
-          outC[numOutC[0]++] = colors[sourceIndex*3+1];
-          outC[numOutC[0]++] = colors[sourceIndex*3+2];
+          outC[numOutC[0]++] = colors[originalIndex[0]*3];
+          outC[numOutC[0]++] = colors[originalIndex[0]*3+1];
+          outC[numOutC[0]++] = colors[originalIndex[0]*3+2];
+
+          outC[numOutC[0]++] = colors[originalIndex[1]*3];
+          outC[numOutC[0]++] = colors[originalIndex[1]*3+1];
+          outC[numOutC[0]++] = colors[originalIndex[1]*3+2];
+
+          outC[numOutC[0]++] = colors[originalIndex[2]*3];
+          outC[numOutC[0]++] = colors[originalIndex[2]*3+1];
+          outC[numOutC[0]++] = colors[originalIndex[2]*3+2];
 
           // uvs
-          outU[numOutU[0]++] = uvs[sourceIndex*2];
-          outU[numOutU[0]++] = uvs[sourceIndex*2+1];
+          outU[numOutU[0]++] = uvs[originalIndex[0]*2];
+          outU[numOutU[0]++] = uvs[originalIndex[0]*2+1];
+
+          outU[numOutU[0]++] = uvs[originalIndex[1]*2];
+          outU[numOutU[0]++] = uvs[originalIndex[1]*2+1];
+
+          outU[numOutU[0]++] = uvs[originalIndex[2]*2];
+          outU[numOutU[0]++] = uvs[originalIndex[2]*2+1];
         } else {
           // normals
           outN[numOutN[0]++] = 0;
           outN[numOutN[0]++] = 0;
-          outN[numOutN[0]++] = 1;
+          outN[numOutN[0]++] = 0;
+
+          outN[numOutN[0]++] = 0;
+          outN[numOutN[0]++] = 0;
+          outN[numOutN[0]++] = 0;
+
+          outN[numOutN[0]++] = 0;
+          outN[numOutN[0]++] = 0;
+          outN[numOutN[0]++] = 0;
 
           // colors
           outC[numOutC[0]++] = 0;
           outC[numOutC[0]++] = 0;
           outC[numOutC[0]++] = 0;
 
+          outC[numOutC[0]++] = 0;
+          outC[numOutC[0]++] = 0;
+          outC[numOutC[0]++] = 0;
+
+          outC[numOutC[0]++] = 0;
+          outC[numOutC[0]++] = 0;
+          outC[numOutC[0]++] = 0;
+
           // uvs
+          outU[numOutU[0]++] = 0;
+          outU[numOutU[0]++] = 0;
+
+          outU[numOutU[0]++] = 0;
+          outU[numOutU[0]++] = 0;
+
           outU[numOutU[0]++] = 0;
           outU[numOutU[0]++] = 0;
         }
