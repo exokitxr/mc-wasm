@@ -114,16 +114,11 @@ void chunk(
   unsigned int **outFaces,
   unsigned int *numOutFaces
 ) {
-  std::cerr << "chunk 0.1 " << numPositions << " " << numFaces << " " << faces[0] << " " << faces[1] << " " << faces[2] << std::endl;
   TriangleMesh hMesh(positions, faces, numFaces);
-
-  std::cerr << "chunk 0.2 " << numFaces << std::endl;
 
   int meshIndex = 0;
   for (float x = mins[0]; x < maxs[0]; x += scale[0]) {
     float ax = x + scale[0];
-
-    std::cerr << "chunk 1.1 " << ax << std::endl;
 
     TriangleMesh left;
     TriangleMesh right;
@@ -135,8 +130,6 @@ void chunk(
 
     for (float z = mins[2]; z < maxs[2]; z += scale[2]) {
       float az = z + scale[2];
-
-      std::cerr << "chunk 1.2 " << az << std::endl;
 
       TriangleMesh top;
       TriangleMesh bottom;
@@ -167,8 +160,6 @@ void chunk(
       numOutC[0] = 0;
       numOutU[0] = 0;
       numOutI[0] = 0;
-
-      std::cerr << "chunk 2.1" << std::endl;
       
       /* TransformationMatrix matrix = TransformationMatrix::multiply(
         TransformationMatrix::mat_translation(position[0], position[1], position[2]),
@@ -185,16 +176,12 @@ void chunk(
       std::vector<int> vertexSourceIndices(bottomPositions.size());
       std::fill(vertexSourceIndices.begin(), vertexSourceIndices.end(), -1);
 
-      std::cerr << "chunk 2.2 " << bottomPositions.size() << " " << bottomIndices.size() << " " << bottomOriginalFacets.size() << " " << vertexSourceIndices.size() << std::endl;
       for (size_t i = 0; i < bottomIndices.size(); i++) {
         const Slic3r::Point3 &facet = bottomIndices[i];
         outI[numOutI[0]++] = facet.x;
         outI[numOutI[0]++] = facet.y;
         outI[numOutI[0]++] = facet.z;
-      }
-      std::cerr << "chunk 2.3 " << bottomPositions.size() << " " << bottomIndices.size() << " " << bottomOriginalFacets.size() << " " << vertexSourceIndices.size() << std::endl;
-      for (size_t i = 0; i < bottomIndices.size(); i++) {
-        const Slic3r::Point3 &facet = bottomIndices[i];
+
         int originalFacet = bottomOriginalFacets[i];
         if (originalFacet != -1) {
           if (vertexSourceIndices[facet.x] == -1) {
@@ -209,8 +196,6 @@ void chunk(
         }
       }
 
-      std::cerr << "chunk 3" << std::endl;
-
       for (size_t i = 0; i < bottomPositions.size(); i++) {
         const Pointf3 &p = bottomPositions[i];
 
@@ -218,11 +203,7 @@ void chunk(
         outP[numOutP[0]++] = p.x;
         outP[numOutP[0]++] = p.y;
         outP[numOutP[0]++] = p.z;
-      }
 
-      std::cerr << "chunk 4" << std::endl;
-
-      for (size_t i = 0; i < bottomPositions.size(); i++) {
         int sourceIndex = vertexSourceIndices[i];
         if (sourceIndex != -1) {
           // normals
@@ -254,8 +235,6 @@ void chunk(
           outU[numOutU[0]++] = 0;
         }
       }
-
-      std::cerr << "chunk 4" << std::endl;
 
       vMesh = std::move(top);
       // vNormalsVector = std::move(topNormals);
