@@ -27,6 +27,8 @@ void chunk(
   unsigned int numColors,
   float *uvs,
   unsigned int numUvs,
+  unsigned int *faces,
+  unsigned int numFaces,
   float *mins,
   float *maxs,
   float *scale,
@@ -37,7 +39,9 @@ void chunk(
   float **outColors,
   unsigned int *numOutColors,
   float **outUvs,
-  unsigned int *numOutUvs
+  unsigned int *numOutUvs,
+  unsigned int **outFaces,
+  unsigned int *numOutFaces
 );
 
 void decimate(

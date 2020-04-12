@@ -98,6 +98,8 @@ void chunk(
   unsigned int numColors,
   float *uvs,
   unsigned int numUvs,
+  unsigned int *faces,
+  unsigned int numFaces,
   float *mins,
   float *maxs,
   float *scale,
@@ -108,18 +110,20 @@ void chunk(
   float **outColors,
   unsigned int *numOutColors,
   float **outUvs,
-  unsigned int *numOutUvs
+  unsigned int *numOutUvs,
+  unsigned int **outFaces,
+  unsigned int *numOutFaces
 ) {
-  unsigned int numFaces = numPositions/3;
-  std::vector<unsigned int> faces(numFaces);
-  for (size_t i = 0; i < numFaces; i++) {
-    faces[i] = i;
-  }
-  TriangleMesh hMesh(positions, faces.data(), numFaces);
+  std::cerr << "chunk 0.1 " << numPositions << " " << numFaces << " " << faces[0] << " " << faces[1] << " " << faces[2] << std::endl;
+  TriangleMesh hMesh(positions, faces, numFaces);
+
+  std::cerr << "chunk 0.2 " << numFaces << std::endl;
 
   int meshIndex = 0;
   for (float x = mins[0]; x < maxs[0]; x += scale[0]) {
     float ax = x + scale[0];
+
+    std::cerr << "chunk 1.1 " << ax << std::endl;
 
     TriangleMesh left;
     TriangleMesh right;
@@ -131,6 +135,8 @@ void chunk(
 
     for (float z = mins[2]; z < maxs[2]; z += scale[2]) {
       float az = z + scale[2];
+
+      std::cerr << "chunk 1.2 " << az << std::endl;
 
       TriangleMesh top;
       TriangleMesh bottom;
@@ -152,12 +158,17 @@ void chunk(
       unsigned int *numOutC = &numOutColors[meshIndex];
       float *outU = outUvs[meshIndex];
       unsigned int *numOutU = &numOutUvs[meshIndex];
+      unsigned int *outI = outFaces[meshIndex];
+      unsigned int *numOutI = &numOutFaces[meshIndex];
       meshIndex++;
 
       numOutP[0] = 0;
       numOutN[0] = 0;
       numOutC[0] = 0;
       numOutU[0] = 0;
+      numOutI[0] = 0;
+
+      std::cerr << "chunk 2.1" << std::endl;
       
       /* TransformationMatrix matrix = TransformationMatrix::multiply(
         TransformationMatrix::mat_translation(position[0], position[1], position[2]),
@@ -169,92 +180,71 @@ void chunk(
       mesh.transform(matrixInverse); */
 
       const std::vector<Pointf3> &bottomPositions = bottom.vertices();
-
-      /* for (size_t i = 0; i < topPositions.size(); i++) {
-        const Pointf3 &topPosition = topPositions[i];
-        outP[numOutP[0]++] = topPosition.x;
-        outP[numOutP[0]++] = topPosition.y;
-        outP[numOutP[0]++] = topPosition.z;
-      } */
-
       const std::vector<Point3> &bottomIndices = bottom.facets();
-      const std::vector<int> &bottomOriginalIndices = bottom.originalFacets();
+      const std::vector<int> &bottomOriginalFacets = bottom.originalFacets();
+      std::vector<int> vertexSourceIndices(bottomPositions.size());
+      std::fill(vertexSourceIndices.begin(), vertexSourceIndices.end(), -1);
+
+      std::cerr << "chunk 2.2 " << bottomPositions.size() << " " << bottomIndices.size() << " " << bottomOriginalFacets.size() << " " << vertexSourceIndices.size() << std::endl;
       for (size_t i = 0; i < bottomIndices.size(); i++) {
         const Slic3r::Point3 &facet = bottomIndices[i];
-        int originalIndex = bottomOriginalIndices[i];
+        outI[numOutI[0]++] = facet.x;
+        outI[numOutI[0]++] = facet.y;
+        outI[numOutI[0]++] = facet.z;
+      }
+      std::cerr << "chunk 2.3 " << bottomPositions.size() << " " << bottomIndices.size() << " " << bottomOriginalFacets.size() << " " << vertexSourceIndices.size() << std::endl;
+      for (size_t i = 0; i < bottomIndices.size(); i++) {
+        const Slic3r::Point3 &facet = bottomIndices[i];
+        int originalFacet = bottomOriginalFacets[i];
+        if (originalFacet != -1) {
+          if (vertexSourceIndices[facet.x] == -1) {
+            vertexSourceIndices[facet.x] = faces[originalFacet*3];
+          }
+          if (vertexSourceIndices[facet.y] == -1) {
+            vertexSourceIndices[facet.y] = faces[originalFacet*3+1];
+          }
+          if (vertexSourceIndices[facet.z] == -1) {
+            vertexSourceIndices[facet.z] = faces[originalFacet*3+2];
+          }
+        }
+      }
+
+      std::cerr << "chunk 3" << std::endl;
+
+      for (size_t i = 0; i < bottomPositions.size(); i++) {
+        const Pointf3 &p = bottomPositions[i];
 
         // positions
-        outP[numOutP[0]++] = bottomPositions[facet.x].x;
-        outP[numOutP[0]++] = bottomPositions[facet.x].y;
-        outP[numOutP[0]++] = bottomPositions[facet.x].z;
+        outP[numOutP[0]++] = p.x;
+        outP[numOutP[0]++] = p.y;
+        outP[numOutP[0]++] = p.z;
+      }
 
-        outP[numOutP[0]++] = bottomPositions[facet.y].x;
-        outP[numOutP[0]++] = bottomPositions[facet.y].y;
-        outP[numOutP[0]++] = bottomPositions[facet.y].z;
+      std::cerr << "chunk 4" << std::endl;
 
-        outP[numOutP[0]++] = bottomPositions[facet.z].x;
-        outP[numOutP[0]++] = bottomPositions[facet.z].y;
-        outP[numOutP[0]++] = bottomPositions[facet.z].z;
-
-        if (originalIndex != -1) {
+      for (size_t i = 0; i < bottomPositions.size(); i++) {
+        int sourceIndex = vertexSourceIndices[i];
+        if (sourceIndex != -1) {
           // normals
-          outN[numOutN[0]++] = normals[originalIndex*9];
-          outN[numOutN[0]++] = normals[originalIndex*9+1];
-          outN[numOutN[0]++] = normals[originalIndex*9+2];
-
-          outN[numOutN[0]++] = normals[originalIndex*9+3];
-          outN[numOutN[0]++] = normals[originalIndex*9+4];
-          outN[numOutN[0]++] = normals[originalIndex*9+5];
-
-          outN[numOutN[0]++] = normals[originalIndex*9+6];
-          outN[numOutN[0]++] = normals[originalIndex*9+7];
-          outN[numOutN[0]++] = normals[originalIndex*9+8];
+          outN[numOutN[0]++] = normals[sourceIndex*3];
+          outN[numOutN[0]++] = normals[sourceIndex*3+1];
+          outN[numOutN[0]++] = normals[sourceIndex*3+2];
 
           // colors
-          outC[numOutC[0]++] = colors[originalIndex*9];
-          outC[numOutC[0]++] = colors[originalIndex*9+1];
-          outC[numOutC[0]++] = colors[originalIndex*9+2];
-
-          outC[numOutC[0]++] = colors[originalIndex*9+3];
-          outC[numOutC[0]++] = colors[originalIndex*9+4];
-          outC[numOutC[0]++] = colors[originalIndex*9+5];
-
-          outC[numOutC[0]++] = colors[originalIndex*9+6];
-          outC[numOutC[0]++] = colors[originalIndex*9+7];
-          outC[numOutC[0]++] = colors[originalIndex*9+8];
+          outC[numOutC[0]++] = colors[sourceIndex*3];
+          outC[numOutC[0]++] = colors[sourceIndex*3+1];
+          outC[numOutC[0]++] = colors[sourceIndex*3+2];
 
           // uvs
-          outU[numOutU[0]++] = uvs[originalIndex*6];
-          outU[numOutU[0]++] = uvs[originalIndex*6+1];
-
-          outU[numOutU[0]++] = uvs[originalIndex*6+2];
-          outU[numOutU[0]++] = uvs[originalIndex*6+3];
-
-          outU[numOutU[0]++] = uvs[originalIndex*6+4];
-          outU[numOutU[0]++] = uvs[originalIndex*6+5];
+          outU[numOutU[0]++] = uvs[sourceIndex*2];
+          outU[numOutU[0]++] = uvs[sourceIndex*2+1];
         } else {
           // normals
           outN[numOutN[0]++] = 0;
           outN[numOutN[0]++] = 0;
-          outN[numOutN[0]++] = 0;
-
-          outN[numOutN[0]++] = 0;
-          outN[numOutN[0]++] = 0;
-          outN[numOutN[0]++] = 0;
-
-          outN[numOutN[0]++] = 0;
-          outN[numOutN[0]++] = 0;
-          outN[numOutN[0]++] = 0;
+          outN[numOutN[0]++] = 1;
 
           // colors
-          outC[numOutC[0]++] = 0;
-          outC[numOutC[0]++] = 0;
-          outC[numOutC[0]++] = 0;
-
-          outC[numOutC[0]++] = 0;
-          outC[numOutC[0]++] = 0;
-          outC[numOutC[0]++] = 0;
-
           outC[numOutC[0]++] = 0;
           outC[numOutC[0]++] = 0;
           outC[numOutC[0]++] = 0;
@@ -262,14 +252,10 @@ void chunk(
           // uvs
           outU[numOutU[0]++] = 0;
           outU[numOutU[0]++] = 0;
-
-          outU[numOutU[0]++] = 0;
-          outU[numOutU[0]++] = 0;
-
-          outU[numOutU[0]++] = 0;
-          outU[numOutU[0]++] = 0;
         }
       }
+
+      std::cerr << "chunk 4" << std::endl;
 
       vMesh = std::move(top);
       // vNormalsVector = std::move(topNormals);
@@ -352,121 +338,114 @@ void decimate(
     meshopt_remapIndexBuffer(faces, NULL, total_indices, &remap[0]);
     numFaces = total_indices;
   }
-
-
-
-
-
-
-  
-
-  Simplify::vertices = std::vector<Simplify::Vertex>(numPositions/3);
-  for (int i = 0; i < Simplify::vertices.size(); i++) {
-    Simplify::Vertex v;
-    v.p.x = positions[i*3];
-    v.p.y = positions[i*3+1];
-    v.p.z = positions[i*3+2];
-    Simplify::vertices[i] = v;
-  }
-  size_t total_indices = numFaces;
-  Simplify::triangles = std::vector<Simplify::Triangle>(total_indices/3);
-  for (int i = 0; i < total_indices; i += 3) {
-    Simplify::Triangle t;
-    t.v[0] = faces[i];
-    t.v[1] = faces[i+1];
-    t.v[2] = faces[i+2];
-    t.attr |= Simplify::Attributes::TEXCOORD | Simplify::Attributes::NORMAL | Simplify::Attributes::COLOR;
-    t.cs[0] = vec3f{
-      colors[faces[i]*3],
-      colors[faces[i]*3+1],
-      colors[faces[i]*3+2],
-    };
-    t.cs[1] = vec3f{
-      colors[faces[i+1]*3],
-      colors[faces[i+1]*3+1],
-      colors[faces[i+1]*3+2],
-    };
-    t.cs[2] = vec3f{
-      colors[faces[i+2]*3],
-      colors[faces[i+2]*3+1],
-      colors[faces[i+2]*3+2],
-    };
-    t.uvs[0] = vec3f{
-      uvs[faces[i]*2],
-      uvs[faces[i]*2+1],
-      0,
-    };
-    t.uvs[1] = vec3f{
-      uvs[faces[i+1]*2],
-      uvs[faces[i+1]*2+1],
-      0,
-    };
-    t.uvs[2] = vec3f{
-      uvs[faces[i+2]*2],
-      uvs[faces[i+2]*2+1],
-      0,
-    };
-    Simplify::triangles[i/3] = t;
-  }
-  // int v[3];double err[4];int deleted,dirty,attr;vec3f n;vec3f uvs[3];int material; };
   size_t target_tri_count = std::min((size_t)minTris, Simplify::triangles.size());
-  Simplify::simplify_mesh(target_tri_count, aggressiveness, base, iterationOffset);
-
-  for (size_t i = 0; i < Simplify::vertices.size(); i++) {
-    Simplify::Vertex &v = Simplify::vertices[i];
-    positions[i*3] = v.p.x;
-    positions[i*3+1] = v.p.y;
-    positions[i*3+2] = v.p.z;
-  }
-  numPositions = Simplify::vertices.size()*3;
-  numNormals = Simplify::vertices.size()*3;
-  numColors = Simplify::vertices.size()*3;
-  numFaces = Simplify::vertices.size()*2;
-  for (int i = 0; i < Simplify::triangles.size(); i++) {
-    Simplify::Triangle &t = Simplify::triangles[i];
-
-    for (int j = 0; j < 3; j++) {
-      int vi = t.v[j];
-      faces[i*3+j] = vi;
-
-      vec3f &n = t.n;
-      normals[vi*3] = n.x;
-      normals[vi*3+1] = n.y;
-      normals[vi*3+2] = n.z;
-
-      vec3f &c = t.cs[j];
-      colors[vi*3] = c.x;
-      colors[vi*3+1] = c.y;
-      colors[vi*3+2] = c.z;
-
-      vec3f &u = t.uvs[j];
-      uvs[vi*2] = u.x;
-      uvs[vi*2+1] = u.y;
+  if (target_tri_count < Simplify::triangles.size()) {
+    Simplify::vertices = std::vector<Simplify::Vertex>(numPositions/3);
+    for (int i = 0; i < Simplify::vertices.size(); i++) {
+      Simplify::Vertex v;
+      v.p.x = positions[i*3];
+      v.p.y = positions[i*3+1];
+      v.p.z = positions[i*3+2];
+      Simplify::vertices[i] = v;
     }
-  }
-  numFaces = Simplify::triangles.size()*3;
-
-  Simplify::vertices.clear();
-  Simplify::triangles.clear();
-  Simplify::refs.clear();
-
-  /* 
-
-  size_t target_index_count = size_t(facesTmp.size() * factor);
-  numFaces = meshopt_simplify(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count, target_error);
-  // numFaces = meshopt_simplifySloppy(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count);
-
-  const unsigned int oldNumFaces = numFaces;
-  const unsigned int maxIndex = numPositions/3;
-  unsigned int *faceWrite = faces;
-  for (size_t i = 0; i < oldNumFaces; i += 3) {
-    if (faces[i] < maxIndex && faces[i+1] < maxIndex && faces[i+2] < maxIndex) {
-      faceWrite[0] = faces[i];
-      faceWrite[1] = faces[i+1];
-      faceWrite[2] = faces[i+2];
-      faceWrite += 3;
-    } else {
-      numFaces -= 3;
+    size_t total_indices = numFaces;
+    Simplify::triangles = std::vector<Simplify::Triangle>(total_indices/3);
+    for (int i = 0; i < total_indices; i += 3) {
+      Simplify::Triangle t;
+      t.v[0] = faces[i];
+      t.v[1] = faces[i+1];
+      t.v[2] = faces[i+2];
+      t.attr |= Simplify::Attributes::TEXCOORD | Simplify::Attributes::NORMAL | Simplify::Attributes::COLOR;
+      t.cs[0] = vec3f{
+        colors[faces[i]*3],
+        colors[faces[i]*3+1],
+        colors[faces[i]*3+2],
+      };
+      t.cs[1] = vec3f{
+        colors[faces[i+1]*3],
+        colors[faces[i+1]*3+1],
+        colors[faces[i+1]*3+2],
+      };
+      t.cs[2] = vec3f{
+        colors[faces[i+2]*3],
+        colors[faces[i+2]*3+1],
+        colors[faces[i+2]*3+2],
+      };
+      t.uvs[0] = vec3f{
+        uvs[faces[i]*2],
+        uvs[faces[i]*2+1],
+        0,
+      };
+      t.uvs[1] = vec3f{
+        uvs[faces[i+1]*2],
+        uvs[faces[i+1]*2+1],
+        0,
+      };
+      t.uvs[2] = vec3f{
+        uvs[faces[i+2]*2],
+        uvs[faces[i+2]*2+1],
+        0,
+      };
+      Simplify::triangles[i/3] = t;
     }
-  } */
+    Simplify::simplify_mesh(target_tri_count, aggressiveness, base, iterationOffset);
+
+    for (size_t i = 0; i < Simplify::vertices.size(); i++) {
+      Simplify::Vertex &v = Simplify::vertices[i];
+      positions[i*3] = v.p.x;
+      positions[i*3+1] = v.p.y;
+      positions[i*3+2] = v.p.z;
+    }
+    numPositions = Simplify::vertices.size()*3;
+    numNormals = Simplify::vertices.size()*3;
+    numColors = Simplify::vertices.size()*3;
+    numFaces = Simplify::vertices.size()*2;
+    for (int i = 0; i < Simplify::triangles.size(); i++) {
+      Simplify::Triangle &t = Simplify::triangles[i];
+
+      for (int j = 0; j < 3; j++) {
+        int vi = t.v[j];
+        faces[i*3+j] = vi;
+
+        vec3f &n = t.n;
+        normals[vi*3] = n.x;
+        normals[vi*3+1] = n.y;
+        normals[vi*3+2] = n.z;
+
+        vec3f &c = t.cs[j];
+        colors[vi*3] = c.x;
+        colors[vi*3+1] = c.y;
+        colors[vi*3+2] = c.z;
+
+        vec3f &u = t.uvs[j];
+        uvs[vi*2] = u.x;
+        uvs[vi*2+1] = u.y;
+      }
+    }
+    numFaces = Simplify::triangles.size()*3;
+
+    Simplify::vertices.clear();
+    Simplify::triangles.clear();
+    Simplify::refs.clear();
+
+    /* 
+
+    size_t target_index_count = size_t(facesTmp.size() * factor);
+    numFaces = meshopt_simplify(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count, target_error);
+    // numFaces = meshopt_simplifySloppy(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count);
+
+    const unsigned int oldNumFaces = numFaces;
+    const unsigned int maxIndex = numPositions/3;
+    unsigned int *faceWrite = faces;
+    for (size_t i = 0; i < oldNumFaces; i += 3) {
+      if (faces[i] < maxIndex && faces[i+1] < maxIndex && faces[i+2] < maxIndex) {
+        faceWrite[0] = faces[i];
+        faceWrite[1] = faces[i+1];
+        faceWrite[2] = faces[i+2];
+        faceWrite += 3;
+      } else {
+        numFaces -= 3;
+      }
+    } */
+  }
 }
