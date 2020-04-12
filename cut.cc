@@ -137,15 +137,9 @@ void chunk(
 
       TriangleMesh top;
       TriangleMesh bottom;
-      // mesh = TriangleMesh(positions, faces.data(), numFaces);
       vMesh.cut(Axis::Z, az, &top, &bottom);
       top.repair();
       bottom.repair();
-
-      /* std::vector<float> topNormals = getMeshVector(top, vNormalsVector);
-      std::vector<float> topColors = getMeshVector(top, vColorsVector);
-      std::vector<float> bottomNormals = getMeshVector(bottom, vNormalsVector);
-      std::vector<float> bottomColors = getMeshVector(bottom, vColorsVector); */
 
       float *outP = outPositions[meshIndex];
       unsigned int *numOutP = &numOutPositions[meshIndex];
@@ -167,24 +161,8 @@ void chunk(
       numOutU[0] = 0;
       numOutX[0] = 0;
       numOutI[0] = 0;
-      
-      /* TransformationMatrix matrix = TransformationMatrix::multiply(
-        TransformationMatrix::mat_translation(position[0], position[1], position[2]),
-        TransformationMatrix::multiply(
-          TransformationMatrix::mat_rotation(quaternion[0], quaternion[1], quaternion[2], quaternion[3]),
-          TransformationMatrix::mat_scale(scale[0], scale[1], scale[2])
-        ));
-      TransformationMatrix matrixInverse = matrix.inverse();
-      mesh.transform(matrixInverse); */
 
       const std::vector<Pointf3> &bottomPositions = bottom.vertices();
-
-      /* for (size_t i = 0; i < topPositions.size(); i++) {
-        const Pointf3 &topPosition = topPositions[i];
-        outP[numOutP[0]++] = topPosition.x;
-        outP[numOutP[0]++] = topPosition.y;
-        outP[numOutP[0]++] = topPosition.z;
-      } */
 
       const std::vector<Point3> &bottomIndices = bottom.facets();
       const std::vector<int> &bottomOriginalIndices = bottom.originalFacets();
@@ -301,13 +279,9 @@ void chunk(
       }
 
       vMesh = std::move(top);
-      // vNormalsVector = std::move(topNormals);
-      // vColorsVector = std::move(topColors);
     }
 
     hMesh = std::move(right);
-    // hNormalsVector = std::move(rightNormals);
-    // hColorsVector = std::move(rightColors);
   }
 }
 
