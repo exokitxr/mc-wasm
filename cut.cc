@@ -317,8 +317,10 @@ void decimate(
     meshopt_remapIndexBuffer(faces, NULL, total_indices, &remap[0]);
     numFaces = total_indices;
   }
-  size_t target_tri_count = std::min((size_t)minTris, Simplify::triangles.size());
-  if (target_tri_count < Simplify::triangles.size()) {
+  size_t total_indices = numFaces;
+  size_t total_triangles = total_indices/3;
+  size_t target_tri_count = std::min((size_t)minTris, total_triangles);
+  if (target_tri_count < total_triangles) {
     Simplify::vertices = std::vector<Simplify::Vertex>(numPositions/3);
     for (int i = 0; i < Simplify::vertices.size(); i++) {
       Simplify::Vertex v;
@@ -327,8 +329,7 @@ void decimate(
       v.p.z = positions[i*3+2];
       Simplify::vertices[i] = v;
     }
-    size_t total_indices = numFaces;
-    Simplify::triangles = std::vector<Simplify::Triangle>(total_indices/3);
+    Simplify::triangles = std::vector<Simplify::Triangle>(total_triangles);
     for (int i = 0; i < total_indices; i += 3) {
       Simplify::Triangle t;
       t.v[0] = faces[i];
