@@ -98,6 +98,8 @@ void chunk(
   unsigned int numColors,
   float *uvs,
   unsigned int numUvs,
+  unsigned int *ids,
+  unsigned int numIds,
   unsigned int *faces,
   unsigned int numFaces,
   float *mins,
@@ -111,6 +113,8 @@ void chunk(
   unsigned int *numOutColors,
   float **outUvs,
   unsigned int *numOutUvs,
+  unsigned int **outIds,
+  unsigned int *numOutIds,
   unsigned int **outFaces,
   unsigned int *numOutFaces
 ) {
@@ -151,6 +155,8 @@ void chunk(
       unsigned int *numOutC = &numOutColors[meshIndex];
       float *outU = outUvs[meshIndex];
       unsigned int *numOutU = &numOutUvs[meshIndex];
+      unsigned int *outX = outIds[meshIndex];
+      unsigned int *numOutX = &numOutIds[meshIndex];
       unsigned int *outI = outFaces[meshIndex];
       unsigned int *numOutI = &numOutFaces[meshIndex];
       meshIndex++;
@@ -159,6 +165,7 @@ void chunk(
       numOutN[0] = 0;
       numOutC[0] = 0;
       numOutU[0] = 0;
+      numOutX[0] = 0;
       numOutI[0] = 0;
       
       /* TransformationMatrix matrix = TransformationMatrix::multiply(
@@ -240,6 +247,13 @@ void chunk(
 
           outU[numOutU[0]++] = uvs[originalIndex[2]*2];
           outU[numOutU[0]++] = uvs[originalIndex[2]*2+1];
+
+          // ids
+          outX[numOutX[0]++] = ids[originalIndex[0]];
+
+          outX[numOutX[0]++] = ids[originalIndex[1]];
+
+          outX[numOutX[0]++] = ids[originalIndex[2]];
         } else {
           // normals
           outN[numOutN[0]++] = 0;
@@ -276,6 +290,13 @@ void chunk(
 
           outU[numOutU[0]++] = 0;
           outU[numOutU[0]++] = 0;
+
+          // ids
+          outX[numOutX[0]++] = 0;
+
+          outX[numOutX[0]++] = 0;
+
+          outX[numOutX[0]++] = 0;
         }
       }
 

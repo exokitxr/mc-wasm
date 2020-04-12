@@ -200,6 +200,8 @@ EMSCRIPTEN_KEEPALIVE void doChunk(
   unsigned int numColors,
   float *uvs,
   unsigned int numUvs,
+  unsigned int *ids,
+  unsigned int numIds,
   unsigned int *faces,
   unsigned int numFaces,
   float *mins,
@@ -213,6 +215,8 @@ EMSCRIPTEN_KEEPALIVE void doChunk(
   unsigned int *numOutColors,
   float **outUvs,
   unsigned int *numOutUvs,
+  unsigned int **outIds,
+  unsigned int *numOutIds,
   unsigned int **outFaces,
   unsigned int *numOutFaces
 ) {
@@ -225,6 +229,8 @@ EMSCRIPTEN_KEEPALIVE void doChunk(
     numColors,
     uvs,
     numUvs,
+    ids,
+    numIds,
     faces,
     numFaces,
     mins,
@@ -238,6 +244,8 @@ EMSCRIPTEN_KEEPALIVE void doChunk(
     numOutColors,
     outUvs,
     numOutUvs,
+    outIds,
+    numOutIds,
     outFaces,
     numOutFaces
   );
