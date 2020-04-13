@@ -86,6 +86,8 @@ void decimate(
   unsigned int &numColors,
   float *uvs,
   unsigned int &numUvs,
+  unsigned int *ids,
+  unsigned int numIds,
   float minTris,
   float aggressiveness,
   float base,

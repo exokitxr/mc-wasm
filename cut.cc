@@ -491,6 +491,8 @@ void decimate(
   unsigned int &numColors,
   float *uvs,
   unsigned int &numUvs,
+  unsigned int *ids,
+  unsigned int numIds,
   float minTris,
   float aggressiveness,
   float base,
@@ -594,6 +596,9 @@ void decimate(
         uvs[faces[i+2]*2+1],
         0,
       };
+      t.ids[0] = ids[faces[i]];
+      t.ids[1] = ids[faces[i+1]];
+      t.ids[2] = ids[faces[i+2]];
       Simplify::triangles[i/3] = t;
     }
     Simplify::simplify_mesh(target_tri_count, aggressiveness, base, iterationOffset);
@@ -607,6 +612,7 @@ void decimate(
     numPositions = Simplify::vertices.size()*3;
     numNormals = Simplify::vertices.size()*3;
     numColors = Simplify::vertices.size()*3;
+    numIds = Simplify::vertices.size();
     numFaces = Simplify::vertices.size()*2;
     for (int i = 0; i < Simplify::triangles.size(); i++) {
       Simplify::Triangle &t = Simplify::triangles[i];
@@ -628,6 +634,8 @@ void decimate(
         vec3f &u = t.uvs[j];
         uvs[vi*2] = u.x;
         uvs[vi*2+1] = u.y;
+
+        ids[vi] = t.ids[j];
       }
     }
     numFaces = Simplify::triangles.size()*3;
