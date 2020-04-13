@@ -48,6 +48,35 @@ void chunk(
   unsigned int *numOutFaces
 );
 
+void chunkOne(
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors,
+  float *uvs,
+  unsigned int numUvs,
+  unsigned int *ids,
+  unsigned int numIds,
+  unsigned int *faces,
+  unsigned int numFaces,
+  float *mins,
+  float *maxs,
+  float *outP,
+  unsigned int *numOutP,
+  float *outN,
+  unsigned int *numOutN,
+  float *outC,
+  unsigned int *numOutC,
+  float *outU,
+  unsigned int *numOutU,
+  unsigned int *outX,
+  unsigned int *numOutX,
+  unsigned int *outI,
+  unsigned int *numOutI
+);
+
 void decimate(
   float *positions,
   unsigned int &numPositions,

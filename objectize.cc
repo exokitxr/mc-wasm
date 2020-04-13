@@ -251,6 +251,64 @@ EMSCRIPTEN_KEEPALIVE void doChunk(
   );
 }
 
+EMSCRIPTEN_KEEPALIVE void doChunkOne(
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors,
+  float *uvs,
+  unsigned int numUvs,
+  unsigned int *ids,
+  unsigned int numIds,
+  unsigned int *faces,
+  unsigned int numFaces,
+  float *mins,
+  float *maxs,
+  float *outP,
+  unsigned int *numOutP,
+  float *outN,
+  unsigned int *numOutN,
+  float *outC,
+  unsigned int *numOutC,
+  float *outU,
+  unsigned int *numOutU,
+  unsigned int *outX,
+  unsigned int *numOutX,
+  unsigned int *outI,
+  unsigned int *numOutI
+) {
+  chunkOne(
+    positions,
+    numPositions,
+    normals,
+    numNormals,
+    colors,
+    numColors,
+    uvs,
+    numUvs,
+    ids,
+    numIds,
+    faces,
+    numFaces,
+    mins,
+    maxs,
+    outP,
+    numOutP,
+    outN,
+    numOutN,
+    outC,
+    numOutC,
+    outU,
+    numOutU,
+    outX,
+    numOutX,
+    outI,
+    numOutI
+  );
+}
+
 EMSCRIPTEN_KEEPALIVE void doDecimate(
   float *positions,
   unsigned int *numPositions,

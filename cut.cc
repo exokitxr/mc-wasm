@@ -285,6 +285,196 @@ void chunk(
   }
 }
 
+void chunkOne(
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors,
+  float *uvs,
+  unsigned int numUvs,
+  unsigned int *ids,
+  unsigned int numIds,
+  unsigned int *faces,
+  unsigned int numFaces,
+  float *mins,
+  float *maxs,
+  float *outP,
+  unsigned int *numOutP,
+  float *outN,
+  unsigned int *numOutN,
+  float *outC,
+  unsigned int *numOutC,
+  float *outU,
+  unsigned int *numOutU,
+  unsigned int *outX,
+  unsigned int *numOutX,
+  unsigned int *outI,
+  unsigned int *numOutI
+) {
+  TriangleMesh mesh(positions, faces, numFaces);
+
+  // {
+    TriangleMesh left1;
+    TriangleMesh right1;
+    mesh.cut(Axis::X, mins[0], &right1, &left1);
+    // left1.repair();
+    right1.repair();
+    // mesh = right;
+    // mesh.repair();
+  // }
+  // {
+    TriangleMesh left2;
+    TriangleMesh right2;
+    right1.cut(Axis::X, maxs[0], &right2, &left2);
+    left2.repair();
+    // right2.repair();
+    // mesh = left;
+    // mesh.repair();
+  // }
+  // {
+    TriangleMesh top1;
+    TriangleMesh bottom1;
+    left2.cut(Axis::Z, mins[2], &top1, &bottom1);
+    top1.repair();
+    // bottom1.repair();
+    // mesh = top;
+    // mesh.repair();
+  // }
+  // {
+    TriangleMesh top2;
+    TriangleMesh bottom2;
+    top1.cut(Axis::Z, maxs[2], &top2, &bottom2);
+    // top2.repair();
+    bottom2.repair();
+    // mesh = bottom;
+    // mesh.repair();
+  // }
+
+  numOutP[0] = 0;
+  numOutN[0] = 0;
+  numOutC[0] = 0;
+  numOutU[0] = 0;
+  numOutX[0] = 0;
+  numOutI[0] = 0;
+
+  const std::vector<Pointf3> &bottomPositions = bottom2.vertices();
+  const std::vector<Point3> &bottomIndices = bottom2.facets();
+  const std::vector<int> &bottomOriginalIndices = bottom2.originalFacets();
+  for (size_t i = 0; i < bottomIndices.size(); i++) {
+    const Slic3r::Point3 &facet = bottomIndices[i];
+    int originalFacet = bottomOriginalIndices[i];
+
+    // positions
+    outP[numOutP[0]++] = bottomPositions[facet.x].x;
+    outP[numOutP[0]++] = bottomPositions[facet.x].y;
+    outP[numOutP[0]++] = bottomPositions[facet.x].z;
+
+    outP[numOutP[0]++] = bottomPositions[facet.y].x;
+    outP[numOutP[0]++] = bottomPositions[facet.y].y;
+    outP[numOutP[0]++] = bottomPositions[facet.y].z;
+
+    outP[numOutP[0]++] = bottomPositions[facet.z].x;
+    outP[numOutP[0]++] = bottomPositions[facet.z].y;
+    outP[numOutP[0]++] = bottomPositions[facet.z].z;
+
+    if (originalFacet != -1) {
+      unsigned int originalIndex[3] = {
+        faces[originalFacet*3],
+        faces[originalFacet*3+1],
+        faces[originalFacet*3+2],
+      };
+
+      // normals
+      outN[numOutN[0]++] = normals[originalIndex[0]*3];
+      outN[numOutN[0]++] = normals[originalIndex[0]*3+1];
+      outN[numOutN[0]++] = normals[originalIndex[0]*3+2];
+
+      outN[numOutN[0]++] = normals[originalIndex[1]*3];
+      outN[numOutN[0]++] = normals[originalIndex[1]*3+1];
+      outN[numOutN[0]++] = normals[originalIndex[1]*3+2];
+
+      outN[numOutN[0]++] = normals[originalIndex[2]*3];
+      outN[numOutN[0]++] = normals[originalIndex[2]*3+1];
+      outN[numOutN[0]++] = normals[originalIndex[2]*3+2];
+
+      // colors
+      outC[numOutC[0]++] = colors[originalIndex[0]*3];
+      outC[numOutC[0]++] = colors[originalIndex[0]*3+1];
+      outC[numOutC[0]++] = colors[originalIndex[0]*3+2];
+
+      outC[numOutC[0]++] = colors[originalIndex[1]*3];
+      outC[numOutC[0]++] = colors[originalIndex[1]*3+1];
+      outC[numOutC[0]++] = colors[originalIndex[1]*3+2];
+
+      outC[numOutC[0]++] = colors[originalIndex[2]*3];
+      outC[numOutC[0]++] = colors[originalIndex[2]*3+1];
+      outC[numOutC[0]++] = colors[originalIndex[2]*3+2];
+
+      // uvs
+      outU[numOutU[0]++] = uvs[originalIndex[0]*2];
+      outU[numOutU[0]++] = uvs[originalIndex[0]*2+1];
+
+      outU[numOutU[0]++] = uvs[originalIndex[1]*2];
+      outU[numOutU[0]++] = uvs[originalIndex[1]*2+1];
+
+      outU[numOutU[0]++] = uvs[originalIndex[2]*2];
+      outU[numOutU[0]++] = uvs[originalIndex[2]*2+1];
+
+      // ids
+      outX[numOutX[0]++] = ids[originalIndex[0]];
+
+      outX[numOutX[0]++] = ids[originalIndex[1]];
+
+      outX[numOutX[0]++] = ids[originalIndex[2]];
+    } else {
+      // normals
+      outN[numOutN[0]++] = 0;
+      outN[numOutN[0]++] = 0;
+      outN[numOutN[0]++] = 0;
+
+      outN[numOutN[0]++] = 0;
+      outN[numOutN[0]++] = 0;
+      outN[numOutN[0]++] = 0;
+
+      outN[numOutN[0]++] = 0;
+      outN[numOutN[0]++] = 0;
+      outN[numOutN[0]++] = 0;
+
+      // colors
+      outC[numOutC[0]++] = 0;
+      outC[numOutC[0]++] = 0;
+      outC[numOutC[0]++] = 0;
+
+      outC[numOutC[0]++] = 0;
+      outC[numOutC[0]++] = 0;
+      outC[numOutC[0]++] = 0;
+
+      outC[numOutC[0]++] = 0;
+      outC[numOutC[0]++] = 0;
+      outC[numOutC[0]++] = 0;
+
+      // uvs
+      outU[numOutU[0]++] = 0;
+      outU[numOutU[0]++] = 0;
+
+      outU[numOutU[0]++] = 0;
+      outU[numOutU[0]++] = 0;
+
+      outU[numOutU[0]++] = 0;
+      outU[numOutU[0]++] = 0;
+
+      // ids
+      outX[numOutX[0]++] = 0;
+
+      outX[numOutX[0]++] = 0;
+
+      outX[numOutX[0]++] = 0;
+    }
+  }
+}
+
 struct Vertex {
   float position[3];
   float normal[3];
