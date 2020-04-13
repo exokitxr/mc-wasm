@@ -320,7 +320,7 @@ void chunkOne(
     TriangleMesh right1;
     mesh.cut(Axis::X, mins[0], &right1, &left1);
     // left1.repair();
-    right1.repair();
+    // right1.repair();
     // mesh = right;
     // mesh.repair();
   // }
@@ -328,7 +328,7 @@ void chunkOne(
     TriangleMesh left2;
     TriangleMesh right2;
     right1.cut(Axis::X, maxs[0], &right2, &left2);
-    left2.repair();
+    // left2.repair();
     // right2.repair();
     // mesh = left;
     // mesh.repair();
@@ -337,7 +337,7 @@ void chunkOne(
     TriangleMesh top1;
     TriangleMesh bottom1;
     left2.cut(Axis::Z, mins[2], &top1, &bottom1);
-    top1.repair();
+    // top1.repair();
     // bottom1.repair();
     // mesh = top;
     // mesh.repair();
