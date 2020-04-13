@@ -492,7 +492,7 @@ void decimate(
   float *uvs,
   unsigned int &numUvs,
   unsigned int *ids,
-  unsigned int numIds,
+  unsigned int &numIds,
   float minTris,
   float aggressiveness,
   float base,
@@ -543,6 +543,9 @@ void decimate(
 
     meshopt_remapVertexBuffer(uvs, uvs, total_indices, sizeof(float) * 2, &remap[0]);
     numUvs = total_vertices * 2;
+
+    meshopt_remapVertexBuffer(ids, ids, total_indices, sizeof(unsigned int), &remap[0]);
+    numIds = total_vertices;
 
     meshopt_remapIndexBuffer(faces, NULL, total_indices, &remap[0]);
     numFaces = total_indices;
@@ -612,8 +615,8 @@ void decimate(
     numPositions = Simplify::vertices.size()*3;
     numNormals = Simplify::vertices.size()*3;
     numColors = Simplify::vertices.size()*3;
+    numUvs = Simplify::vertices.size()*2;
     numIds = Simplify::vertices.size();
-    numFaces = Simplify::vertices.size()*2;
     for (int i = 0; i < Simplify::triangles.size(); i++) {
       Simplify::Triangle &t = Simplify::triangles[i];
 
