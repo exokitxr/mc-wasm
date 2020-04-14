@@ -1,5 +1,6 @@
 #include "cut.h"
 #include "Simplify.h"
+#include <unordered_set>
 
 using namespace Slic3r;
 
@@ -285,6 +286,15 @@ void chunk(
   }
 }
 
+bool operator==(const vec3f &a, const vec3f &b) {
+  return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+struct Hash {
+   size_t operator() (const vec3f &a) const {
+     return (size_t)a.x ^ (size_t)a.y ^ (size_t)a.z;
+   }
+};
+
 void chunkOne(
   float *positions,
   unsigned int numPositions,
@@ -484,12 +494,12 @@ struct Vertex {
   float normals[3];
 };
 
-float subVectors(float *c, const float *a, const float *b) {
+void subVectors(float *c, const float *a, const float *b) {
   c[0] = a[0] - b[0];
   c[1] = a[1] - b[1];
   c[2] = a[2] - b[2];
 }
-float crossVectors(float *c, const float *a, const float *b) {
+void crossVectors(float *c, const float *a, const float *b) {
   const float ax = a[0], ay = a[1], az = a[2];
   const float bx = b[0], by = b[1], bz = b[2];
 
@@ -518,9 +528,30 @@ void decimate(
   unsigned int *faces,
   unsigned int &numFaces
 ) {
-  for (size_t i = 0; i < numPositions; i++) {
-    positions[i] = std::floor(positions[i]/quantization)*quantization;
+  size_t total_indices;
+  for (;;) {
+    for (size_t i = 0; i < numPositions; i++) {
+      positions[i] = std::floor(positions[i]/quantization)*quantization;
+    }
+
+    {
+      std::unordered_set<vec3f, Hash> points;
+      for (size_t i = 0; i < numPositions; i += 3) {
+        points.insert(vec3f{
+          positions[i],
+          positions[i+1],
+          positions[i+2],
+        });
+      }
+      if (points.size() < 500000) {
+        break;
+      } else {
+        quantization *= 2.0f;
+        continue;
+      }
+    }
   }
+
   for (size_t i = 0; i < numPositions; i += 9) {
     float *a = &positions[i];
     float *b = &positions[i+3];
@@ -552,7 +583,6 @@ void decimate(
     normal[2] /= length;
   }
 
-  size_t total_indices;
   {
     total_indices = numPositions/3;
     std::vector<unsigned int> remap(total_indices);
@@ -701,7 +731,7 @@ void decimate(
       memcpy(facesTmp.data(), faces, numFaces * sizeof(unsigned int));
       numFaces = meshopt_simplifySloppy(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count);
     } */
-    facesTmp = std::vector<unsigned int>();
+    // facesTmp = std::vector<unsigned int>();
 
     /* const unsigned int oldNumFaces = numFaces;
     const unsigned int maxIndex = numPositions/3;
