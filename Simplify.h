@@ -34,12 +34,12 @@
 
 struct vector3
 {
-double x, y, z;
+float x, y, z;
 };
 
 struct vec3f
 {
-    double x, y, z;
+    float x, y, z;
 
     inline vec3f( void ) {}
 
@@ -49,7 +49,7 @@ struct vec3f
     inline vec3f( vector3 a )
 	 { x = a.x; y = a.y; z = a.z; }
 
-    inline vec3f( const double X, const double Y, const double Z )
+    inline vec3f( const float X, const float Y, const float Z )
     { x = X; y = Y; z = Z; }
 
     inline vec3f operator + ( const vec3f& a ) const
@@ -58,7 +58,7 @@ struct vec3f
 	inline vec3f operator += ( const vec3f& a ) const
     { return vec3f( x + a.x, y + a.y, z + a.z ); }
 
-    inline vec3f operator * ( const double a ) const
+    inline vec3f operator * ( const float a ) const
     { return vec3f( x * a, y * a, z * a ); }
 
     inline vec3f operator * ( const vec3f a ) const
@@ -79,10 +79,10 @@ struct vec3f
     inline vec3f operator - ( const vec3f& a ) const
     { return vec3f( x - a.x, y - a.y, z - a.z ); }
 
-    inline vec3f operator / ( const double a ) const
+    inline vec3f operator / ( const float a ) const
     { return vec3f( x / a, y / a, z / a ); }
 
-    inline double dot( const vec3f& a ) const
+    inline float dot( const vec3f& a ) const
     { return a.x*x + a.y*y + a.z*z; }
 
     inline vec3f cross( const vec3f& a , const vec3f& b )
@@ -93,48 +93,48 @@ struct vec3f
 		return *this;
 	}
 
-    inline double angle( const vec3f& v )
+    inline float angle( const vec3f& v )
     {
 		vec3f a = v , b = *this;
-		double dot = v.x*x + v.y*y + v.z*z;
-		double len = a.length() * b.length();
+		float dot = v.x*x + v.y*y + v.z*z;
+		float len = a.length() * b.length();
 		if(len==0)len=0.00001f;
-		double input = dot  / len;
+		float input = dot  / len;
 		if (input<-1) input=-1;
 		if (input>1) input=1;
-		return (double) acos ( input );
+		return (float) acos ( input );
 	}
 
-    inline double angle2( const vec3f& v , const vec3f& w )
+    inline float angle2( const vec3f& v , const vec3f& w )
     {
 		vec3f a = v , b= *this;
-		double dot = a.x*b.x + a.y*b.y + a.z*b.z;
-		double len = a.length() * b.length();
+		float dot = a.x*b.x + a.y*b.y + a.z*b.z;
+		float len = a.length() * b.length();
 		if(len==0)len=1;
 
 		vec3f plane; plane.cross( b,w );
 
 		if ( plane.x * a.x + plane.y * a.y + plane.z * a.z > 0 )
-			return (double) -acos ( dot  / len );
+			return (float) -acos ( dot  / len );
 
-		return (double) acos ( dot  / len );
+		return (float) acos ( dot  / len );
 	}
 
-    inline vec3f rot_x( double a )
+    inline vec3f rot_x( float a )
     {
-		double yy = cos ( a ) * y + sin ( a ) * z;
-		double zz = cos ( a ) * z - sin ( a ) * y;
+		float yy = cos ( a ) * y + sin ( a ) * z;
+		float zz = cos ( a ) * z - sin ( a ) * y;
 		y = yy; z = zz;
 		return *this;
 	}
-    inline vec3f rot_y( double a )
+    inline vec3f rot_y( float a )
     {
-		double xx = cos ( -a ) * x + sin ( -a ) * z;
-		double zz = cos ( -a ) * z - sin ( -a ) * x;
+		float xx = cos ( -a ) * x + sin ( -a ) * z;
+		float zz = cos ( -a ) * z - sin ( -a ) * x;
 		x = xx; z = zz;
 		return *this;
 	}
-    inline void clamp( double min, double max )
+    inline void clamp( float min, float max )
     {
 		if (x<min) x=min;
 		if (y<min) y=min;
@@ -143,10 +143,10 @@ struct vec3f
 		if (y>max) y=max;
 		if (z>max) z=max;
 	}
-    inline vec3f rot_z( double a )
+    inline vec3f rot_z( float a )
     {
-		double yy = cos ( a ) * y + sin ( a ) * x;
-		double xx = cos ( a ) * x - sin ( a ) * y;
+		float yy = cos ( a ) * y + sin ( a ) * x;
+		float xx = cos ( a ) * x - sin ( a ) * y;
 		y = yy; x = xx;
 		return *this;
 	}
@@ -157,36 +157,36 @@ struct vec3f
     inline vec3f frac()
 	{
 		return vec3f(
-			x-double(int(x)),
-			y-double(int(y)),
-			z-double(int(z))
+			x-float(int(x)),
+			y-float(int(y)),
+			z-float(int(z))
 			);
 	}
 
     inline vec3f integer()
 	{
 		return vec3f(
-			double(int(x)),
-			double(int(y)),
-			double(int(z))
+			float(int(x)),
+			float(int(y)),
+			float(int(z))
 			);
 	}
 
-    inline double length() const
+    inline float length() const
     {
-		return (double)sqrt(x*x + y*y + z*z);
+		return (float)sqrt(x*x + y*y + z*z);
 	}
 
-    inline vec3f normalize( double desired_length = 1 )
+    inline vec3f normalize( float desired_length = 1 )
     {
-		double square = sqrt(x*x + y*y + z*z);
+		float square = sqrt(x*x + y*y + z*z);
 		/*
 		if (square <= 0.00001f )
 		{
 			x=1;y=0;z=0;
 			return *this;
 		}*/
-		//double len = desired_length / square;
+		//float len = desired_length / square;
 		x/=square;y/=square;z/=square;
 
 		return *this;
@@ -194,21 +194,21 @@ struct vec3f
     static vec3f normalize( vec3f a );
 
 	static void random_init();
-	static double random_double();
+	static float random_double();
 	static vec3f random();
 
 	static int random_number;
 
-	double random_double_01(double a){
-		double rnf=a*14.434252+a*364.2343+a*4213.45352+a*2341.43255+a*254341.43535+a*223454341.3523534245+23453.423412;
+	float random_double_01(float a){
+		float rnf=a*14.434252+a*364.2343+a*4213.45352+a*2341.43255+a*254341.43535+a*223454341.3523534245+23453.423412;
 		int rni=((int)rnf)%100000;
-		return double(rni)/(100000.0f-1.0f);
+		return float(rni)/(100000.0f-1.0f);
 	}
 
 	vec3f random01_fxyz(){
-		x=(double)random_double_01(x);
-		y=(double)random_double_01(y);
-		z=(double)random_double_01(z);
+		x=(float)random_double_01(x);
+		y=(float)random_double_01(y);
+		z=(float)random_double_01(z);
 		return *this;
 	}
 
@@ -218,15 +218,15 @@ vec3f barycentric(const vec3f &p, const vec3f &a, const vec3f &b, const vec3f &c
 	vec3f v0 = b-a;
 	vec3f v1 = c-a;
 	vec3f v2 = p-a;
-	double d00 = v0.dot(v0);
-	double d01 = v0.dot(v1);
-	double d11 = v1.dot(v1);
-	double d20 = v2.dot(v0);
-	double d21 = v2.dot(v1);
-	double denom = d00*d11-d01*d01;
-	double v = (d11 * d20 - d01 * d21) / denom;
-	double w = (d00 * d21 - d01 * d20) / denom;
-	double u = 1.0 - v - w;
+	float d00 = v0.dot(v0);
+	float d01 = v0.dot(v1);
+	float d11 = v1.dot(v1);
+	float d20 = v2.dot(v0);
+	float d21 = v2.dot(v1);
+	float denom = d00*d11-d01*d01;
+	float v = (d11 * d20 - d01 * d21) / denom;
+	float w = (d00 * d21 - d01 * d20) / denom;
+	float u = 1.0 - v - w;
 	return vec3f(u,v,w);
 }
 
@@ -240,7 +240,7 @@ vec3f interpolate(const vec3f &p, const vec3f &a, const vec3f &b, const vec3f &c
 	return out;
 }
 
-double min(double v1, double v2) {
+float min(float v1, float v2) {
 	return fmin(v1,v2);
 }
 
@@ -251,12 +251,12 @@ class SymetricMatrix {
 
 	// Constructor
 
-	SymetricMatrix(double c=0) { loopi(0,10) m[i] = c;  }
+	SymetricMatrix(float c=0) { loopi(0,10) m[i] = c;  }
 
-	SymetricMatrix(	double m11, double m12, double m13, double m14,
-			            double m22, double m23, double m24,
-			                        double m33, double m34,
-			                                    double m44) {
+	SymetricMatrix(	float m11, float m12, float m13, float m14,
+			            float m22, float m23, float m24,
+			                        float m33, float m34,
+			                                    float m44) {
 			 m[0] = m11;  m[1] = m12;  m[2] = m13;  m[3] = m14;
 			              m[4] = m22;  m[5] = m23;  m[6] = m24;
 			                           m[7] = m33;  m[8] = m34;
@@ -265,7 +265,7 @@ class SymetricMatrix {
 
 	// Make plane
 
-	SymetricMatrix(double a,double b,double c,double d)
+	SymetricMatrix(float a,float b,float c,float d)
 	{
 		m[0] = a*a;  m[1] = a*b;  m[2] = a*c;  m[3] = a*d;
 		             m[4] = b*b;  m[5] = b*c;  m[6] = b*d;
@@ -273,15 +273,15 @@ class SymetricMatrix {
 		                                       m[9 ] = d*d;
 	}
 
-	double operator[](int c) const { return m[c]; }
+	float operator[](int c) const { return m[c]; }
 
 	// Determinant
 
-	double det(	int a11, int a12, int a13,
+	float det(	int a11, int a12, int a13,
 				int a21, int a22, int a23,
 				int a31, int a32, int a33)
 	{
-		double det =  m[a11]*m[a22]*m[a33] + m[a13]*m[a21]*m[a32] + m[a12]*m[a23]*m[a31]
+		float det =  m[a11]*m[a22]*m[a33] + m[a13]*m[a21]*m[a32] + m[a12]*m[a23]*m[a31]
 					- m[a13]*m[a22]*m[a31] - m[a11]*m[a23]*m[a32]- m[a12]*m[a21]*m[a33];
 		return det;
 	}
@@ -302,7 +302,7 @@ class SymetricMatrix {
 		return *this;
 	}
 
-	double m[10];
+	float m[10];
 };
 ///////////////////////////////////////////
 
@@ -315,7 +315,7 @@ namespace Simplify
 		TEXCOORD = 4,
 		COLOR = 8
 	};
-	struct Triangle { int v[3];double err[4];int deleted,dirty,attr;vec3f n;vec3f cs[3];vec3f uvs[3];unsigned int ids[3];int material;double size; };
+	struct Triangle { int v[3];float err[4];int deleted,dirty,attr;vec3f n;vec3f cs[3];vec3f uvs[3];unsigned int ids[3];int material;float size; };
 	struct Vertex { vec3f p;int tstart,tcount;SymetricMatrix q;int border;};
 	struct Ref { int tid,tvertex; };
 	std::vector<Triangle> triangles;
@@ -326,8 +326,8 @@ namespace Simplify
 
 	// Helper functions
 
-	double vertex_error(SymetricMatrix q, double x, double y, double z);
-	double calculate_error(int id_v1, int id_v2, vec3f &p_result);
+	float vertex_error(SymetricMatrix q, float x, float y, float z);
+	float calculate_error(int id_v1, int id_v2, vec3f &p_result);
 	bool flipped(vec3f p,int i0,int i1,Vertex &v0,Vertex &v1,std::vector<int> &deleted);
 	void update_uvs(int i0,const Vertex &v,const vec3f &p,std::vector<int> &deleted);
 	void update_triangles(int i0,Vertex &v,std::vector<int> &deleted,int &deleted_triangles);
@@ -346,7 +346,7 @@ namespace Simplify
         return a.size < b.size;
     }
 
-	void simplify_mesh(int target_count, double agressiveness=7, double base = 0.000000001, int iterationOffset = 3, bool verbose=false)
+	void simplify_mesh(int target_count, float agressiveness=7, float base = 0.000000001, int iterationOffset = 3, bool verbose=false)
 	{
 		int halfTargetCount = target_count/2;
 		{
@@ -355,11 +355,11 @@ namespace Simplify
 	            vec3f &a = vertices[triangle.v[0]].p;
 	            vec3f &b = vertices[triangle.v[1]].p;
 	            vec3f &c = vertices[triangle.v[2]].p;
-	            const double ab = std::sqrt((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) + (a.z - b.z)*(a.z - b.z));
-	            const double bc = std::sqrt((b.x - c.x)*(b.x - c.x) + (b.y - c.y)*(b.y - c.y) + (b.z - c.z)*(b.z - c.z));
-	            const double ca = std::sqrt((c.x - a.x)*(c.x - a.x) + (c.y - a.y)*(c.y - a.y) + (c.z - a.z)*(c.z - a.z));
-	            const double p = ab + bc + ca;
-	            const double s = p/2.0f;
+	            const float ab = std::sqrt((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) + (a.z - b.z)*(a.z - b.z));
+	            const float bc = std::sqrt((b.x - c.x)*(b.x - c.x) + (b.y - c.y)*(b.y - c.y) + (b.z - c.z)*(b.z - c.z));
+	            const float ca = std::sqrt((c.x - a.x)*(c.x - a.x) + (c.y - a.y)*(c.y - a.y) + (c.z - a.z)*(c.z - a.z));
+	            const float p = ab + bc + ca;
+	            const float s = p/2.0f;
 	            triangle.size = std::sqrt(s * (s - ab) * (s - bc) * (s - ca));
 	        }
 	        std::make_heap(triangles.begin(), triangles.end(), triangleSizeComp);
@@ -402,7 +402,7 @@ namespace Simplify
 			// The following numbers works well for most models.
 			// If it does not, try to adjust the 3 parameters
 			//
-			double threshold = base*pow(double(iteration+iterationOffset),agressiveness);
+			float threshold = base*pow(float(iteration+iterationOffset),agressiveness);
 
 			// target number of triangles reached ? Then break
 			if ((verbose) && (iteration%5==0)) {
@@ -494,7 +494,7 @@ namespace Simplify
 			// The following numbers works well for most models.
 			// If it does not, try to adjust the 3 parameters
 			//
-			double threshold = DBL_EPSILON; //1.0E-3 EPS;
+			float threshold = DBL_EPSILON; //1.0E-3 EPS;
 			if (verbose) {
 				printf("lossless iteration %d\n", iteration);
 			}
@@ -793,7 +793,7 @@ namespace Simplify
 
 	// Error between vertex and Quadric
 
-	double vertex_error(SymetricMatrix q, double x, double y, double z)
+	float vertex_error(SymetricMatrix q, float x, float y, float z)
 	{
  		return   q[0]*x*x + 2*q[1]*x*y + 2*q[2]*x*z + 2*q[3]*x + q[4]*y*y
  		     + 2*q[5]*y*z + 2*q[6]*y + q[7]*z*z + 2*q[8]*z + q[9];
@@ -801,14 +801,14 @@ namespace Simplify
 
 	// Error for one edge
 
-	double calculate_error(int id_v1, int id_v2, vec3f &p_result)
+	float calculate_error(int id_v1, int id_v2, vec3f &p_result)
 	{
 		// compute interpolated vertex
 
 		SymetricMatrix q = vertices[id_v1].q + vertices[id_v2].q;
 		bool   border = vertices[id_v1].border & vertices[id_v2].border;
-		double error=0;
-		double det = q.det(0, 1, 2, 1, 4, 5, 2, 5, 7);
+		float error=0;
+		float det = q.det(0, 1, 2, 1, 4, 5, 2, 5, 7);
 		if ( det != 0 && !border )
 		{
 
@@ -825,9 +825,9 @@ namespace Simplify
 			vec3f p1=vertices[id_v1].p;
 			vec3f p2=vertices[id_v2].p;
 			vec3f p3=(p1+p2)/2;
-			double error1 = vertex_error(q, p1.x,p1.y,p1.z);
-			double error2 = vertex_error(q, p2.x,p2.y,p2.z);
-			double error3 = vertex_error(q, p3.x,p3.y,p3.z);
+			float error1 = vertex_error(q, p1.x,p1.y,p1.z);
+			float error2 = vertex_error(q, p2.x,p2.y,p2.z);
+			float error3 = vertex_error(q, p3.x,p3.y,p3.z);
 			error = min(error1, min(error2, error3));
 			if (error1 == error) p_result=p1;
 			if (error2 == error) p_result=p2;
@@ -856,7 +856,7 @@ namespace Simplify
 		return str;
 	}
 
-	//Option : Load OBJ
+	/* //Option : Load OBJ
 	void load_obj(const char* filename, bool process_uv=false){
 		vertices.clear();
 		triangles.clear();
@@ -1050,6 +1050,6 @@ namespace Simplify
 			//fprintf(file, "f %d// %d// %d//\n", triangles[i].v[0]+1, triangles[i].v[1]+1, triangles[i].v[2]+1); //more compact: remove trailing zeros
 		}
 		fclose(file);
-	}
+	} */
 };
 ///////////////////////////////////////////
