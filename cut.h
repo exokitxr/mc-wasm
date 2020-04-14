@@ -89,6 +89,8 @@ void decimate(
   unsigned int *ids,
   unsigned int &numIds,
   float minTris,
+  float quantization,
+  float target_error,
   float aggressiveness,
   float base,
   int iterationOffset,

@@ -481,10 +481,22 @@ void chunkOne(
 
 struct Vertex {
   float position[3];
-  float normal[3];
-  float color[3];
-  float uv[2];
+  float normals[3];
 };
+
+float subVectors(float *c, const float *a, const float *b) {
+  c[0] = a[0] - b[0];
+  c[1] = a[1] - b[1];
+  c[2] = a[2] - b[2];
+}
+float crossVectors(float *c, const float *a, const float *b) {
+  const float ax = a[0], ay = a[1], az = a[2];
+  const float bx = b[0], by = b[1], bz = b[2];
+
+  c[0] = ay * bz - az * by;
+  c[1] = az * bx - ax * bz;
+  c[2] = ax * by - ay * bx;
+}
 
 void decimate(
   float *positions,
@@ -498,14 +510,51 @@ void decimate(
   unsigned int *ids,
   unsigned int &numIds,
   float minTris,
+  float quantization,
+  float target_error,
   float aggressiveness,
   float base,
   int iterationOffset,
   unsigned int *faces,
   unsigned int &numFaces
 ) {
+  for (size_t i = 0; i < numPositions; i++) {
+    positions[i] = std::floor(positions[i]/quantization)*quantization;
+  }
+  for (size_t i = 0; i < numPositions; i += 9) {
+    float *a = &positions[i];
+    float *b = &positions[i+3];
+    float *c = &positions[i+6];
+
+    float cb[3];
+    subVectors(cb, c, b);
+    float ab[3];
+    subVectors(ab, a, b);
+    crossVectors(cb, cb, ab);
+
+    normals[ i ] = cb[0];
+    normals[ i + 1 ] = cb[1];
+    normals[ i + 2 ] = cb[2];
+
+    normals[ i + 3 ] = cb[0];
+    normals[ i + 4 ] = cb[1];
+    normals[ i + 5 ] = cb[2];
+
+    normals[ i + 6 ] = cb[0];
+    normals[ i + 7 ] = cb[1];
+    normals[ i + 8 ] = cb[2];
+  }
+  for (size_t i = 0; i < numPositions; i += 3) {
+    float *normal = &normals[i];
+    float length = std::sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
+    normal[0] /= length;
+    normal[1] /= length;
+    normal[2] /= length;
+  }
+
+  size_t total_indices;
   {
-    size_t total_indices = numPositions/3;
+    total_indices = numPositions/3;
     std::vector<unsigned int> remap(total_indices);
     size_t total_vertices;
     {
@@ -522,17 +571,9 @@ void decimate(
             normals[i*3+1],
             normals[i*3+2],
           },
-          {
-            colors[i*3],
-            colors[i*3+1],
-            colors[i*3+2],
-          },
-          {
-            uvs[i*2],
-            uvs[i*2+1]
-          },
         };
       }
+
       total_vertices = meshopt_generateVertexRemap(remap.data(), NULL, total_indices, vertices.data(), total_indices, sizeof(Vertex));
     }
 
@@ -554,7 +595,7 @@ void decimate(
     meshopt_remapIndexBuffer(faces, NULL, total_indices, &remap[0]);
     numFaces = total_indices;
   }
-  size_t total_indices = numFaces;
+  /* size_t total_indices = numFaces;
   size_t total_triangles = total_indices/3;
   size_t target_tri_count = std::min((size_t)minTris, total_triangles);
   if (target_tri_count < total_triangles) {
@@ -649,15 +690,20 @@ void decimate(
 
     Simplify::vertices = decltype(Simplify::vertices)();
     Simplify::triangles = decltype(Simplify::triangles)();
-    Simplify::refs = decltype(Simplify::refs)();
+    Simplify::refs = decltype(Simplify::refs)(); */
 
-    /* 
-
-    size_t target_index_count = size_t(facesTmp.size() * factor);
+    size_t target_index_count = std::min((size_t)(minTris*3), (size_t)total_indices);
+    std::vector<unsigned int> facesTmp(numFaces);
+    memcpy(facesTmp.data(), faces, numFaces * sizeof(unsigned int));
     numFaces = meshopt_simplify(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count, target_error);
-    // numFaces = meshopt_simplifySloppy(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count);
+    /* if (numFaces > target_index_count) {
+      facesTmp = std::vector<unsigned int>(numFaces);
+      memcpy(facesTmp.data(), faces, numFaces * sizeof(unsigned int));
+      numFaces = meshopt_simplifySloppy(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count);
+    } */
+    facesTmp = std::vector<unsigned int>();
 
-    const unsigned int oldNumFaces = numFaces;
+    /* const unsigned int oldNumFaces = numFaces;
     const unsigned int maxIndex = numPositions/3;
     unsigned int *faceWrite = faces;
     for (size_t i = 0; i < oldNumFaces; i += 3) {
@@ -670,5 +716,5 @@ void decimate(
         numFaces -= 3;
       }
     } */
-  }
+  // }
 }
