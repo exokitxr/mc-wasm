@@ -362,15 +362,12 @@ namespace Simplify
 	            const double s = p/2.0f;
 	            triangle.size = std::sqrt(s * (s - ab) * (s - bc) * (s - ca));
 	        }
-	        std::vector<Triangle> triangleHeap = triangles;
-	        std::make_heap(triangleHeap.begin(), triangleHeap.end(), triangleSizeComp);
+	        std::make_heap(triangles.begin(), triangles.end(), triangleSizeComp);
 	        for (size_t i = 0; i < halfTargetCount; i++) {
-	        	std::pop_heap(triangleHeap.begin(), triangleHeap.end(), triangleSizeComp);
-	        	triangles[i] = triangleHeap.back();
-	        	triangleHeap.pop_back();
+	        	std::pop_heap(triangles.begin(), triangles.end() - i, triangleSizeComp);
 	        }
-	        for (size_t i = halfTargetCount; i < triangles.size(); i++) {
-	        	triangles[i] = triangleHeap[i-halfTargetCount];
+	        for (size_t i = 0; i < halfTargetCount; i++) {
+	        	std::swap(triangles[i], triangles[triangles.size() - halfTargetCount + i]);
 	        }
 	    }
 

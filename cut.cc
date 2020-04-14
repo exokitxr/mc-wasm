@@ -316,9 +316,10 @@ void chunkOne(
   TriangleMesh mesh(positions, faces, numFaces);
 
   // {
-    TriangleMesh left1;
+    // TriangleMesh left1;
     TriangleMesh right1;
-    mesh.cut(Axis::X, mins[0], &right1, &left1);
+    mesh.cut(Axis::X, mins[0], &right1, nullptr);
+    mesh = TriangleMesh();
     // left1.repair();
     // right1.repair();
     // mesh = right;
@@ -326,8 +327,9 @@ void chunkOne(
   // }
   // {
     TriangleMesh left2;
-    TriangleMesh right2;
-    right1.cut(Axis::X, maxs[0], &right2, &left2);
+    // TriangleMesh right2;
+    right1.cut(Axis::X, maxs[0], nullptr, &left2);
+    right1 = TriangleMesh();
     // left2.repair();
     // right2.repair();
     // mesh = left;
@@ -335,17 +337,19 @@ void chunkOne(
   // }
   // {
     TriangleMesh top1;
-    TriangleMesh bottom1;
-    left2.cut(Axis::Z, mins[2], &top1, &bottom1);
+    // TriangleMesh bottom1;
+    left2.cut(Axis::Z, mins[2], &top1, nullptr);
+    left2 = TriangleMesh();
     // top1.repair();
     // bottom1.repair();
     // mesh = top;
     // mesh.repair();
   // }
   // {
-    TriangleMesh top2;
+   //  TriangleMesh top2;
     TriangleMesh bottom2;
-    top1.cut(Axis::Z, maxs[2], &top2, &bottom2);
+    top1.cut(Axis::Z, maxs[2], nullptr, &bottom2);
+    top1 = TriangleMesh();
     // top2.repair();
     bottom2.repair();
     // mesh = bottom;
@@ -643,9 +647,9 @@ void decimate(
     }
     numFaces = Simplify::triangles.size()*3;
 
-    Simplify::vertices.clear();
-    Simplify::triangles.clear();
-    Simplify::refs.clear();
+    Simplify::vertices = decltype(Simplify::vertices)();
+    Simplify::triangles = decltype(Simplify::triangles)();
+    Simplify::refs = decltype(Simplify::refs)();
 
     /* 
 
