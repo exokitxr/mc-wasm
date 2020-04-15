@@ -289,9 +289,10 @@ void chunk(
 bool operator==(const vec3f &a, const vec3f &b) {
   return a.x == b.x && a.y == b.y && a.z == b.z;
 }
-struct Hash {
-   size_t operator() (const vec3f &a) const {
-     return (size_t)a.x ^ (size_t)a.y ^ (size_t)a.z;
+class Hash {
+public:
+   size_t operator() (const HashVec &a) const {
+     return *(size_t *)(&a.x) ^ *(size_t *)(&a.y) ^ *(size_t *)(&a.z);
    }
 };
 
