@@ -563,6 +563,11 @@ void decimate(
     subVectors(ab, a, b);
     crossVectors(cb, cb, ab);
 
+    float length = std::sqrt(cb[0] * cb[0] + cb[1] * cb[1] + cb[2] * cb[2]);
+    cb[0] /= length;
+    cb[1] /= length;
+    cb[2] /= length;
+
     normals[ i ] = cb[0];
     normals[ i + 1 ] = cb[1];
     normals[ i + 2 ] = cb[2];
@@ -574,13 +579,6 @@ void decimate(
     normals[ i + 6 ] = cb[0];
     normals[ i + 7 ] = cb[1];
     normals[ i + 8 ] = cb[2];
-  }
-  for (size_t i = 0; i < numPositions; i += 3) {
-    float *normal = &normals[i];
-    float length = std::sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
-    normal[0] /= length;
-    normal[1] /= length;
-    normal[2] /= length;
   }
 
   {
