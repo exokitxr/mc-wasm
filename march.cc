@@ -1,4 +1,5 @@
 #include "march.h"
+#include <iostream>
 
 int edgeTable[256]={
 0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
@@ -559,6 +560,307 @@ void marchingCubes(int dims[3], float *potential, uint8_t *brush, float shift[3]
       faces[faceIndex++] = edges[f[i+2]];
     }
   }
+}
+
+void decimateMarch(int dims[3], float shift[3], float size[3], float *positions, unsigned int *faces, unsigned int &positionIndex, unsigned int &faceIndex) {
+  std::cerr << "decimate 1 " << dims[0] << " " << dims[1] << " " << dims[2] << " " << positionIndex << " " << faceIndex << std::endl;
+
+  int hits1 = 0;
+  int hits2 = 0;
+
+  int dimp1s[3] = {
+    dims[0]+1,
+    dims[1]+1,
+    dims[2]+1,
+  };
+  float fdims[3] = {
+    (float)dims[0],
+    (float)dims[1],
+    (float)dims[2],
+  };
+
+  std::vector<float> potential(dimp1s[0]*dimp1s[1]*dimp1s[2]);
+  std::fill(potential.begin(), potential.end(), 10);
+  for (unsigned int i = 0; i < positionIndex; i += 3) {
+    float x = (positions[i] - shift[0]);
+    float y = (positions[i+1] - shift[1]);
+    float z = (positions[i+2] - shift[2]);
+    // if (x > 0 && x < size[0] && y > 0 && y < size[1] && z > 0 && z < size[2]) {
+    	hits1++;
+    	int ix = (int)std::round(x/size[0]*dims[0]);
+    	int iy = (int)std::round(y/size[1]*dims[1]);
+    	int iz = (int)std::round(z/size[2]*dims[2]);
+    	const float brushSize = 0.5f;
+	    const float value = 1.0f;
+	    const float factor = brushSize;
+		const int factor2 = std::ceil(brushSize);
+		const float max = std::max(std::sqrt(factor*factor*3.0f), 0.1f);
+		for (int dx = -factor2; dx <= factor2; dx++) {
+		  for (int dz = -factor2; dz <= factor2; dz++) {
+		    for (int dy = -factor2; dy <= factor2; dy++) {
+		      const int ax = ix + dx;
+		      const int ay = iy + dy;
+		      const int az = iz + dz;
+		      if (
+		        ax >= 0 &&
+		        ay >= 0 &&
+		        az >= 0 &&
+		        ax <= dims[0] &&
+		        ay <= dims[1] &&
+		        az <= dims[2]
+		      ) {
+		      	hits2++;
+		        const int index = ax + ay*dimp1s[0]*dimp1s[1] + az*dimp1s[0];
+		        const float d = (max - std::sqrt((float)dx*dx + (float)dy*dy + (float)dz*dz)) / max;
+		        potential[index] = value > 0 ? std::min(potential[index], -d) : std::max(potential[index], d);
+		      }
+		    }
+		  }
+		}
+    // }
+  }
+
+  std::cerr << "decimate 2 " << positionIndex << " " << hits1 << " " << hits2 << std::endl;
+
+  positionIndex = 0;
+  faceIndex = 0;
+
+  int n = 0;
+  float grid[8] = {0};
+  int edges[12] = {0};
+  int x[3] = {0};
+
+  //March over the volume
+  for(x[2]=0; x[2]<dimp1s[2]-1; ++x[2], n+=dimp1s[0])
+  for(x[1]=0; x[1]<dimp1s[1]-1; ++x[1], ++n)
+  for(x[0]=0; x[0]<dimp1s[0]-1; ++x[0], ++n) {
+    //For each cell, compute cube mask
+    int cube_index = 0;
+    for(int i=0; i<8; ++i) {
+      int *v = cubeVerts[i];
+      int potentialIndex = (x[0]+v[0]) +
+        (((x[2]+v[2])) * dimp1s[0]) +
+        ((x[1]+v[1]) * dimp1s[0] * dimp1s[1]);
+      float s = potential[potentialIndex];
+      grid[i] = s;
+      cube_index |= (s > 0) ? 1 << i : 0;
+    }
+    //Compute vertices
+    int edge_mask = edgeTable[cube_index];
+    if(edge_mask == 0) {
+      continue;
+    }
+    for(int i=0; i<12; ++i) {
+      if((edge_mask & (1<<i)) == 0) {
+        continue;
+      }
+      edges[i] = positionIndex / 3;
+      int *e = edgeIndex[i];
+      int *p0 = cubeVerts[e[0]];
+      int *p1 = cubeVerts[e[1]];
+      float a = grid[e[0]];
+      float b = grid[e[1]];
+      float d = a - b;
+      float t = a / d;
+      for(int j=0; j<3; ++j) {
+        positions[positionIndex + j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) * size[j] / dims[j] + shift[j];
+      }
+
+      positionIndex += 3;
+    }
+    //Add faces
+    int *f = triTable[cube_index];
+    for(int i=0;f[i]!=-1;i+=3) {
+      faces[faceIndex++] = edges[f[i]];
+      faces[faceIndex++] = edges[f[i+1]];
+      faces[faceIndex++] = edges[f[i+2]];
+    }
+  }
+
+  std::cerr << "decimate 3 " << positionIndex << " " << faceIndex << std::endl;
+}
+
+void marchPotentials(int dims[3], float shift[3], float size[3], float *potentialSrc, float *positions, unsigned int *faces, unsigned int &positionIndex, unsigned int &faceIndex) {
+  std::cerr << "decimate 1 " << dims[0] << " " << dims[1] << " " << dims[2] << " " << positionIndex << " " << faceIndex << std::endl;
+
+  // int hits1 = 0;
+  // int hits2 = 0;
+
+  float dimsf[3] = {
+    (float)dims[0],
+    (float)dims[1],
+    (float)dims[2],
+  };
+  /* int dimp1s[3] = {
+    dims[0]+1,
+    dims[1]+1,
+    dims[2]+1,
+  }; */
+
+  float *potential = potentialSrc;
+  /* std::vector<float> potential(dimp1s[0]*dimp1s[1]*dimp1s[2]);
+  const float maxDistance = std::sqrt(3);
+  for (int x = 0; x < dimp1s[0]; x++) {
+  	for (int y = 0; y < dimp1s[1]; y++) {
+	  for (int z = 0; z < dimp1s[2]; z++) {
+	  	float acc = 0;
+	  	float count = 0;
+	  	for (int dx = -1; dx <= 1; dx++) {
+		  for (int dz = -1; dz <= 1; dz++) {
+		    for (int dy = -1; dy <= 1; dy++) {
+              const int ax = x + dx;
+		      const int ay = y + dy;
+		      const int az = z + dz;
+		      if (
+		        ax >= 0 &&
+		        ay >= 0 &&
+		        az >= 0 &&
+		        ax <= dims[0] &&
+		        ay <= dims[1] &&
+		        az <= dims[2]
+		      ) {
+		      	float distance = std::sqrt((float)dx*dx + (float)dy*dy + (float)dz*dz);
+		        float factor = (maxDistance - distance) / maxDistance;
+		        const int index = ax + ay*dimp1s[0]*dimp1s[1] + az*dimp1s[0];
+		        acc += potentialSrc[index] * factor;
+                count += factor;
+		      }
+		    }
+		  }
+		}
+		const int index = x + y*dimp1s[0]*dimp1s[1] + z*dimp1s[0];
+		potential[index] = acc / count;
+	  }
+  	}
+  } */
+
+  /* std::vector<float> potential(dimp1s[0]*dimp1s[1]*dimp1s[2]);
+  std::fill(potential.begin(), potential.end(), 10);
+  for (unsigned int i = 0; i < positionIndex; i += 3) {
+    float x = (positions[i] - shift[0]);
+    float y = (positions[i+1] - shift[1]);
+    float z = (positions[i+2] - shift[2]);
+    // if (x > 0 && x < size[0] && y > 0 && y < size[1] && z > 0 && z < size[2]) {
+    	hits1++;
+    	int ix = (int)std::round(x/size[0]*dims[0]);
+    	int iy = (int)std::round(y/size[1]*dims[1]);
+    	int iz = (int)std::round(z/size[2]*dims[2]);
+    	const float brushSize = 0.5f;
+	    const float value = 1.0f;
+	    const float factor = brushSize;
+		const int factor2 = std::ceil(brushSize);
+		const float max = std::max(std::sqrt(factor*factor*3.0f), 0.1f);
+		for (int dx = -factor2; dx <= factor2; dx++) {
+		  for (int dz = -factor2; dz <= factor2; dz++) {
+		    for (int dy = -factor2; dy <= factor2; dy++) {
+		      const int ax = ix + dx;
+		      const int ay = iy + dy;
+		      const int az = iz + dz;
+		      if (
+		        ax >= 0 &&
+		        ay >= 0 &&
+		        az >= 0 &&
+		        ax <= dims[0] &&
+		        ay <= dims[1] &&
+		        az <= dims[2]
+		      ) {
+		      	hits2++;
+		        const int index = ax + ay*dimp1s[0]*dimp1s[1] + az*dimp1s[0];
+		        const float d = (max - std::sqrt((float)dx*dx + (float)dy*dy + (float)dz*dz)) / max;
+		        potential[index] = value > 0 ? std::min(potential[index], -d) : std::max(potential[index], d);
+		      }
+		    }
+		  }
+		}
+    // }
+  } */
+
+  // std::cerr << "decimate 2 " << positionIndex << " " << hits1 << " " << hits2 << std::endl;
+
+  positionIndex = 0;
+  faceIndex = 0;
+
+  int n = 0;
+  float grid[8] = {0};
+  int edges[12] = {0};
+  int x[3] = {0};
+
+  //March over the volume
+  for(x[2]=0; x[2]<dims[2]-1; ++x[2], n+=dims[0])
+  for(x[1]=0; x[1]<dims[1]-1; ++x[1], ++n)
+  for(x[0]=0; x[0]<dims[0]-1; ++x[0], ++n) {
+    //For each cell, compute cube mask
+    int cube_index = 0;
+    for(int i=0; i<8; ++i) {
+      int *v = cubeVerts[i];
+      int potentialIndex = (x[0]+v[0]) +
+        (((x[2]+v[2])) * dims[0]) +
+        ((x[1]+v[1]) * dims[0] * dims[1]);
+      float s = potential[potentialIndex];
+      grid[i] = s;
+      cube_index |= (s > 0) ? 1 << i : 0;
+    }
+    //Compute vertices
+    int edge_mask = edgeTable[cube_index];
+    if(edge_mask == 0) {
+      continue;
+    }
+    for(int i=0; i<12; ++i) {
+      if((edge_mask & (1<<i)) == 0) {
+        continue;
+      }
+      edges[i] = positionIndex / 3;
+      int *e = edgeIndex[i];
+      int *p0 = cubeVerts[e[0]];
+      int *p1 = cubeVerts[e[1]];
+      float a = grid[e[0]];
+      float b = grid[e[1]];
+      float d = a - b;
+      float t = a / d;
+      for(int j=0; j<3; ++j) {
+        positions[positionIndex + j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) * size[j] / dimsf[j] + shift[j];
+      }
+
+      positionIndex += 3;
+    }
+    //Add faces
+    int *f = triTable[cube_index];
+    for(int i=0;f[i]!=-1;i+=3) {
+      faces[faceIndex++] = edges[f[i]];
+      faces[faceIndex++] = edges[f[i+1]];
+      faces[faceIndex++] = edges[f[i+2]];
+    }
+
+    /* int *f = triTable[cube_index];
+	for(int i=0;f[i]!=-1;i+=3) {
+	  std::array<float, 3> &a = edges[f[i]];
+	  std::array<float, 3> &b = edges[f[i+2]];
+	  std::array<float, 3> &c = edges[f[i+1]];
+
+	  const int baseIndex = faceIndex*3;
+	  positions[baseIndex] = a[0];
+	  positions[baseIndex+1] = a[1];
+	  positions[baseIndex+2] = a[2];
+	  positions[baseIndex+3] = b[0];
+	  positions[baseIndex+4] = b[1];
+	  positions[baseIndex+5] = b[2];
+	  positions[baseIndex+6] = c[0];
+	  positions[baseIndex+7] = c[1];
+	  positions[baseIndex+8] = c[2];
+
+	  barycentrics[baseIndex] = 1;
+	  barycentrics[baseIndex+1] = 0;
+	  barycentrics[baseIndex+2] = 0;
+	  barycentrics[baseIndex+3] = 0;
+	  barycentrics[baseIndex+4] = 1;
+	  barycentrics[baseIndex+5] = 0;
+	  barycentrics[baseIndex+6] = 0;
+	  barycentrics[baseIndex+7] = 0;
+	  barycentrics[baseIndex+8] = 1;
+	} */
+  }
+
+  std::cerr << "decimate 3 " << positionIndex << " " << faceIndex << std::endl;
 }
 
 void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positionsBuffer, float *barycentricsBuffer, float *uvsBuffer, float *uvs2Buffer, unsigned int *positionIndexBuffer, unsigned int *barycentricIndexBuffer, unsigned int *uvIndexBuffer, unsigned int *uvIndex2Buffer) {

@@ -286,7 +286,14 @@ void chunk(
   }
 }
 
-bool operator==(const vec3f &a, const vec3f &b) {
+class HashVec {
+public:
+  int x;
+  int y;
+  int z;
+  unsigned int index;
+};
+bool operator==(const HashVec &a, const HashVec &b) {
   return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 class Hash {
@@ -529,22 +536,134 @@ void decimate(
   unsigned int *faces,
   unsigned int &numFaces
 ) {
+  std::cerr << "decimate 0" << std::endl;
+  if ((unsigned int)minTris >= numPositions/9) {
+    return;
+  }
+
   size_t total_indices;
   for (;;) {
-    for (size_t i = 0; i < numPositions; i++) {
-      positions[i] = std::floor(positions[i]/quantization)*quantization;
-    }
+    std::cerr << "decimate 1 " << quantization << " " << numPositions << std::endl;
+    /* for (size_t i = 0; i < numPositions; i++) {
+      positions[i] = std::round(positions[i]/quantization)*quantization;
+    } */
 
     {
-      std::unordered_set<vec3f, Hash> points;
-      for (size_t i = 0; i < numPositions; i += 3) {
-        points.insert(vec3f{
-          positions[i],
-          positions[i+1],
-          positions[i+2],
-        });
+      std::unordered_set<HashVec, Hash> points;
+      int numInserted = 0;
+      int numReferenced = 0;
+      {
+        // std::vector<unsigned int> remap(numPositions/3);
+        // std::vector<bool> keepFaces(numPositions/3);
+        unsigned int i = 0;
+        unsigned int index = 0;
+        for (; i < numPositions; i += 3, index++) {
+          HashVec v{
+            (int)(positions[i]/quantization),
+            (int)(positions[i+1]/quantization),
+            (int)(positions[i+2]/quantization),
+            index,
+          };
+          auto iterPair = points.insert(v);
+          auto &iter = iterPair.first;
+          auto &inserted = iterPair.second;
+          if (inserted) {
+            faces[index] = index;
+            numInserted++;
+          } else {
+            /* unsigned int matchingIndex = iter->index;
+            positions[i] = positions[matchingIndex*3];
+            positions[i+1] = positions[matchingIndex*3+1];
+            positions[i+2] = positions[matchingIndex*3+2]; */
+            faces[index] = iter->index;
+            numReferenced++;
+          }
+        }
       }
-      if (points.size() < 500000) {
+      std::cerr << "decimate 2.1 " << quantization << " " << numPositions << " " << points.size() << " " << numInserted << " " << numReferenced << std::endl;
+      /* for (unsigned int i = 0; i < numPositions/3; i++) {
+        std::cerr << " " << faces[i] << " " << positions[faces[i]*3] << " " << positions[faces[i]*3+1] << " " << positions[faces[i]*3+2] << std::endl;
+      } */
+      const unsigned int numTris = numPositions/9;
+      std::vector<unsigned char> deadTris(numTris);
+      unsigned int numDeadTris = 0;
+      {
+        unsigned int i = 0;
+        unsigned int index = 0;
+        for (; index < numTris; i += 3, index++) {
+          if (faces[i] == faces[i+1] && faces[i] == faces[i+2]) {
+            deadTris[index] = true;
+            numDeadTris++;
+          }
+        }
+      }
+      std::cerr << "decimate 2.2 " << quantization << " " << numPositions << " " << points.size() << " " << numDeadTris << std::endl;
+      if ((numTris - numDeadTris) < ((size_t)minTris)) {
+        numPositions = 0;
+        numNormals = 0;
+        numColors = 0;
+        numUvs = 0;
+        numIds = 0;
+
+        for (size_t originalIndex = 0; originalIndex < numTris; originalIndex++) {
+          if (!deadTris[originalIndex]) {
+            unsigned int newIndexA = faces[originalIndex*3];
+            unsigned int newIndexB = faces[originalIndex*3+1];
+            unsigned int newIndexC = faces[originalIndex*3+2];
+
+            positions[numPositions++] = positions[newIndexA*3];
+            positions[numPositions++] = positions[newIndexA*3+1];
+            positions[numPositions++] = positions[newIndexA*3+2];
+
+            positions[numPositions++] = positions[newIndexB*3];
+            positions[numPositions++] = positions[newIndexB*3+1];
+            positions[numPositions++] = positions[newIndexB*3+2];
+
+            positions[numPositions++] = positions[newIndexC*3];
+            positions[numPositions++] = positions[newIndexC*3+1];
+            positions[numPositions++] = positions[newIndexC*3+2];
+
+            normals[numNormals++] = normals[newIndexA*3];
+            normals[numNormals++] = normals[newIndexA*3+1];
+            normals[numNormals++] = normals[newIndexA*3+2];
+
+            normals[numNormals++] = normals[newIndexB*3];
+            normals[numNormals++] = normals[newIndexB*3+1];
+            normals[numNormals++] = normals[newIndexB*3+2];
+
+            normals[numNormals++] = normals[newIndexC*3];
+            normals[numNormals++] = normals[newIndexC*3+1];
+            normals[numNormals++] = normals[newIndexC*3+2];
+
+            colors[numColors++] = colors[newIndexA*3];
+            colors[numColors++] = colors[newIndexA*3+1];
+            colors[numColors++] = colors[newIndexA*3+2];
+
+            colors[numColors++] = colors[newIndexB*3];
+            colors[numColors++] = colors[newIndexB*3+1];
+            colors[numColors++] = colors[newIndexB*3+2];
+
+            colors[numColors++] = colors[newIndexC*3];
+            colors[numColors++] = colors[newIndexC*3+1];
+            colors[numColors++] = colors[newIndexC*3+2];
+
+            uvs[numUvs++] = uvs[newIndexA*2];
+            uvs[numUvs++] = uvs[newIndexA*2+1];
+
+            uvs[numUvs++] = uvs[newIndexB*2];
+            uvs[numUvs++] = uvs[newIndexB*2+1];
+
+            uvs[numUvs++] = uvs[newIndexC*2];
+            uvs[numUvs++] = uvs[newIndexC*2+1];
+
+            ids[numIds++] = ids[newIndexA];
+
+            ids[numIds++] = ids[newIndexB];
+
+            ids[numIds++] = ids[newIndexC];
+          }
+        }
+        std::cerr << "decimate 2.2 " << quantization << " " << numPositions << " " << points.size() << std::endl;
         break;
       } else {
         quantization *= 2.0f;
@@ -552,6 +671,39 @@ void decimate(
       }
     }
   }
+
+  std::cerr << "decimate 3 " << quantization << " " << numPositions << std::endl;
+
+  // minTris = (float)std::min(minTris, (float)(numPositions/9));
+
+  std::cerr << "decimate 4 " << quantization << " " << numPositions << std::endl;
+
+  numFaces = numPositions/3;
+  for (size_t i = 0; i < numFaces; i++) {
+    faces[i] = i;
+  }
+
+  std::cerr << "decimate 5 " << quantization << " " << numPositions << std::endl;
+
+  /* size_t target_index_count = ((size_t)minTris)*3;
+  std::vector<unsigned int> facesTmp;
+  for (size_t i = 0; i < numFaces; i += 3) {
+    unsigned int &a = *(unsigned int *)&positions[faces[i]*3];
+    unsigned int &b = *(unsigned int *)&positions[faces[i+1]*3];
+    unsigned int &c = *(unsigned int *)&positions[faces[i+2]*3];
+
+    if (a != b || a != c) {
+      facesTmp.push_back(faces[i]);
+      facesTmp.push_back(faces[i+1]);
+      facesTmp.push_back(faces[i+2]);
+    }
+  }
+
+  std::cerr << "decimate 6 " << quantization << " " << numPositions << " " << facesTmp.size() << std::endl;
+
+  numFaces = meshopt_simplify(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count, target_error); */
+
+  std::cerr << "decimate 7 " << quantization << " " << numPositions << std::endl;
 
   for (size_t i = 0; i < numPositions; i += 9) {
     float *a = &positions[i];
@@ -582,168 +734,5 @@ void decimate(
     normals[ i + 8 ] = cb[2];
   }
 
-  {
-    total_indices = numPositions/3;
-    std::vector<unsigned int> remap(total_indices);
-    size_t total_vertices;
-    {
-      std::vector<Vertex> vertices(total_indices);
-      for (size_t i = 0; i < total_indices; i++) {
-        vertices[i] = Vertex{
-          {
-            positions[i*3],
-            positions[i*3+1],
-            positions[i*3+2],
-          },
-          {
-            normals[i*3],
-            normals[i*3+1],
-            normals[i*3+2],
-          },
-        };
-      }
-
-      total_vertices = meshopt_generateVertexRemap(remap.data(), NULL, total_indices, vertices.data(), total_indices, sizeof(Vertex));
-    }
-
-    meshopt_remapVertexBuffer(positions, positions, total_indices, sizeof(float) * 3, &remap[0]);
-    numPositions = total_vertices * 3;
-
-    meshopt_remapVertexBuffer(normals, normals, total_indices, sizeof(float) * 3, &remap[0]);
-    numNormals = total_vertices * 3;
-
-    meshopt_remapVertexBuffer(colors, colors, total_indices, sizeof(float) * 3, &remap[0]);
-    numColors = total_vertices * 3;
-
-    meshopt_remapVertexBuffer(uvs, uvs, total_indices, sizeof(float) * 2, &remap[0]);
-    numUvs = total_vertices * 2;
-
-    meshopt_remapVertexBuffer(ids, ids, total_indices, sizeof(unsigned int), &remap[0]);
-    numIds = total_vertices;
-
-    meshopt_remapIndexBuffer(faces, NULL, total_indices, &remap[0]);
-    numFaces = total_indices;
-  }
-  /* size_t total_indices = numFaces;
-  size_t total_triangles = total_indices/3;
-  size_t target_tri_count = std::min((size_t)minTris, total_triangles);
-  if (target_tri_count < total_triangles) {
-    Simplify::vertices = std::vector<Simplify::Vertex>(numPositions/3);
-    for (int i = 0; i < Simplify::vertices.size(); i++) {
-      Simplify::Vertex v;
-      v.p.x = positions[i*3];
-      v.p.y = positions[i*3+1];
-      v.p.z = positions[i*3+2];
-      Simplify::vertices[i] = v;
-    }
-    Simplify::triangles = std::vector<Simplify::Triangle>(total_triangles);
-    for (int i = 0; i < total_indices; i += 3) {
-      Simplify::Triangle t;
-      t.v[0] = faces[i];
-      t.v[1] = faces[i+1];
-      t.v[2] = faces[i+2];
-      t.attr |= Simplify::Attributes::TEXCOORD | Simplify::Attributes::NORMAL | Simplify::Attributes::COLOR;
-      t.cs[0] = vec3f{
-        colors[faces[i]*3],
-        colors[faces[i]*3+1],
-        colors[faces[i]*3+2],
-      };
-      t.cs[1] = vec3f{
-        colors[faces[i+1]*3],
-        colors[faces[i+1]*3+1],
-        colors[faces[i+1]*3+2],
-      };
-      t.cs[2] = vec3f{
-        colors[faces[i+2]*3],
-        colors[faces[i+2]*3+1],
-        colors[faces[i+2]*3+2],
-      };
-      t.uvs[0] = vec3f{
-        uvs[faces[i]*2],
-        uvs[faces[i]*2+1],
-        0,
-      };
-      t.uvs[1] = vec3f{
-        uvs[faces[i+1]*2],
-        uvs[faces[i+1]*2+1],
-        0,
-      };
-      t.uvs[2] = vec3f{
-        uvs[faces[i+2]*2],
-        uvs[faces[i+2]*2+1],
-        0,
-      };
-      t.ids[0] = ids[faces[i]];
-      t.ids[1] = ids[faces[i+1]];
-      t.ids[2] = ids[faces[i+2]];
-      Simplify::triangles[i/3] = t;
-    }
-    Simplify::simplify_mesh(target_tri_count, aggressiveness, base, iterationOffset);
-
-    for (size_t i = 0; i < Simplify::vertices.size(); i++) {
-      Simplify::Vertex &v = Simplify::vertices[i];
-      positions[i*3] = v.p.x;
-      positions[i*3+1] = v.p.y;
-      positions[i*3+2] = v.p.z;
-    }
-    numPositions = Simplify::vertices.size()*3;
-    numNormals = Simplify::vertices.size()*3;
-    numColors = Simplify::vertices.size()*3;
-    numUvs = Simplify::vertices.size()*2;
-    numIds = Simplify::vertices.size();
-    for (int i = 0; i < Simplify::triangles.size(); i++) {
-      Simplify::Triangle &t = Simplify::triangles[i];
-
-      for (int j = 0; j < 3; j++) {
-        int vi = t.v[j];
-        faces[i*3+j] = vi;
-
-        vec3f &n = t.n;
-        normals[vi*3] = n.x;
-        normals[vi*3+1] = n.y;
-        normals[vi*3+2] = n.z;
-
-        vec3f &c = t.cs[j];
-        colors[vi*3] = c.x;
-        colors[vi*3+1] = c.y;
-        colors[vi*3+2] = c.z;
-
-        vec3f &u = t.uvs[j];
-        uvs[vi*2] = u.x;
-        uvs[vi*2+1] = u.y;
-
-        ids[vi] = t.ids[j];
-      }
-    }
-    numFaces = Simplify::triangles.size()*3;
-
-    Simplify::vertices = decltype(Simplify::vertices)();
-    Simplify::triangles = decltype(Simplify::triangles)();
-    Simplify::refs = decltype(Simplify::refs)(); */
-
-    size_t target_index_count = std::min((size_t)(minTris*3), (size_t)total_indices);
-    std::vector<unsigned int> facesTmp(numFaces);
-    memcpy(facesTmp.data(), faces, numFaces * sizeof(unsigned int));
-    numFaces = meshopt_simplify(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count, target_error);
-    /* if (numFaces > target_index_count) {
-      facesTmp = std::vector<unsigned int>(numFaces);
-      memcpy(facesTmp.data(), faces, numFaces * sizeof(unsigned int));
-      numFaces = meshopt_simplifySloppy(faces, facesTmp.data(), facesTmp.size(), positions, numPositions, 3*sizeof(float), target_index_count);
-    } */
-    // facesTmp = std::vector<unsigned int>();
-
-    /* const unsigned int oldNumFaces = numFaces;
-    const unsigned int maxIndex = numPositions/3;
-    unsigned int *faceWrite = faces;
-    for (size_t i = 0; i < oldNumFaces; i += 3) {
-      if (faces[i] < maxIndex && faces[i+1] < maxIndex && faces[i+2] < maxIndex) {
-        faceWrite[0] = faces[i];
-        faceWrite[1] = faces[i+1];
-        faceWrite[2] = faces[i+2];
-        faceWrite += 3;
-      } else {
-        numFaces -= 3;
-      }
-    } */
-  // }
+  std::cerr << "decimate 8 " << quantization << " " << numPositions << std::endl;
 }

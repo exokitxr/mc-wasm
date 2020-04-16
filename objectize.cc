@@ -351,6 +351,14 @@ EMSCRIPTEN_KEEPALIVE void doDecimate(
   );
 }
 
+EMSCRIPTEN_KEEPALIVE void doDecimateMarch(int dims[3], float shift[3], float size[3], float *positions, unsigned int *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
+  return decimateMarch(dims, shift, size, positions, faces, *positionIndex, *faceIndex);
+}
+
+EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int dims[3], float shift[3], float size[3], float *potential, float *positions, unsigned int *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
+  return marchPotentials(dims, shift, size, potential, positions, faces, *positionIndex, *faceIndex);
+}
+
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
   return malloc(size);
 }

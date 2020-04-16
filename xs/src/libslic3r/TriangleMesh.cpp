@@ -1166,8 +1166,8 @@ TriangleMeshSlicer<A>::slice_facet(float slice_z, const stl_facet &facet, const 
         points.erase( points.begin() + points_on_layer[1] );
     }
     
-    if (!points.empty()) {
-        assert(points.size() == 2); // facets must intersect each plane 0 or 2 times
+    if (points.size() == 2) {
+        // assert(points.size() == 2); // facets must intersect each plane 0 or 2 times
         IntersectionLine line;
         line.a          = (Point)points[1];
         line.b          = (Point)points[0];
