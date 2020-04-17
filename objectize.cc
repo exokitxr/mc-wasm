@@ -361,8 +361,8 @@ EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int x, int y, int z, int *dims, floa
   std::cout << "num positions end " << *positionIndex << " " << (void *)(&positionIndex) << std::endl;
 }
 
-EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, float *textures, int voxelWidth, float voxelSize, float voxelResolution) {
-  pushChunkTexture(x, y, z, textures, voxelWidth, voxelSize, voxelResolution);
+EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, float *textures, int voxelWidth, float voxelSize, float voxelResolution, float value, float nvalue) {
+  pushChunkTexture(x, y, z, textures, voxelWidth, voxelSize, voxelResolution, value, nvalue);
 }
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
