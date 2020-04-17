@@ -1,5 +1,5 @@
 mkdir -p bin
-emcc -s WASM=1 -O3 -s TOTAL_MEMORY=268435456 -D__linux__ \
+emcc -s WASM=1 -O3 -s TOTAL_MEMORY=104857600 -D__linux__ \
   march.cc uv.cc cut.cc objectize.cc xatlas.cpp cmprs.cc \
   xs/src/libslic3r/TriangleMesh.cpp xs/src/libslic3r/Polygon.cpp xs/src/libslic3r/ExPolygon.cpp \
   xs/src/libslic3r/Point.cpp xs/src/libslic3r/Multipoint.cpp \
