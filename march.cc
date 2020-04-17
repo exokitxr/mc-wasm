@@ -720,7 +720,7 @@ int floorDiv(int a, int b) {
 }
 
 void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, float *size, float *positions, float *barycentrics, unsigned int &positionIndex, unsigned int &barycentricIndex) {
-  std::cerr << "decimate 1 " << dims[0] << " " << dims[1] << " " << dims[2] << " " << positionIndex << std::endl;
+  // std::cerr << "decimate 1 " << dims[0] << " " << dims[1] << " " << dims[2] << " " << positionIndex << std::endl;
 
   // int hits1 = 0;
   // int hits2 = 0;
@@ -943,7 +943,7 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
   }
 }
 
-  std::cerr << "decimate 3 " << positionIndex << " " << barycentricIndex << std::endl;
+  // std::cerr << "decimate 3 " << positionIndex << " " << barycentricIndex << std::endl;
 }
 
 void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positionsBuffer, float *barycentricsBuffer, float *uvsBuffer, float *uvs2Buffer, unsigned int *positionIndexBuffer, unsigned int *barycentricIndexBuffer, unsigned int *uvIndexBuffer, unsigned int *uvIndex2Buffer) {
