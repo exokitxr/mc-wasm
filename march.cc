@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 bool operator==(const ChunkKey &a, const ChunkKey &b) {
-  return a.x == b.x && a.y == b.y && a.z == b.z;
+  return a.x == b.x && a.y == b.y && a.z == b.z && a.lod == b.lod;
 }
 /* bool operator<(const ChunkKey &a, const ChunkKey &b) {
   return a.x < b.x || a.y < b.y || a.z < b.z;
@@ -22,7 +22,7 @@ bool operator==(const ChunkKey &a, const ChunkKey &b) {
 class HashChunk {
 public:
    size_t operator() (const ChunkKey &a) const {
-     return *(size_t *)(&a.x) ^ *(size_t *)(&a.y) ^ *(size_t *)(&a.z);
+     return *(size_t *)(&a.x) ^ *(size_t *)(&a.y) ^ *(size_t *)(&a.z) ^ *(size_t *)(&a.lod);
    }
 };
 std::unordered_map<ChunkKey, ChunkVoxels, HashChunk> chunkVoxels;
@@ -719,7 +719,7 @@ int floorDiv(int a, int b) {
   return d * b == a ? d : d - ((a < 0) ^ (b < 0));
 }
 
-void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, float *positions, float *barycentrics, unsigned int &positionIndex, unsigned int &barycentricIndex) {
+void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, float *size, float *positions, float *barycentrics, unsigned int &positionIndex, unsigned int &barycentricIndex) {
   std::cerr << "decimate 1 " << dims[0] << " " << dims[1] << " " << dims[2] << " " << positionIndex << std::endl;
 
   // int hits1 = 0;
@@ -765,6 +765,7 @@ void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, 
 		    floorDiv(ax, dims[0]),
 		    floorDiv(ay, dims[1]),
 		    floorDiv(az, dims[2]),
+            lod,
 		  };
 		  const auto iter = chunkVoxels.find(k);
 		  if (iter == chunkVoxels.end()) {
@@ -1275,12 +1276,13 @@ inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTex
   }
 }
 
-void pushChunkTexture(int x, int y, int z, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, float value, float nvalue) {
+void pushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, float value, float nvalue) {
 	// std::cerr << "push chunk texture 1 " << x << " " << y << " " << z << " " << voxelWidth << " " << voxelSize << " " << voxelResolution << std::endl;
 	const ChunkKey k{
         x,
         y,
         z,
+        lod,
 	};
 	// std::cerr << "push chunk texture 2" << std::endl;
 	ChunkVoxels &chunk = (chunkVoxels[k] = ChunkVoxels(voxelWidth, nvalue));

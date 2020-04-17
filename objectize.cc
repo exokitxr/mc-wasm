@@ -355,12 +355,12 @@ EMSCRIPTEN_KEEPALIVE void doDecimateMarch(int dims[3], float shift[3], float siz
   return decimateMarch(dims, shift, size, positions, faces, *positionIndex, *faceIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int x, int y, int z, int *dims, float *shift, float *size, float *positions, float *barycentrics, unsigned int *positionIndex, unsigned int *barycentricIndex) {
-  marchPotentials(x, y, z, dims, shift, size, positions, barycentrics, *positionIndex, *barycentricIndex);
+EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int x, int y, int z, int lod, int *dims, float *shift, float *size, float *positions, float *barycentrics, unsigned int *positionIndex, unsigned int *barycentricIndex) {
+  marchPotentials(x, y, z, lod, dims, shift, size, positions, barycentrics, *positionIndex, *barycentricIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, float value, float nvalue) {
-  pushChunkTexture(x, y, z, depthTextures, voxelWidth, voxelSize, voxelResolution, value, nvalue);
+EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, float value, float nvalue) {
+  pushChunkTexture(x, y, z, lod, depthTextures, voxelWidth, voxelSize, voxelResolution, value, nvalue);
 }
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
