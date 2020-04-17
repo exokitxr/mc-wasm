@@ -800,9 +800,11 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
     // const v = new THREE.Vector3(x + voxelSize/2, y + voxelSize/2, z + voxelSize/2);
     // const originalZ = z;
 
-    const int vx = x * dims[0];
+    /* const int vx = x * dims[0];
     const int vy = y * dims[1];
-    const int vz = z * dims[2];
+    const int vz = z * dims[2]; */
+
+    bool hadPotential = false;
 
     std::vector<std::pair<ChunkKey, std::vector<ChunkGuide>>> &chunkGuides = getChunkGuides(dims[0]);
     // std::cerr << "num chunk guides " << chunkGuides.size() << std::endl;
@@ -824,7 +826,9 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
 
       std::vector<ChunkGuide> &chunkGuides = chunkGuidePair.second;
       for (auto &chunkGuide : chunkGuides) {
-        potential[chunkGuide.dstIndex] = depthBufferPixels[chunkGuide.srcIndex];
+        auto v = depthBufferPixels[chunkGuide.srcIndex];
+        potential[chunkGuide.dstIndex] = v;
+        hadPotential = hadPotential || v > 0;
       }
 
       /* const int nx = mod(ax, dims[0]);
@@ -944,9 +948,10 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
   // std::cerr << "decimate 2 " << positionIndex << " " << hits1 << " " << hits2 << std::endl;
 
 {
-  positionIndex = 0;
-  barycentricIndex = 0;
+positionIndex = 0;
+barycentricIndex = 0;
 
+if (hadPotential) {
   int n = 0;
   float grid[8] = {0};
   std::array<std::array<float, 3>, 12> edges;
@@ -992,32 +997,33 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
     }
 
     int *f = triTable[cube_index];
-	for(int i=0;f[i]!=-1;i+=3) {
-	  std::array<float, 3> &a = edges[f[i]];
-	  std::array<float, 3> &b = edges[f[i+1]];
-	  std::array<float, 3> &c = edges[f[i+2]];
+  	for(int i=0;f[i]!=-1;i+=3) {
+  	  std::array<float, 3> &a = edges[f[i]];
+  	  std::array<float, 3> &b = edges[f[i+1]];
+  	  std::array<float, 3> &c = edges[f[i+2]];
 
-	  positions[positionIndex++] = a[0];
-	  positions[positionIndex++] = a[1];
-	  positions[positionIndex++] = a[2];
-	  positions[positionIndex++] = b[0];
-	  positions[positionIndex++] = b[1];
-	  positions[positionIndex++] = b[2];
-	  positions[positionIndex++] = c[0];
-	  positions[positionIndex++] = c[1];
-	  positions[positionIndex++] = c[2];
+  	  positions[positionIndex++] = a[0];
+  	  positions[positionIndex++] = a[1];
+  	  positions[positionIndex++] = a[2];
+  	  positions[positionIndex++] = b[0];
+  	  positions[positionIndex++] = b[1];
+  	  positions[positionIndex++] = b[2];
+  	  positions[positionIndex++] = c[0];
+  	  positions[positionIndex++] = c[1];
+  	  positions[positionIndex++] = c[2];
 
-	  barycentrics[barycentricIndex++] = 1;
-	  barycentrics[barycentricIndex++] = 0;
-	  barycentrics[barycentricIndex++] = 0;
-	  barycentrics[barycentricIndex++] = 0;
-	  barycentrics[barycentricIndex++] = 1;
-	  barycentrics[barycentricIndex++] = 0;
-	  barycentrics[barycentricIndex++] = 0;
-	  barycentrics[barycentricIndex++] = 0;
-	  barycentrics[barycentricIndex++] = 1;
-	}
+  	  barycentrics[barycentricIndex++] = 1;
+  	  barycentrics[barycentricIndex++] = 0;
+  	  barycentrics[barycentricIndex++] = 0;
+  	  barycentrics[barycentricIndex++] = 0;
+  	  barycentrics[barycentricIndex++] = 1;
+  	  barycentrics[barycentricIndex++] = 0;
+  	  barycentrics[barycentricIndex++] = 0;
+  	  barycentrics[barycentricIndex++] = 0;
+  	  barycentrics[barycentricIndex++] = 1;
+  	}
   }
+}
 }
 
   // std::cerr << "decimate 3 " << positionIndex << " " << barycentricIndex << std::endl;
