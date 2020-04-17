@@ -355,8 +355,14 @@ EMSCRIPTEN_KEEPALIVE void doDecimateMarch(int dims[3], float shift[3], float siz
   return decimateMarch(dims, shift, size, positions, faces, *positionIndex, *faceIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int dims[3], float shift[3], float size[3], float *potential, float *positions, unsigned int *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
-  return marchPotentials(dims, shift, size, potential, positions, faces, *positionIndex, *faceIndex);
+EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int x, int y, int z, int *dims, float *shift, float *size, float *positions, unsigned int *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
+  std::cout << "num positions start " << *positionIndex << " " << (void *)(&positionIndex) << std::endl;
+  marchPotentials(x, y, z, dims, shift, size, positions, faces, *positionIndex, *faceIndex);
+  std::cout << "num positions end " << *positionIndex << " " << (void *)(&positionIndex) << std::endl;
+}
+
+EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, float *textures, int voxelWidth, float voxelSize, float voxelResolution) {
+  pushChunkTexture(x, y, z, textures, voxelWidth, voxelSize, voxelResolution);
 }
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
