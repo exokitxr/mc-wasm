@@ -355,8 +355,8 @@ EMSCRIPTEN_KEEPALIVE void doDecimateMarch(int dims[3], float shift[3], float siz
   return decimateMarch(dims, shift, size, positions, faces, *positionIndex, *faceIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int x, int y, int z, int *dims, float *shift, float *size, float *positions, float *normals, unsigned char *colors, float *barycentrics, unsigned int *positionIndex, unsigned int *normalIndex, unsigned int *colorIndex, unsigned int *barycentricIndex) {
-  marchPotentials(x, y, z, dims, shift, size, positions, normals, colors, barycentrics, *positionIndex, *normalIndex, *colorIndex, *barycentricIndex);
+EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int x, int y, int z, int *dims, float *shift, float *size, float *positions, float *normals, float *barycentrics, unsigned int *positionIndex, unsigned int *normalIndex, unsigned int *barycentricIndex) {
+  marchPotentials(x, y, z, dims, shift, size, positions, normals, barycentrics, *positionIndex, *normalIndex, *barycentricIndex);
 }
 
 EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, unsigned char *colorTextures, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, float value, float nvalue) {
