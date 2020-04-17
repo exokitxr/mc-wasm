@@ -6,9 +6,9 @@
 bool operator==(const ChunkKey &a, const ChunkKey &b) {
   return a.x == b.x && a.y == b.y && a.z == b.z && a.lod == b.lod;
 }
-/* bool operator<(const ChunkKey &a, const ChunkKey &b) {
-  return a.x < b.x || a.y < b.y || a.z < b.z;
-} */
+bool operator<(const ChunkKey &a, const ChunkKey &b) {
+  return a.x < b.x || a.y < b.y || a.z < b.z || a.lod < b.lod;
+}
 /* namespace std {
   template <>
   struct hash<ChunkKey>
@@ -719,6 +719,59 @@ int floorDiv(int a, int b) {
   return d * b == a ? d : d - ((a < 0) ^ (b < 0));
 }
 
+class ChunkGuide {
+public:
+  int srcIndex;
+  int dstIndex;
+};
+std::map<int, std::vector<std::pair<ChunkKey, std::vector<ChunkGuide>>>> chunkGuidesMap;
+std::vector<std::pair<ChunkKey, std::vector<ChunkGuide>>> &getChunkGuides(int voxelWidth) {
+  auto iter = chunkGuidesMap.find(voxelWidth);
+  if (iter != chunkGuidesMap.end()) {
+    return iter->second;
+  } else {
+    std::unordered_map<ChunkKey, std::vector<ChunkGuide>, HashChunk> chunkGuides;
+
+    int voxelWidthP2 = voxelWidth + 2;
+    for (int iz = 0; iz < voxelWidthP2; iz++) {
+      for (int ix = 0; ix < voxelWidthP2; ix++) {
+        for (int iy = 0; iy < voxelWidthP2; iy++) {
+          const int ax = ix - 1;
+          const int ay = iy - 1;
+          const int az = iz - 1;
+
+          ChunkKey k{
+            floorDiv(ax, voxelWidth),
+            floorDiv(ay, voxelWidth),
+            floorDiv(az, voxelWidth),
+            0,
+          };
+          auto chunkGuideIterPair = chunkGuides.insert(std::pair<ChunkKey, std::vector<ChunkGuide>>(k, std::vector<ChunkGuide>()));
+          auto &chunkGuidesPair = chunkGuideIterPair.first;
+          auto &chunkGuides = chunkGuidesPair->second;
+
+          const int nx = mod(ax, voxelWidth);
+          const int ny = mod(ay, voxelWidth);
+          const int nz = mod(az, voxelWidth);
+
+          const int srcIndex = nx + ny*voxelWidth*voxelWidth + nz*voxelWidth;
+          const int dstIndex = ix + iy*voxelWidthP2*voxelWidthP2 + iz*voxelWidthP2;
+          chunkGuides.push_back(ChunkGuide{
+            srcIndex,
+            dstIndex,
+          });
+        }
+      }
+    }
+
+    std::vector<std::pair<ChunkKey, std::vector<ChunkGuide>>> newMap;
+    for (auto iter : chunkGuides) {
+      newMap.push_back(std::pair<ChunkKey, std::vector<ChunkGuide>>(iter.first, std::move(iter.second)));
+    }
+    return chunkGuidesMap[voxelWidth] = std::move(newMap);
+  }
+}
+
 void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, float *size, float *positions, float *barycentrics, unsigned int &positionIndex, unsigned int &barycentricIndex) {
   // std::cerr << "decimate 1 " << dims[0] << " " << dims[1] << " " << dims[2] << " " << positionIndex << std::endl;
 
@@ -730,7 +783,6 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
     dims[1]+1,
     dims[2]+1,
   }; */
-
 
     int voxelWidthP2s[3] = {
         dims[0] + 2,
@@ -752,9 +804,38 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
     const int vy = y * dims[1];
     const int vz = z * dims[2];
 
-    // console.log('vox 1');
-    // const maxDistance = Math.sqrt(3);
-    for (int iz = 0; iz < voxelWidthP2s[0]; iz++) {
+    std::vector<std::pair<ChunkKey, std::vector<ChunkGuide>>> &chunkGuides = getChunkGuides(dims[0]);
+    // std::cerr << "num chunk guides " << chunkGuides.size() << std::endl;
+    for (size_t i = 0; i < chunkGuides.size(); i++) {
+      auto &chunkGuidePair = chunkGuides[i];
+      ChunkKey k = chunkGuidePair.first;
+      k.x += x;
+      k.y += y;
+      k.z += z;
+      k.lod = lod;
+
+      const auto iter = chunkVoxels.find(k);
+      if (iter == chunkVoxels.end()) {
+        std::cerr << "cannot find chunk " << k.x << " " << k.y << " " << k.z << " " << k.lod << std::endl;
+        abort();
+      }
+      const ChunkVoxels &chunk = iter->second;
+      const std::vector<float> &depthBufferPixels = chunk.voxels;
+
+      std::vector<ChunkGuide> &chunkGuides = chunkGuidePair.second;
+      for (auto &chunkGuide : chunkGuides) {
+        potential[chunkGuide.dstIndex] = depthBufferPixels[chunkGuide.srcIndex];
+      }
+
+      /* const int nx = mod(ax, dims[0]);
+      const int ny = mod(ay, dims[1]);
+      const int nz = mod(az, dims[2]);
+      const int srcIndex = nx + ny*dims[0]*dims[1] + nz*dims[0];
+      const int dstIndex = ix + iy*voxelWidthP2s[0]*voxelWidthP2s[1] + iz*voxelWidthP2s[0];
+      potential[dstIndex] = depthBufferPixels[srcIndex]; */
+    }
+
+    /* for (int iz = 0; iz < voxelWidthP2s[0]; iz++) {
       for (int ix = 0; ix < voxelWidthP2s[1]; ix++) {
         for (int iy = 0; iy < voxelWidthP2s[2]; iy++) {
           const int ax = vx + ix - 1;
@@ -762,18 +843,14 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
           const int az = vz + iz - 1;
 
           const ChunkKey k{
-		    floorDiv(ax, dims[0]),
-		    floorDiv(ay, dims[1]),
-		    floorDiv(az, dims[2]),
+  		      floorDiv(ax, dims[0]),
+  		      floorDiv(ay, dims[1]),
+  		      floorDiv(az, dims[2]),
             lod,
-		  };
-		  const auto iter = chunkVoxels.find(k);
-		  if (iter == chunkVoxels.end()) {
-		  	std::cerr << "cannot find chunk " << x << " " << y << " " << z << " " << lod << " " << floorDiv(ax, dims[0]) << " " << floorDiv(ay, dims[1]) << " " << floorDiv(az, dims[2]) << " " << chunkVoxels.size() << std::endl;
-		  	abort();
-		  }
-		  const ChunkVoxels &chunk = iter->second;
-		  const std::vector<float> &depthBufferPixels = chunk.voxels;
+		      };
+    		  const auto iter = chunkVoxels.find(k);
+    		  const ChunkVoxels &chunk = iter->second;
+    		  const std::vector<float> &depthBufferPixels = chunk.voxels;
 
           const int nx = mod(ax, dims[0]);
           const int ny = mod(ay, dims[1]);
@@ -783,7 +860,7 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
           potential[dstIndex] = depthBufferPixels[srcIndex];
         }
       }
-    }
+    } */
 
 
   // float *potential = potentialSrc;
