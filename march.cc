@@ -29,7 +29,7 @@ std::unordered_map<ChunkKey, ChunkVoxels, HashChunk> chunkVoxels;
 
 ChunkVoxels::ChunkVoxels() {}
 ChunkVoxels::ChunkVoxels(int voxelWidth, float nvalue) :
-    colors(voxelWidth * voxelWidth * voxelWidth * 4),
+    colors(voxelWidth * voxelWidth * voxelWidth * 3),
     voxels(voxelWidth * voxelWidth * voxelWidth)
 {
 	std::fill(voxels.begin(), voxels.end(), nvalue);
@@ -720,17 +720,17 @@ int floorDiv(int a, int b) {
   return d * b == a ? d : d - ((a < 0) ^ (b < 0));
 }
 
-void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, float *positions, float *normals, float *barycentrics, unsigned int &positionIndex, unsigned int &normalIndex, unsigned int &barycentricIndex) {
+void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, float *positions, float *normals, unsigned char *colors, float *barycentrics, unsigned int &positionIndex, unsigned int &normalIndex, unsigned int &colorIndex, unsigned int &barycentricIndex) {
   std::cerr << "decimate 1 " << dims[0] << " " << dims[1] << " " << dims[2] << " " << positionIndex << std::endl;
 
   // int hits1 = 0;
   // int hits2 = 0;
 
-  /* int dimp1s[3] = {
-    dims[0]+1,
-    dims[1]+1,
-    dims[2]+1,
-  }; */
+  float dimsf[3] = {
+    (float)dims[0],
+    (float)dims[1],
+    (float)dims[2],
+  };
 
 
     int voxelWidthP2s[3] = {
@@ -744,6 +744,7 @@ void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, 
 	    (float)voxelWidthP2s[2],
 	  };
     std::vector<float> potential(voxelWidthP2s[0] * voxelWidthP2s[1] * voxelWidthP2s[2]);
+    std::vector<unsigned char> color(voxelWidthP2s[0] * voxelWidthP2s[1] * voxelWidthP2s[2] * 3);
     // std::fill(potential.begin(), potential.end(), -1.0f);
 
     // const v = new THREE.Vector3(x + voxelSize/2, y + voxelSize/2, z + voxelSize/2);
@@ -773,6 +774,7 @@ void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, 
 		  	abort();
 		  }
 		  const ChunkVoxels &chunk = iter->second;
+		  const std::vector<unsigned char> &colorBufferPixels = chunk.colors;
 		  const std::vector<float> &depthBufferPixels = chunk.voxels;
 
           const int nx = mod(ax, dims[0]);
@@ -781,6 +783,7 @@ void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, 
           const int srcIndex = nx + ny*dims[0]*dims[1] + nz*dims[0];
           const int dstIndex = ix + iy*voxelWidthP2s[0]*voxelWidthP2s[1] + iz*voxelWidthP2s[0];
           potential[dstIndex] = depthBufferPixels[srcIndex];
+          memcpy(color.data() + dstIndex*3, colorBufferPixels.data() + srcIndex*3, 3);
         }
       }
     }
@@ -869,6 +872,7 @@ void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, 
 {
   positionIndex = 0;
   normalIndex = 0;
+  colorIndex = 0;
   barycentricIndex = 0;
 
   int n = 0;
@@ -917,21 +921,21 @@ void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, 
 
     int *f = triTable[cube_index];
 	for(int i=0;f[i]!=-1;i+=3) {
-	  std::array<float, 3> &a = edges[f[i]];
-	  std::array<float, 3> &b = edges[f[i+1]];
-	  std::array<float, 3> &c = edges[f[i+2]];
+	  {
+	    std::array<float, 3> &a = edges[f[i]];
+		std::array<float, 3> &b = edges[f[i+1]];
+		std::array<float, 3> &c = edges[f[i+2]];
 
-	  positions[positionIndex++] = a[0];
-	  positions[positionIndex++] = a[1];
-	  positions[positionIndex++] = a[2];
-	  positions[positionIndex++] = b[0];
-	  positions[positionIndex++] = b[1];
-	  positions[positionIndex++] = b[2];
-	  positions[positionIndex++] = c[0];
-	  positions[positionIndex++] = c[1];
-	  positions[positionIndex++] = c[2];
+		positions[positionIndex++] = a[0];
+		positions[positionIndex++] = a[1];
+		positions[positionIndex++] = a[2];
+		positions[positionIndex++] = b[0];
+		positions[positionIndex++] = b[1];
+		positions[positionIndex++] = b[2];
+		positions[positionIndex++] = c[0];
+		positions[positionIndex++] = c[1];
+		positions[positionIndex++] = c[2];
 
-      {
 	    float cb[3];
 	    subVectors(cb, &c[0], &b[0]);
 	    float ab[3];
@@ -955,6 +959,129 @@ void marchPotentials(int x, int y, int z, int *dims, float *shift, float *size, 
 	    normals[normalIndex++] = cb[1];
 	    normals[normalIndex++] = cb[2];
 	  }
+
+      {
+		int brushIndex = (x[0]) +
+			(((x[2])) * voxelWidthP2s[0]) +
+			((x[1]) * voxelWidthP2s[0] * voxelWidthP2s[1]);
+	    unsigned char r = color[brushIndex*3];
+	    unsigned char g = color[brushIndex*3+1];
+	    unsigned char b = color[brushIndex*3+2];
+
+	    colors[colorIndex++] = r;
+	    colors[colorIndex++] = g;
+	    colors[colorIndex++] = b;
+
+	    colors[colorIndex++] = r;
+	    colors[colorIndex++] = g;
+	    colors[colorIndex++] = b;
+
+	    colors[colorIndex++] = r;
+	    colors[colorIndex++] = g;
+	    colors[colorIndex++] = b;
+	  }
+
+	  /* {
+	  	std::array<float, 3> &a = edges[f[i]];
+		std::array<float, 3> &b = edges[f[i+1]];
+		std::array<float, 3> &c = edges[f[i+2]];
+
+	  	float mx = (a[0] + b[0] + c[0])/3.0f;
+	  	float my = (a[0] + b[1] + c[1])/3.0f;
+	  	float mz = (a[2] + b[2] + c[2])/3.0f;
+
+	  	float ax = std::abs(mx);
+	  	float ay = std::abs(my);
+	  	float az = std::abs(mz);
+
+	  	unsigned int index;
+	  	TextureVector du;
+	  	TextureVector dv;
+	  	if (ax >= ay && ax >= az) {
+          if (ax >= 0.5) {
+            index = dims[0]*dims[0]*4*1;
+            du = TextureVector{
+              0,
+              0,
+              -1,
+            };
+            dv = TextureVector{
+              0,
+              1,
+              0,
+            };
+          } else {
+            index = dims[0]*dims[0]*4*3;
+            du = TextureVector{
+              0,
+              0,
+              1,
+            };
+            dv = TextureVector{
+              0,
+              1,
+              0,
+            };
+          }
+	  	} else if (ay >= ax && ay >= az) {
+          if (ay >= 0.5) {
+            index = dims[0]*dims[0]*4*4;
+            du = TextureVector{
+              1,
+              0,
+              0,
+            };
+            dv = TextureVector{
+              0,
+              0,
+              -1,
+            };
+          } else {
+            index = dims[0]*dims[0]*4*5;
+            du = TextureVector{
+              1,
+              0,
+              0,
+            };
+            dv = TextureVector{
+              0,
+              0,
+              1,
+            };
+          }
+	  	} else {
+          if (az >= 0.5) {
+            index = dims[0]*dims[0]*4*0;
+            du = TextureVector{
+              1,
+              0,
+              0,
+            };
+            dv = TextureVector{
+              0,
+              1,
+              0,
+            };
+          } else {
+            index = dims[0]*dims[0]*4*2;
+            du = TextureVector{
+              -1,
+              0,
+              0,
+            };
+            dv = TextureVector{
+              0,
+              1,
+              0,
+            };
+          }
+	  	}
+	  	int u = (int)std::min(std::max((mx * du.x + my * du.y + mz * du.z)/dimsf[0], 0.0f), dimsf[0] - 1.0f);
+	  	int v = (int)std::min(std::max((mx * dv.x + my * dv.y + mz * dv.z)/dimsf[0], 0.0f), dimsf[0] - 1.0f);
+	  	unsigned char color[3] = {
+          
+	  	};
+	  } */
 
 	  barycentrics[barycentricIndex++] = 1;
 	  barycentrics[barycentricIndex++] = 0;
@@ -1287,13 +1414,19 @@ inline void absorbTexture(std::vector<unsigned char> &colorBufferPixels, std::ve
       depth -= voxelResolution/2.0f;
       ChunkVector p3 = p2;
       for (float d = voxelResolution/2.0f; d < depth && d < voxelSize; d += voxelResolution) {
-      	// std::cerr << "absorb 2 " << d << " " << p.x << " " << p.y << " " << p.z << " " << (p.x + p.y*voxelWidth*voxelWidth + p.z*voxelWidth) << " " << depthBufferPixels.size() << std::endl;
         if (p3.x < 0 || p3.y < 0 || p3.z < 0 || p3.x > voxelWidth || p3.y > voxelWidth || p3.z > voxelWidth) {
-          // fail       1 101 99   0 0 99      1 0 0      0 1 0      1 1 1     101 99 100 10
           std::cerr << "fail " << p3.x << " " << p3.y << " " << p3.z << " " << ip.x << " " << ip.y << " " << ip.z << " " << du.x << " " << du.y << " " << du.z << " " << dv.x << " " << dv.y << " " << dv.z << " " << dd.x << " " << dd.y << " " << dd.z << " " << u << " " << v << " " << p.x << " " << p.y << " " << p.z << " " << voxelWidth << " " << voxelSize << std::endl;
           abort();
         }
+
         depthBufferPixels[p3.x + p3.y*voxelWidth*voxelWidth + p3.z*voxelWidth] = value;
+
+        int colorDstIndex = (p3.x + p3.y*voxelWidth*voxelWidth + p3.z*voxelWidth)*3;
+        int colorSrcIndex = (u + v * voxelWidth)*4;
+        colorBufferPixels[colorDstIndex] = colorTexture[colorSrcIndex];
+        colorBufferPixels[colorDstIndex+1] = colorTexture[colorSrcIndex+1];
+        colorBufferPixels[colorDstIndex+2] = colorTexture[colorSrcIndex+2];
+
         p3 += dd;
       }
       p2 += dv;
