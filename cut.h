@@ -4,6 +4,9 @@
 #include "TriangleMesh.hpp"
 #include "meshoptimizer/src/meshoptimizer.h"
 
+void subVectors(float *c, const float *a, const float *b);
+void crossVectors(float *c, const float *a, const float *b);
+
 void cut(
   float *positions,
   unsigned int numPositions,
