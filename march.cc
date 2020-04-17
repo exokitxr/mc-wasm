@@ -769,7 +769,7 @@ void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, floa
 		  };
 		  const auto iter = chunkVoxels.find(k);
 		  if (iter == chunkVoxels.end()) {
-		  	std::cerr << "cannot find chunk " << ax << " " << ay << " " << az << " " << chunkVoxels.size() << std::endl;
+		  	std::cerr << "cannot find chunk " << x << " " << y << " " << z << " " << lod << " " << floorDiv(ax, dims[0]) << " " << floorDiv(ay, dims[1]) << " " << floorDiv(az, dims[2]) << " " << chunkVoxels.size() << std::endl;
 		  	abort();
 		  }
 		  const ChunkVoxels &chunk = iter->second;
