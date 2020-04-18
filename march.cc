@@ -1346,8 +1346,11 @@ inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTex
         for (int dy = -o; dy <= o; dy++) {
           const int ax = o + u*pixelRatio + dx;
           const int ay = o + v*pixelRatio + dy;
-          const int index = ax + ay*voxelWidth*pixelRatio;
-          const float v = depthTexture[index];
+          const int index = (ax + ay * voxelWidth * pixelRatio) * 4;
+          const float v = depthTexture[index] +
+            depthTexture[index+1] * 255.0 +
+            depthTexture[index+2] * 255.0 * 255.0 +
+            depthTexture[index+3] * 255.0 * 255.0 * 255.0;
           acc = std::min(acc, v);
         }
       }
@@ -1355,9 +1358,7 @@ inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTex
       depth -= voxelResolution/2.0f;
       ChunkVector p3 = p2;
       for (float d = voxelResolution/2.0f; d < depth && d < voxelSize; d += voxelResolution) {
-      	// std::cerr << "absorb 2 " << d << " " << p.x << " " << p.y << " " << p.z << " " << (p.x + p.y*voxelWidth*voxelWidth + p.z*voxelWidth) << " " << depthBufferPixels.size() << std::endl;
         /* if (p3.x < 0 || p3.y < 0 || p3.z < 0 || p3.x > voxelWidth || p3.y > voxelWidth || p3.z > voxelWidth) {
-          // fail       1 101 99   0 0 99      1 0 0      0 1 0      1 1 1     101 99 100 10
           std::cerr << "fail " << p3.x << " " << p3.y << " " << p3.z << " " << ip.x << " " << ip.y << " " << ip.z << " " << du.x << " " << du.y << " " << du.z << " " << dv.x << " " << dv.y << " " << dv.z << " " << dd.x << " " << dd.y << " " << dd.z << " " << u << " " << v << " " << p.x << " " << p.y << " " << p.z << " " << voxelWidth << " " << voxelSize << std::endl;
           abort();
         } */
@@ -1373,17 +1374,17 @@ inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTex
 void pushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value, float nvalue) {
 	// std::cerr << "push chunk texture 1 " << x << " " << y << " " << z << " " << voxelWidth << " " << voxelSize << " " << voxelResolution << std::endl;
 	const ChunkKey k{
-        x,
-        y,
-        z,
-        lod,
+    x,
+    y,
+    z,
+    lod,
 	};
 	// std::cerr << "push chunk texture 2" << std::endl;
 	ChunkVoxels &chunk = (chunkVoxels[k] = ChunkVoxels(voxelWidth, nvalue));
     // std::cerr << "push chunk texture 3" << std::endl;
 	std::vector<float> &depthBufferPixels = chunk.voxels;
 
-  int texSize = voxelWidth * pixelRatio * voxelWidth * pixelRatio;
+  int texSize = voxelWidth * pixelRatio * voxelWidth * pixelRatio * 4;
 
   // std::cerr << "push chunk texture 4" << std::endl;
   absorbTexture(depthBufferPixels, depthTextures, ChunkVector{0, 0, voxelWidth-1}, ChunkVector{1, 0, 0}, ChunkVector{0, 1, 0}, ChunkVector{0, 0, -1}, voxelWidth, voxelSize, voxelResolution, pixelRatio, value);
