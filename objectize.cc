@@ -359,8 +359,8 @@ EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int x, int y, int z, int lod, int *d
   marchPotentials(x, y, z, lod, dims, shift, size, positions, barycentrics, *positionIndex, *barycentricIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, float value, float nvalue) {
-  pushChunkTexture(x, y, z, lod, depthTextures, voxelWidth, voxelSize, voxelResolution, value, nvalue);
+EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value, float nvalue) {
+  pushChunkTexture(x, y, z, lod, depthTextures, voxelWidth, voxelSize, voxelResolution, pixelRatio, value, nvalue);
 }
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {

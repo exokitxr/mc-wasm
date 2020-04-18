@@ -1333,23 +1333,34 @@ inline ChunkVector &operator+=(ChunkVector &a, const ChunkVector &b) {
   a.z += b.z;
   return a;
 }
-inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTexture, const ChunkVector &ip, const ChunkVector &du, const ChunkVector &dv, const ChunkVector &dd, int voxelWidth, float voxelSize, float voxelResolution, float value) {
+inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTexture, const ChunkVector &ip, const ChunkVector &du, const ChunkVector &dv, const ChunkVector &dd, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value) {
+  const int o = pixelRatio/2;
+  // const int startIndex = i * voxelWidth * voxelWidth;
+
   ChunkVector p = ip;
-  // std::cout << "start " << du.x << " " << du.y << " " << du.z << " " << dv.x << " " << dv.y << " " << dv.z << " " << voxelWidth << " " << voxelSize << std::endl;
   for (int u = 0; u < voxelWidth; u++) {
   	ChunkVector p2 = p;
     for (int v = 0; v < voxelWidth; v++) {
-      // std::cerr << "absorb 1 " << u << " " << v << std::endl;
-      float depth = depthTexture[u + v * voxelWidth];
+      float acc = std::numeric_limits<float>::infinity();
+      for (int dx = -o; dx <= o; dx++) {
+        for (int dy = -o; dy <= o; dy++) {
+          const int ax = o + u*pixelRatio + dx;
+          const int ay = o + v*pixelRatio + dy;
+          const int index = ax + ay*voxelWidth*pixelRatio;
+          const float v = depthTexture[index];
+          acc = std::min(acc, v);
+        }
+      }
+      float depth = acc;
       depth -= voxelResolution/2.0f;
       ChunkVector p3 = p2;
       for (float d = voxelResolution/2.0f; d < depth && d < voxelSize; d += voxelResolution) {
       	// std::cerr << "absorb 2 " << d << " " << p.x << " " << p.y << " " << p.z << " " << (p.x + p.y*voxelWidth*voxelWidth + p.z*voxelWidth) << " " << depthBufferPixels.size() << std::endl;
-        if (p3.x < 0 || p3.y < 0 || p3.z < 0 || p3.x > voxelWidth || p3.y > voxelWidth || p3.z > voxelWidth) {
+        /* if (p3.x < 0 || p3.y < 0 || p3.z < 0 || p3.x > voxelWidth || p3.y > voxelWidth || p3.z > voxelWidth) {
           // fail       1 101 99   0 0 99      1 0 0      0 1 0      1 1 1     101 99 100 10
           std::cerr << "fail " << p3.x << " " << p3.y << " " << p3.z << " " << ip.x << " " << ip.y << " " << ip.z << " " << du.x << " " << du.y << " " << du.z << " " << dv.x << " " << dv.y << " " << dv.z << " " << dd.x << " " << dd.y << " " << dd.z << " " << u << " " << v << " " << p.x << " " << p.y << " " << p.z << " " << voxelWidth << " " << voxelSize << std::endl;
           abort();
-        }
+        } */
         depthBufferPixels[p3.x + p3.y*voxelWidth*voxelWidth + p3.z*voxelWidth] = value;
         p3 += dd;
       }
@@ -1359,7 +1370,7 @@ inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTex
   }
 }
 
-void pushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, float value, float nvalue) {
+void pushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value, float nvalue) {
 	// std::cerr << "push chunk texture 1 " << x << " " << y << " " << z << " " << voxelWidth << " " << voxelSize << " " << voxelResolution << std::endl;
 	const ChunkKey k{
         x,
@@ -1372,19 +1383,21 @@ void pushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int vo
     // std::cerr << "push chunk texture 3" << std::endl;
 	std::vector<float> &depthBufferPixels = chunk.voxels;
 
-    // std::cerr << "push chunk texture 4" << std::endl;
-    absorbTexture(depthBufferPixels, depthTextures, ChunkVector{0, 0, voxelWidth-1}, ChunkVector{1, 0, 0}, ChunkVector{0, 1, 0}, ChunkVector{0, 0, -1}, voxelWidth, voxelSize, voxelResolution, value);
-    // std::cerr << "push chunk texture 5.1 " << *(textures + (voxelWidth * voxelWidth)) << std::endl;
-    absorbTexture(depthBufferPixels, depthTextures + (voxelWidth * voxelWidth), ChunkVector{voxelWidth-1, 0, voxelWidth-1}, ChunkVector{0, 0, -1}, ChunkVector{0, 1, 0}, ChunkVector{-1, 0, 0}, voxelWidth, voxelSize, voxelResolution, value);
+  int texSize = voxelWidth * pixelRatio * voxelWidth * pixelRatio;
+
+  // std::cerr << "push chunk texture 4" << std::endl;
+  absorbTexture(depthBufferPixels, depthTextures, ChunkVector{0, 0, voxelWidth-1}, ChunkVector{1, 0, 0}, ChunkVector{0, 1, 0}, ChunkVector{0, 0, -1}, voxelWidth, voxelSize, voxelResolution, pixelRatio, value);
+  // std::cerr << "push chunk texture 5.1 " << *(textures + (voxelWidth * voxelWidth)) << std::endl;
+  absorbTexture(depthBufferPixels, depthTextures + texSize, ChunkVector{voxelWidth-1, 0, voxelWidth-1}, ChunkVector{0, 0, -1}, ChunkVector{0, 1, 0}, ChunkVector{-1, 0, 0}, voxelWidth, voxelSize, voxelResolution, pixelRatio, value);
 	// std::cerr << "push chunk texture 6" << std::endl;
-	absorbTexture(depthBufferPixels, depthTextures + (voxelWidth * voxelWidth * 2), ChunkVector{voxelWidth-1, 0, 0}, ChunkVector{-1, 0, 0}, ChunkVector{0, 1, 0}, ChunkVector{0, 0, 1}, voxelWidth, voxelSize, voxelResolution, value);
+	absorbTexture(depthBufferPixels, depthTextures + texSize * 2, ChunkVector{voxelWidth-1, 0, 0}, ChunkVector{-1, 0, 0}, ChunkVector{0, 1, 0}, ChunkVector{0, 0, 1}, voxelWidth, voxelSize, voxelResolution, pixelRatio, value);
 	// std::cerr << "push chunk texture 7" << std::endl;
-	absorbTexture(depthBufferPixels, depthTextures + (voxelWidth * voxelWidth * 3), ChunkVector{0, 0, 0}, ChunkVector{0, 0, 1}, ChunkVector{0, 1, 0}, ChunkVector{1, 0, 0}, voxelWidth, voxelSize, voxelResolution, value);
+	absorbTexture(depthBufferPixels, depthTextures + texSize * 3, ChunkVector{0, 0, 0}, ChunkVector{0, 0, 1}, ChunkVector{0, 1, 0}, ChunkVector{1, 0, 0}, voxelWidth, voxelSize, voxelResolution, pixelRatio, value);
 	// std::cerr << "push chunk texture 8" << std::endl;
-	absorbTexture(depthBufferPixels, depthTextures + (voxelWidth * voxelWidth * 4), ChunkVector{0, voxelWidth-1, voxelWidth-1}, ChunkVector{1, 0, 0}, ChunkVector{0, 0, -1}, ChunkVector{0, -1, 0}, voxelWidth, voxelSize, voxelResolution, value);
+	absorbTexture(depthBufferPixels, depthTextures + texSize * 4, ChunkVector{0, voxelWidth-1, voxelWidth-1}, ChunkVector{1, 0, 0}, ChunkVector{0, 0, -1}, ChunkVector{0, -1, 0}, voxelWidth, voxelSize, voxelResolution, pixelRatio, value);
 	// std::cerr << "push chunk texture 9" << std::endl
-	absorbTexture(depthBufferPixels, depthTextures + (voxelWidth * voxelWidth * 5), ChunkVector{0, 0, 0}, ChunkVector{1, 0, 0}, ChunkVector{0, 0, 1}, ChunkVector{0, 1, 0}, voxelWidth, voxelSize, voxelResolution, value);
-    // std::cerr << "push chunk texture 10" << std::endl;
+	absorbTexture(depthBufferPixels, depthTextures + texSize * 5, ChunkVector{0, 0, 0}, ChunkVector{1, 0, 0}, ChunkVector{0, 0, 1}, ChunkVector{0, 1, 0}, voxelWidth, voxelSize, voxelResolution, pixelRatio, value);
+  // std::cerr << "push chunk texture 10" << std::endl;
 }
 
 void collide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *collision, unsigned int *collisionIndex) {
