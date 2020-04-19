@@ -836,7 +836,7 @@ void marchPotentials(float *depthTextures, int *dims, float *shift, float *size,
   int voxelWidth = dims[0];
   int texSize = voxelWidth * pixelRatio * voxelWidth * pixelRatio * 4;
 
-  std::cerr << "march " << dims[0] << " " << dims[1] << " " << dims[2] << " " << shift[0] << " " << shift[1] << " " << shift[2] << " " << size[0] << " " << size[1] << " " << size[2] << " " << pixelRatio << " " << value << " " << nvalue << std::endl;
+  // std::cerr << "march " << dims[0] << " " << dims[1] << " " << dims[2] << " " << shift[0] << " " << shift[1] << " " << shift[2] << " " << size[0] << " " << size[1] << " " << size[2] << " " << pixelRatio << " " << value << " " << nvalue << std::endl;
 
   // std::cerr << "push chunk texture 4" << std::endl;
   absorbTexture(potential, depthTextures, ChunkVector{0, 0, voxelWidth-1}, ChunkVector{1, 0, 0}, ChunkVector{0, 1, 0}, ChunkVector{0, 0, -1}, dims[0], dims[1], size[2], size[2]/dims[2], pixelRatio, value);
