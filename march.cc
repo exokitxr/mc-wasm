@@ -34,6 +34,27 @@ ChunkVoxels::ChunkVoxels(int voxelWidth, float nvalue) :
 	std::fill(voxels.begin(), voxels.end(), nvalue);
 }
 
+inline ChunkVector operator+(const ChunkVector &a, const ChunkVector &b) {
+  return ChunkVector{
+    a.x + b.x,
+    a.y + b.y,
+    a.z + b.z,
+  };
+}
+inline ChunkVector operator*(const ChunkVector &a, int n) {
+  return ChunkVector{
+    a.x * n,
+    a.y * n,
+    a.z * n,
+  };
+}
+inline ChunkVector &operator+=(ChunkVector &a, const ChunkVector &b) {
+  a.x += b.x;
+  a.y += b.y;
+  a.z += b.z;
+  return a;
+}
+
 int edgeTable[256]={
 0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
@@ -772,203 +793,92 @@ std::vector<std::pair<ChunkKey, std::vector<ChunkGuide>>> &getChunkGuides(int vo
   }
 }
 
-void marchPotentials(int x, int y, int z, int lod, int *dims, float *shift, float *size, float *positions, float *barycentrics, unsigned int &positionIndex, unsigned int &barycentricIndex) {
-  // std::cerr << "decimate 1 " << dims[0] << " " << dims[1] << " " << dims[2] << " " << positionIndex << std::endl;
+inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTexture, const ChunkVector &ip, const ChunkVector &du, const ChunkVector &dv, const ChunkVector &dd, int voxelWidth, int voxelHeight, float voxelSize, float voxelResolution, int pixelRatio, float value) {
+  const int o = pixelRatio/2;
 
-  // int hits1 = 0;
-  // int hits2 = 0;
-
-  /* int dimp1s[3] = {
-    dims[0]+1,
-    dims[1]+1,
-    dims[2]+1,
-  }; */
-
-    int voxelWidthP2s[3] = {
-        dims[0] + 2,
-        dims[1] + 2,
-        dims[2] + 2,
-    };
-    float voxelWidthP2sf[3] = {
-	    (float)voxelWidthP2s[0],
-	    (float)voxelWidthP2s[1],
-	    (float)voxelWidthP2s[2],
-	  };
-    std::vector<float> potential(voxelWidthP2s[0] * voxelWidthP2s[1] * voxelWidthP2s[2]);
-    // std::fill(potential.begin(), potential.end(), -1.0f);
-
-    // const v = new THREE.Vector3(x + voxelSize/2, y + voxelSize/2, z + voxelSize/2);
-    // const originalZ = z;
-
-    /* const int vx = x * dims[0];
-    const int vy = y * dims[1];
-    const int vz = z * dims[2]; */
-
-    bool hadPotential = false;
-
-    std::vector<std::pair<ChunkKey, std::vector<ChunkGuide>>> &chunkGuides = getChunkGuides(dims[0]);
-    // std::cerr << "num chunk guides " << chunkGuides.size() << std::endl;
-    for (size_t i = 0; i < chunkGuides.size(); i++) {
-      auto &chunkGuidePair = chunkGuides[i];
-      ChunkKey k = chunkGuidePair.first;
-      k.x += x;
-      k.y += y;
-      k.z += z;
-      k.lod = lod;
-
-      const auto iter = chunkVoxels.find(k);
-      if (iter == chunkVoxels.end()) {
-        std::cerr << "cannot find chunk " << k.x << " " << k.y << " " << k.z << " " << k.lod << std::endl;
-        abort();
-      }
-      const ChunkVoxels &chunk = iter->second;
-      const std::vector<float> &depthBufferPixels = chunk.voxels;
-
-      std::vector<ChunkGuide> &chunkGuides = chunkGuidePair.second;
-      for (auto &chunkGuide : chunkGuides) {
-        auto v = depthBufferPixels[chunkGuide.srcIndex];
-        potential[chunkGuide.dstIndex] = v;
-        hadPotential = hadPotential || v > 0;
-      }
-
-      /* const int nx = mod(ax, dims[0]);
-      const int ny = mod(ay, dims[1]);
-      const int nz = mod(az, dims[2]);
-      const int srcIndex = nx + ny*dims[0]*dims[1] + nz*dims[0];
-      const int dstIndex = ix + iy*voxelWidthP2s[0]*voxelWidthP2s[1] + iz*voxelWidthP2s[0];
-      potential[dstIndex] = depthBufferPixels[srcIndex]; */
-    }
-
-    /* for (int iz = 0; iz < voxelWidthP2s[0]; iz++) {
-      for (int ix = 0; ix < voxelWidthP2s[1]; ix++) {
-        for (int iy = 0; iy < voxelWidthP2s[2]; iy++) {
-          const int ax = vx + ix - 1;
-          const int ay = vy + iy - 1;
-          const int az = vz + iz - 1;
-
-          const ChunkKey k{
-  		      floorDiv(ax, dims[0]),
-  		      floorDiv(ay, dims[1]),
-  		      floorDiv(az, dims[2]),
-            lod,
-		      };
-    		  const auto iter = chunkVoxels.find(k);
-    		  const ChunkVoxels &chunk = iter->second;
-    		  const std::vector<float> &depthBufferPixels = chunk.voxels;
-
-          const int nx = mod(ax, dims[0]);
-          const int ny = mod(ay, dims[1]);
-          const int nz = mod(az, dims[2]);
-          const int srcIndex = nx + ny*dims[0]*dims[1] + nz*dims[0];
-          const int dstIndex = ix + iy*voxelWidthP2s[0]*voxelWidthP2s[1] + iz*voxelWidthP2s[0];
-          potential[dstIndex] = depthBufferPixels[srcIndex];
+  ChunkVector p = ip;
+  for (int u = 0; u < voxelWidth; u++) {
+    ChunkVector p2 = p;
+    for (int v = 0; v < voxelHeight; v++) {
+      float acc = std::numeric_limits<float>::infinity();
+      for (int dx = -o; dx <= o; dx++) {
+        for (int dy = -o; dy <= o; dy++) {
+          const int ax = o + u*pixelRatio + dx;
+          const int ay = o + v*pixelRatio + dy;
+          const int index = (ax + ay * voxelWidth * pixelRatio) * 4;
+          const float v = depthTexture[index] +
+            depthTexture[index+1] * 255.0 +
+            depthTexture[index+2] * 255.0 * 255.0 +
+            depthTexture[index+3] * 255.0 * 255.0 * 255.0;
+          acc = std::min(acc, v);
         }
       }
-    } */
+      float depth = acc;
+      depth -= voxelResolution/2.0f;
+      ChunkVector p3 = p2;
+      for (float d = voxelResolution/2.0f; d < depth && d < voxelSize; d += voxelResolution) {
+        /* if (p3.x < 0 || p3.y < 0 || p3.z < 0 || p3.x > voxelWidth || p3.y > voxelWidth || p3.z > voxelWidth) {
+          std::cerr << "fail " << p3.x << " " << p3.y << " " << p3.z << " " << ip.x << " " << ip.y << " " << ip.z << " " << du.x << " " << du.y << " " << du.z << " " << dv.x << " " << dv.y << " " << dv.z << " " << dd.x << " " << dd.y << " " << dd.z << " " << u << " " << v << " " << p.x << " " << p.y << " " << p.z << " " << voxelWidth << " " << voxelSize << std::endl;
+          abort();
+        } */
+        depthBufferPixels[p3.x + p3.y*voxelWidth*voxelWidth + p3.z*voxelWidth] = value;
+        p3 += dd;
+      }
+      p2 += dv;
+    }
+    p += du;
+  }
+}
 
+void marchPotentials(float *depthTextures, int *dims, float *shift, float *size, int pixelRatio, float value, float nvalue, float *positions, float *barycentrics, unsigned int &positionIndex, unsigned int &barycentricIndex) {
+  std::vector<float> potential(dims[0] * dims[1] * dims[2]);
+  std::fill(potential.begin(), potential.end(), nvalue);
+  int voxelWidth = dims[0];
+  int texSize = voxelWidth * pixelRatio * voxelWidth * pixelRatio * 4;
 
-  // float *potential = potentialSrc;
-  /* std::vector<float> potential(dimp1s[0]*dimp1s[1]*dimp1s[2]);
-  const float maxDistance = std::sqrt(3);
-  for (int x = 0; x < dimp1s[0]; x++) {
-  	for (int y = 0; y < dimp1s[1]; y++) {
-	  for (int z = 0; z < dimp1s[2]; z++) {
-	  	float acc = 0;
-	  	float count = 0;
-	  	for (int dx = -1; dx <= 1; dx++) {
-		  for (int dz = -1; dz <= 1; dz++) {
-		    for (int dy = -1; dy <= 1; dy++) {
-              const int ax = x + dx;
-		      const int ay = y + dy;
-		      const int az = z + dz;
-		      if (
-		        ax >= 0 &&
-		        ay >= 0 &&
-		        az >= 0 &&
-		        ax <= dims[0] &&
-		        ay <= dims[1] &&
-		        az <= dims[2]
-		      ) {
-		      	float distance = std::sqrt((float)dx*dx + (float)dy*dy + (float)dz*dz);
-		        float factor = (maxDistance - distance) / maxDistance;
-		        const int index = ax + ay*dimp1s[0]*dimp1s[1] + az*dimp1s[0];
-		        acc += potentialSrc[index] * factor;
-                count += factor;
-		      }
-		    }
-		  }
-		}
-		const int index = x + y*dimp1s[0]*dimp1s[1] + z*dimp1s[0];
-		potential[index] = acc / count;
-	  }
-  	}
-  } */
+  std::cerr << "march " << dims[0] << " " << dims[1] << " " << dims[2] << " " << shift[0] << " " << shift[1] << " " << shift[2] << " " << size[0] << " " << size[1] << " " << size[2] << " " << pixelRatio << " " << value << " " << nvalue << std::endl;
 
-  /* std::vector<float> potential(dimp1s[0]*dimp1s[1]*dimp1s[2]);
-  std::fill(potential.begin(), potential.end(), 10);
-  for (unsigned int i = 0; i < positionIndex; i += 3) {
-    float x = (positions[i] - shift[0]);
-    float y = (positions[i+1] - shift[1]);
-    float z = (positions[i+2] - shift[2]);
-    // if (x > 0 && x < size[0] && y > 0 && y < size[1] && z > 0 && z < size[2]) {
-    	hits1++;
-    	int ix = (int)std::round(x/size[0]*dims[0]);
-    	int iy = (int)std::round(y/size[1]*dims[1]);
-    	int iz = (int)std::round(z/size[2]*dims[2]);
-    	const float brushSize = 0.5f;
-	    const float value = 1.0f;
-	    const float factor = brushSize;
-		const int factor2 = std::ceil(brushSize);
-		const float max = std::max(std::sqrt(factor*factor*3.0f), 0.1f);
-		for (int dx = -factor2; dx <= factor2; dx++) {
-		  for (int dz = -factor2; dz <= factor2; dz++) {
-		    for (int dy = -factor2; dy <= factor2; dy++) {
-		      const int ax = ix + dx;
-		      const int ay = iy + dy;
-		      const int az = iz + dz;
-		      if (
-		        ax >= 0 &&
-		        ay >= 0 &&
-		        az >= 0 &&
-		        ax <= dims[0] &&
-		        ay <= dims[1] &&
-		        az <= dims[2]
-		      ) {
-		      	hits2++;
-		        const int index = ax + ay*dimp1s[0]*dimp1s[1] + az*dimp1s[0];
-		        const float d = (max - std::sqrt((float)dx*dx + (float)dy*dy + (float)dz*dz)) / max;
-		        potential[index] = value > 0 ? std::min(potential[index], -d) : std::max(potential[index], d);
-		      }
-		    }
-		  }
-		}
-    // }
-  } */
+  // std::cerr << "push chunk texture 4" << std::endl;
+  absorbTexture(potential, depthTextures, ChunkVector{0, 0, voxelWidth-1}, ChunkVector{1, 0, 0}, ChunkVector{0, 1, 0}, ChunkVector{0, 0, -1}, dims[0], dims[1], size[2], size[2]/dims[2], pixelRatio, value);
+  // std::cerr << "push chunk texture 5.1 " << *(textures + (voxelWidth * voxelWidth)) << std::endl;
+  absorbTexture(potential, depthTextures + texSize, ChunkVector{voxelWidth-1, 0, voxelWidth-1}, ChunkVector{0, 0, -1}, ChunkVector{0, 1, 0}, ChunkVector{-1, 0, 0}, dims[2], dims[1], size[0], size[0]/dims[0], pixelRatio, value);
+  // std::cerr << "push chunk texture 6" << std::endl;
+  absorbTexture(potential, depthTextures + texSize * 2, ChunkVector{voxelWidth-1, 0, 0}, ChunkVector{-1, 0, 0}, ChunkVector{0, 1, 0}, ChunkVector{0, 0, 1}, dims[0], dims[1], size[2], size[2]/dims[2], pixelRatio, value);
+  // std::cerr << "push chunk texture 7" << std::endl;
+  absorbTexture(potential, depthTextures + texSize * 3, ChunkVector{0, 0, 0}, ChunkVector{0, 0, 1}, ChunkVector{0, 1, 0}, ChunkVector{1, 0, 0}, dims[2], dims[1], size[0], size[0]/dims[0], pixelRatio, value);
+  // std::cerr << "push chunk texture 8" << std::endl;
+  absorbTexture(potential, depthTextures + texSize * 4, ChunkVector{0, voxelWidth-1, voxelWidth-1}, ChunkVector{1, 0, 0}, ChunkVector{0, 0, -1}, ChunkVector{0, -1, 0}, dims[0], dims[2], size[1], size[1]/dims[1], pixelRatio, value);
+  // std::cerr << "push chunk texture 9" << std::endl
+  absorbTexture(potential, depthTextures + texSize * 5, ChunkVector{0, 0, 0}, ChunkVector{1, 0, 0}, ChunkVector{0, 0, 1}, ChunkVector{0, 1, 0}, dims[0], dims[2], size[1], size[1]/dims[1], pixelRatio, value);
+  // std::cerr << "push chunk texture 10" << std::endl;
 
-  // std::cerr << "decimate 2 " << positionIndex << " " << hits1 << " " << hits2 << std::endl;
+  float dimsf[3] = {
+    (float)dims[0],
+    (float)dims[1],
+    (float)dims[2],
+  };
 
 {
-positionIndex = 0;
-barycentricIndex = 0;
+  positionIndex = 0;
+  barycentricIndex = 0;
 
-if (hadPotential) {
   int n = 0;
   float grid[8] = {0};
   std::array<std::array<float, 3>, 12> edges;
   int x[3] = {0};
 
   //March over the volume
-  for(x[2]=0; x[2]<voxelWidthP2s[2]-1; ++x[2], n+=voxelWidthP2s[0])
-  for(x[1]=0; x[1]<voxelWidthP2s[1]-1; ++x[1], ++n)
-  for(x[0]=0; x[0]<voxelWidthP2s[0]-1; ++x[0], ++n) {
+  for(x[2]=0; x[2]<dims[2]-1; ++x[2], n+=dims[0])
+  for(x[1]=0; x[1]<dims[1]-1; ++x[1], ++n)
+  for(x[0]=0; x[0]<dims[0]-1; ++x[0], ++n) {
     //For each cell, compute cube mask
     int cube_index = 0;
     for(int i=0; i<8; ++i) {
       int *v = cubeVerts[i];
       float s = potential[
         (x[0]+v[0]) +
-        (((x[2]+v[2])) * voxelWidthP2s[0]) +
-        ((x[1]+v[1]) * voxelWidthP2s[0] * voxelWidthP2s[1])
+        (((x[2]+v[2])) * dims[0]) +
+        ((x[1]+v[1]) * dims[0] * dims[1])
       ];
 
       grid[i] = s;
@@ -992,7 +902,7 @@ if (hadPotential) {
       float t = a / d;
       std::array<float, 3> &v = edges[i];
       for(int j=0; j<3; ++j) {
-        v[j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) * size[j] / voxelWidthP2sf[j] + shift[j];
+        v[j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) * size[j] / dimsf[j] + shift[j];
       }
     }
 
@@ -1023,7 +933,6 @@ if (hadPotential) {
   	  barycentrics[barycentricIndex++] = 1;
   	}
   }
-}
 }
 
   // std::cerr << "decimate 3 " << positionIndex << " " << barycentricIndex << std::endl;
@@ -1313,65 +1222,7 @@ void computeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *color
   }
 }
 
-inline ChunkVector operator+(const ChunkVector &a, const ChunkVector &b) {
-  return ChunkVector{
-    a.x + b.x,
-    a.y + b.y,
-    a.z + b.z,
-  };
-}
-inline ChunkVector operator*(const ChunkVector &a, int n) {
-  return ChunkVector{
-    a.x * n,
-    a.y * n,
-    a.z * n,
-  };
-}
-inline ChunkVector &operator+=(ChunkVector &a, const ChunkVector &b) {
-  a.x += b.x;
-  a.y += b.y;
-  a.z += b.z;
-  return a;
-}
-inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTexture, const ChunkVector &ip, const ChunkVector &du, const ChunkVector &dv, const ChunkVector &dd, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value) {
-  const int o = pixelRatio/2;
-  // const int startIndex = i * voxelWidth * voxelWidth;
-
-  ChunkVector p = ip;
-  for (int u = 0; u < voxelWidth; u++) {
-  	ChunkVector p2 = p;
-    for (int v = 0; v < voxelWidth; v++) {
-      float acc = std::numeric_limits<float>::infinity();
-      for (int dx = -o; dx <= o; dx++) {
-        for (int dy = -o; dy <= o; dy++) {
-          const int ax = o + u*pixelRatio + dx;
-          const int ay = o + v*pixelRatio + dy;
-          const int index = (ax + ay * voxelWidth * pixelRatio) * 4;
-          const float v = depthTexture[index] +
-            depthTexture[index+1] * 255.0 +
-            depthTexture[index+2] * 255.0 * 255.0 +
-            depthTexture[index+3] * 255.0 * 255.0 * 255.0;
-          acc = std::min(acc, v);
-        }
-      }
-      float depth = acc;
-      depth -= voxelResolution/2.0f;
-      ChunkVector p3 = p2;
-      for (float d = voxelResolution/2.0f; d < depth && d < voxelSize; d += voxelResolution) {
-        /* if (p3.x < 0 || p3.y < 0 || p3.z < 0 || p3.x > voxelWidth || p3.y > voxelWidth || p3.z > voxelWidth) {
-          std::cerr << "fail " << p3.x << " " << p3.y << " " << p3.z << " " << ip.x << " " << ip.y << " " << ip.z << " " << du.x << " " << du.y << " " << du.z << " " << dv.x << " " << dv.y << " " << dv.z << " " << dd.x << " " << dd.y << " " << dd.z << " " << u << " " << v << " " << p.x << " " << p.y << " " << p.z << " " << voxelWidth << " " << voxelSize << std::endl;
-          abort();
-        } */
-        depthBufferPixels[p3.x + p3.y*voxelWidth*voxelWidth + p3.z*voxelWidth] = value;
-        p3 += dd;
-      }
-      p2 += dv;
-    }
-    p += du;
-  }
-}
-
-void pushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value, float nvalue) {
+/* void pushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value, float nvalue) {
 	// std::cerr << "push chunk texture 1 " << x << " " << y << " " << z << " " << voxelWidth << " " << voxelSize << " " << voxelResolution << std::endl;
 	const ChunkKey k{
     x,
@@ -1427,4 +1278,4 @@ void collide(float *positions, unsigned int numPositions, float origin[3], float
       }
     }
   }
-}
+} */

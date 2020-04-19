@@ -107,9 +107,9 @@ EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, uint8_t
   marchingCubes(dims, potential, brush, shift, scale, positions, colors, faces, *positionIndex, *colorIndex, *faceIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *collision, unsigned int *collisionIndex) {
+/* EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *collision, unsigned int *collisionIndex) {
   collide(positions, numPositions, origin, direction, collision, collisionIndex);
-}
+} */
 
 /* EMSCRIPTEN_KEEPALIVE void doComputeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int *positionIndex, unsigned int *barycentricIndex, unsigned int *uvIndex, unsigned int *uvIndex2) {
   computeGeometry(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, marchCubesTexSize, marchCubesTexSquares, marchCubesTexTriangleSize, potentialsBuffer, positions, barycentrics, uvs, uvs2, positionIndex, barycentricIndex, uvIndex, uvIndex2);
@@ -355,13 +355,13 @@ EMSCRIPTEN_KEEPALIVE void doDecimateMarch(int dims[3], float shift[3], float siz
   return decimateMarch(dims, shift, size, positions, faces, *positionIndex, *faceIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doMarchPotentials(int x, int y, int z, int lod, int *dims, float *shift, float *size, float *positions, float *barycentrics, unsigned int *positionIndex, unsigned int *barycentricIndex) {
-  marchPotentials(x, y, z, lod, dims, shift, size, positions, barycentrics, *positionIndex, *barycentricIndex);
+EMSCRIPTEN_KEEPALIVE void doMarchPotentials(float *depthTextures, int *dims, float *shift, float *size, int pixelRatio, float value, float nvalue, float *positions, float *barycentrics, unsigned int *positionIndex, unsigned int *barycentricIndex) {
+  marchPotentials(depthTextures, dims, shift, size, pixelRatio, value, nvalue, positions, barycentrics, *positionIndex, *barycentricIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value, float nvalue) {
+/* EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value, float nvalue) {
   pushChunkTexture(x, y, z, lod, depthTextures, voxelWidth, voxelSize, voxelResolution, pixelRatio, value, nvalue);
-}
+} */
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
   return malloc(size);
