@@ -805,11 +805,13 @@ inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTex
         for (int dy = -o; dy <= o; dy++) {
           const int ax = o + u*pixelRatio + dx;
           const int ay = o + v*pixelRatio + dy;
-          const int index = (ax + ay * voxelWidth * pixelRatio) * 4;
+          const int index = ax + ay * voxelWidth * pixelRatio;
+          const float v = depthTexture[index];
+          /* const int index = (ax + ay * voxelWidth * pixelRatio) * 4;
           const float v = depthTexture[index] +
             depthTexture[index+1] * 255.0 +
             depthTexture[index+2] * 255.0 * 255.0 +
-            depthTexture[index+3] * 255.0 * 255.0 * 255.0;
+            depthTexture[index+3] * 255.0 * 255.0 * 255.0; */
           acc = std::min(acc, v);
         }
       }
@@ -830,11 +832,11 @@ inline void absorbTexture(std::vector<float> &depthBufferPixels, float *depthTex
   }
 }
 
-void marchPotentials(float *depthTextures, int *dims, float *shift, float *size, int pixelRatio, float value, float nvalue, float *positions, float *barycentrics, unsigned int &positionIndex, unsigned int &barycentricIndex) {
+void marchPotentials(float *depthTextures, int *dims, float *shift, float *size, int pixelRatio, float value, float nvalue, float *positions, unsigned short *faces, unsigned int &positionIndex, unsigned int &faceIndex) {
   std::vector<float> potential(dims[0] * dims[1] * dims[2]);
   std::fill(potential.begin(), potential.end(), nvalue);
   int voxelWidth = dims[0];
-  int texSize = voxelWidth * pixelRatio * voxelWidth * pixelRatio * 4;
+  int texSize = voxelWidth * pixelRatio * voxelWidth * pixelRatio;
 
   // std::cerr << "march " << dims[0] << " " << dims[1] << " " << dims[2] << " " << shift[0] << " " << shift[1] << " " << shift[2] << " " << size[0] << " " << size[1] << " " << size[2] << " " << pixelRatio << " " << value << " " << nvalue << std::endl;
 
@@ -860,11 +862,11 @@ void marchPotentials(float *depthTextures, int *dims, float *shift, float *size,
 
 {
   positionIndex = 0;
-  barycentricIndex = 0;
+  faceIndex = 0;
 
   int n = 0;
   float grid[8] = {0};
-  std::array<std::array<float, 3>, 12> edges;
+  unsigned short edges[12] = {0};
   int x[3] = {0};
 
   //March over the volume
@@ -893,6 +895,7 @@ void marchPotentials(float *depthTextures, int *dims, float *shift, float *size,
       if((edge_mask & (1<<i)) == 0) {
         continue;
       }
+      edges[i] = (unsigned short)(positionIndex / 3);
       int *e = edgeIndex[i];
       int *p0 = cubeVerts[e[0]];
       int *p1 = cubeVerts[e[1]];
@@ -900,38 +903,19 @@ void marchPotentials(float *depthTextures, int *dims, float *shift, float *size,
       float b = grid[e[1]];
       float d = a - b;
       float t = a / d;
-      std::array<float, 3> &v = edges[i];
       for(int j=0; j<3; ++j) {
-        v[j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) * size[j] / dimsf[j] + shift[j];
+        positions[positionIndex + j] = ((x[j] + p0[j]) + t * (p1[j] - p0[j])) * size[j] / dimsf[j] + shift[j];
       }
+
+      positionIndex += 3;
     }
-
+    //Add faces
     int *f = triTable[cube_index];
-  	for(int i=0;f[i]!=-1;i+=3) {
-  	  std::array<float, 3> &a = edges[f[i]];
-  	  std::array<float, 3> &b = edges[f[i+1]];
-  	  std::array<float, 3> &c = edges[f[i+2]];
-
-  	  positions[positionIndex++] = a[0];
-  	  positions[positionIndex++] = a[1];
-  	  positions[positionIndex++] = a[2];
-  	  positions[positionIndex++] = b[0];
-  	  positions[positionIndex++] = b[1];
-  	  positions[positionIndex++] = b[2];
-  	  positions[positionIndex++] = c[0];
-  	  positions[positionIndex++] = c[1];
-  	  positions[positionIndex++] = c[2];
-
-  	  barycentrics[barycentricIndex++] = 1;
-  	  barycentrics[barycentricIndex++] = 0;
-  	  barycentrics[barycentricIndex++] = 0;
-  	  barycentrics[barycentricIndex++] = 0;
-  	  barycentrics[barycentricIndex++] = 1;
-  	  barycentrics[barycentricIndex++] = 0;
-  	  barycentrics[barycentricIndex++] = 0;
-  	  barycentrics[barycentricIndex++] = 0;
-  	  barycentrics[barycentricIndex++] = 1;
-  	}
+    for(int i=0;f[i]!=-1;i+=3) {
+      faces[faceIndex++] = edges[f[i]];
+      faces[faceIndex++] = edges[f[i+1]];
+      faces[faceIndex++] = edges[f[i+2]];
+    }
   }
 }
 

@@ -355,8 +355,8 @@ EMSCRIPTEN_KEEPALIVE void doDecimateMarch(int dims[3], float shift[3], float siz
   return decimateMarch(dims, shift, size, positions, faces, *positionIndex, *faceIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doMarchPotentials(float *depthTextures, int *dims, float *shift, float *size, int pixelRatio, float value, float nvalue, float *positions, float *barycentrics, unsigned int *positionIndex, unsigned int *barycentricIndex) {
-  marchPotentials(depthTextures, dims, shift, size, pixelRatio, value, nvalue, positions, barycentrics, *positionIndex, *barycentricIndex);
+EMSCRIPTEN_KEEPALIVE void doMarchPotentials(float *depthTextures, int *dims, float *shift, float *size, int pixelRatio, float value, float nvalue, float *positions, unsigned short *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
+  marchPotentials(depthTextures, dims, shift, size, pixelRatio, value, nvalue, positions, faces, *positionIndex, *faceIndex);
 }
 
 /* EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value, float nvalue) {
