@@ -5,6 +5,7 @@
 #include "march.h"
 #include "uv.h"
 #include "cut.h"
+#include "cmprs.h"
 // #include "light.h"
 // #include "heightfield.h"
 // #include "cull.h"
@@ -106,9 +107,9 @@ EMSCRIPTEN_KEEPALIVE void doMarchingCubes(int dims[3], float *potential, uint8_t
   marchingCubes(dims, potential, brush, shift, scale, positions, colors, faces, *positionIndex, *colorIndex, *faceIndex);
 }
 
-EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *collision, unsigned int *collisionIndex) {
+/* EMSCRIPTEN_KEEPALIVE void doCollide(float *positions, unsigned int numPositions, float origin[3], float direction[3], float *collision, unsigned int *collisionIndex) {
   collide(positions, numPositions, origin, direction, collision, collisionIndex);
-}
+} */
 
 /* EMSCRIPTEN_KEEPALIVE void doComputeGeometry(int *chunkCoords, unsigned int numChunkCoords, float *colorTargetCoordBuf, int colorTargetSize, float voxelSize, float marchCubesTexSize, float marchCubesTexSquares, float marchCubesTexTriangleSize, float *potentialsBuffer, float *positions, float *barycentrics, float *uvs, float *uvs2, unsigned int *positionIndex, unsigned int *barycentricIndex, unsigned int *uvIndex, unsigned int *uvIndex2) {
   computeGeometry(chunkCoords, numChunkCoords, colorTargetCoordBuf, colorTargetSize, voxelSize, marchCubesTexSize, marchCubesTexSquares, marchCubesTexTriangleSize, potentialsBuffer, positions, barycentrics, uvs, uvs2, positionIndex, barycentricIndex, uvIndex, uvIndex2);
@@ -145,6 +146,222 @@ EMSCRIPTEN_KEEPALIVE void doCut(
     numOutFaces
   );
 }
+
+EMSCRIPTEN_KEEPALIVE void doCompress(
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors,
+  uint8_t *outData,
+  unsigned int *outSize
+) {
+  compress(
+    positions,
+    numPositions,
+    normals,
+    numNormals,
+    colors,
+    numColors,
+    outData,
+    outSize
+  );
+}
+
+EMSCRIPTEN_KEEPALIVE void doDecompress(
+  uint8_t *data,
+  unsigned int size,
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors
+) {
+  decompress(
+    data,
+    size,
+    positions,
+    numPositions,
+    normals,
+    numNormals,
+    colors,
+    numColors
+  );
+}
+
+EMSCRIPTEN_KEEPALIVE void doChunk(
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors,
+  float *uvs,
+  unsigned int numUvs,
+  unsigned int *ids,
+  unsigned int numIds,
+  unsigned int *faces,
+  unsigned int numFaces,
+  float *mins,
+  float *maxs,
+  float *scale,
+  float **outPositions,
+  unsigned int *numOutPositions,
+  float **outNormals,
+  unsigned int *numOutNormals,
+  float **outColors,
+  unsigned int *numOutColors,
+  float **outUvs,
+  unsigned int *numOutUvs,
+  unsigned int **outIds,
+  unsigned int *numOutIds,
+  unsigned int **outFaces,
+  unsigned int *numOutFaces
+) {
+  chunk(
+    positions,
+    numPositions,
+    normals,
+    numNormals,
+    colors,
+    numColors,
+    uvs,
+    numUvs,
+    ids,
+    numIds,
+    faces,
+    numFaces,
+    mins,
+    maxs,
+    scale,
+    outPositions,
+    numOutPositions,
+    outNormals,
+    numOutNormals,
+    outColors,
+    numOutColors,
+    outUvs,
+    numOutUvs,
+    outIds,
+    numOutIds,
+    outFaces,
+    numOutFaces
+  );
+}
+
+EMSCRIPTEN_KEEPALIVE void doChunkOne(
+  float *positions,
+  unsigned int numPositions,
+  float *normals,
+  unsigned int numNormals,
+  float *colors,
+  unsigned int numColors,
+  float *uvs,
+  unsigned int numUvs,
+  unsigned int *ids,
+  unsigned int numIds,
+  unsigned int *faces,
+  unsigned int numFaces,
+  float *mins,
+  float *maxs,
+  float *outP,
+  unsigned int *numOutP,
+  float *outN,
+  unsigned int *numOutN,
+  float *outC,
+  unsigned int *numOutC,
+  float *outU,
+  unsigned int *numOutU,
+  unsigned int *outX,
+  unsigned int *numOutX,
+  unsigned int *outI,
+  unsigned int *numOutI
+) {
+  chunkOne(
+    positions,
+    numPositions,
+    normals,
+    numNormals,
+    colors,
+    numColors,
+    uvs,
+    numUvs,
+    ids,
+    numIds,
+    faces,
+    numFaces,
+    mins,
+    maxs,
+    outP,
+    numOutP,
+    outN,
+    numOutN,
+    outC,
+    numOutC,
+    outU,
+    numOutU,
+    outX,
+    numOutX,
+    outI,
+    numOutI
+  );
+}
+
+EMSCRIPTEN_KEEPALIVE void doDecimate(
+  float *positions,
+  unsigned int *numPositions,
+  float *normals,
+  unsigned int *numNormals,
+  float *colors,
+  unsigned int *numColors,
+  float *uvs,
+  unsigned int *numUvs,
+  unsigned int *ids,
+  unsigned int *numIds,
+  float minTris,
+  float quantization,
+  float target_error,
+  float aggressiveness,
+  float base,
+  int iterationOffset,
+  unsigned int *faces,
+  unsigned int *numFaces
+) {
+  decimate(
+    positions,
+    *numPositions,
+    normals,
+    *numNormals,
+    colors,
+    *numColors,
+    uvs,
+    *numUvs,
+    ids,
+    *numIds,
+    minTris,
+    quantization,
+    target_error,
+    aggressiveness,
+    base,
+    iterationOffset,
+    faces,
+    *numFaces
+  );
+}
+
+EMSCRIPTEN_KEEPALIVE void doDecimateMarch(int dims[3], float shift[3], float size[3], float *positions, unsigned int *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
+  return decimateMarch(dims, shift, size, positions, faces, *positionIndex, *faceIndex);
+}
+
+EMSCRIPTEN_KEEPALIVE void doMarchPotentials(float *depthTextures, int *dims, float *shift, float *size, int pixelRatio, float value, float nvalue, float *positions, unsigned short *faces, unsigned int *positionIndex, unsigned int *faceIndex) {
+  marchPotentials(depthTextures, dims, shift, size, pixelRatio, value, nvalue, positions, faces, *positionIndex, *faceIndex);
+}
+
+/* EMSCRIPTEN_KEEPALIVE void doPushChunkTexture(int x, int y, int z, int lod, float *depthTextures, int voxelWidth, float voxelSize, float voxelResolution, int pixelRatio, float value, float nvalue) {
+  pushChunkTexture(x, y, z, lod, depthTextures, voxelWidth, voxelSize, voxelResolution, pixelRatio, value, nvalue);
+} */
 
 EMSCRIPTEN_KEEPALIVE void *doMalloc(size_t size) {
   return malloc(size);

@@ -65,6 +65,8 @@ TriangleMesh::TriangleMesh(const Pointf3* points, const Point3* facets, size_t n
         facet.extra[0] = 0;
         facet.extra[1] = 0;
 
+        facet.originalIndex = i;
+
         stl.facet_start[i] = facet;
     }
     stl_get_size(&stl);
@@ -175,18 +177,18 @@ TriangleMesh::repair() {
 
     /// Call the stl_repair from admesh rather than reimplementing it ourselves.
     stl_repair(&(this->stl),  // operate on this STL
-               true,  // flag: try to fix everything
-               true,  // flag: check for perfectly aligned edges
+               false,  // flag: try to fix everything
+               false,  // flag: check for perfectly aligned edges
                false, // flag: don't use tolerance
                0.0,    // null tolerance value
                false, // flag: don't increment tolerance
                0.0,   // amount to increment tolerance on each iteration
-               true,  // find and try to connect nearby bad facets
-               10,    // Perform 10 iterations
-               true,  // remove unconnected
-               true,  // fill holes
-               true,  // fix normal directions
-               true,  // fix normal values
+               false,  // find and try to connect nearby bad facets
+               1,    // Perform 10 iterations
+               false,  // remove unconnected
+               false,  // fill holes
+               false,  // fix normal directions
+               false,  // fix normal values
                false, // reverse direction of all facets and normals
                0);  // Verbosity
     
@@ -447,6 +449,22 @@ Point3s TriangleMesh::facets()
         }
     } else {
         Slic3r::Log::warn("TriangleMesh", "facets() requires repair()");
+    }
+    return tmp;
+}
+
+std::vector<int> TriangleMesh::originalFacets() 
+{
+    std::vector<int> tmp {};
+    if (this->repaired) {
+        if (this->stl.v_shared == nullptr) 
+            stl_generate_shared_vertices(&stl); // build the list of vertices
+        for (auto i = 0; i < stl.stats.number_of_facets; i++) {
+            const auto& v = stl.facet_start[i];
+            tmp.push_back(v.originalIndex);
+        }
+    } else {
+        Slic3r::Log::warn("TriangleMesh", "originalFacets() requires repair()");
     }
     return tmp;
 }
@@ -758,6 +776,7 @@ TriangleMesh::extrude_tin(float offset)
                 new_facet.normal.x = normal[0];
                 new_facet.normal.y = normal[1];
                 new_facet.normal.z = normal[2];
+                new_facet.originalIndex = facet.originalIndex;
                 stl_add_facet(&this->stl, &new_facet);
                 
                 // second triangle
@@ -767,6 +786,7 @@ TriangleMesh::extrude_tin(float offset)
                 new_facet.normal.x = normal[0];
                 new_facet.normal.y = normal[1];
                 new_facet.normal.z = normal[2];
+                new_facet.originalIndex = facet.originalIndex;
                 stl_add_facet(&this->stl, &new_facet);
             }
         }
@@ -1146,8 +1166,8 @@ TriangleMeshSlicer<A>::slice_facet(float slice_z, const stl_facet &facet, const 
         points.erase( points.begin() + points_on_layer[1] );
     }
     
-    if (!points.empty()) {
-        assert(points.size() == 2); // facets must intersect each plane 0 or 2 times
+    if (points.size() == 2) {
+        // assert(points.size() == 2); // facets must intersect each plane 0 or 2 times
         IntersectionLine line;
         line.a          = (Point)points[1];
         line.b          = (Point)points[0];
@@ -1288,7 +1308,7 @@ TriangleMeshSlicer<A>::make_loops(std::vector<IntersectionLine> &lines, Polygons
                 // we can't close this loop!
                 //// push @failed_loops, [@loop];
                 //#ifdef SLIC3R_DEBUG
-                printf("  Unable to close this loop having %d points\n", (int)loop.size());
+                // printf("  Unable to close this loop having %d points\n", (int)loop.size());
                 //#endif
                 goto CYCLE;
             }
@@ -1499,6 +1519,7 @@ TriangleMeshSlicer<A>::cut(float z, TriangleMesh* upper, TriangleMesh* lower) co
             triangle.vertex[0] = *v0;
             triangle.vertex[1] = v0v1;
             triangle.vertex[2] = v2v0;
+            triangle.originalIndex = facet->originalIndex;
             
             // build the facets forming a quadrilateral on the other side
             stl_facet quadrilateral[2];
@@ -1506,10 +1527,12 @@ TriangleMeshSlicer<A>::cut(float z, TriangleMesh* upper, TriangleMesh* lower) co
             quadrilateral[0].vertex[0] = *v1;
             quadrilateral[0].vertex[1] = *v2;
             quadrilateral[0].vertex[2] = v0v1;
+            quadrilateral[0].originalIndex = facet->originalIndex;
             quadrilateral[1].normal = facet->normal;
             quadrilateral[1].vertex[0] = *v2;
             quadrilateral[1].vertex[1] = v2v0;
             quadrilateral[1].vertex[2] = v0v1;
+            quadrilateral[1].originalIndex = facet->originalIndex;
             
             if (_z(*v0) > z) {
                 if (upper != NULL) stl_add_facet(&upper->stl, &triangle);
@@ -1551,6 +1574,7 @@ TriangleMeshSlicer<A>::cut(float z, TriangleMesh* upper, TriangleMesh* lower) co
                 _y(facet.vertex[i]) = unscale(p.points[i].y);
                 _z(facet.vertex[i]) = z;
             }
+            facet.originalIndex = -1;
             stl_add_facet(&upper->stl, &facet);
         }
     }
@@ -1577,6 +1601,7 @@ TriangleMeshSlicer<A>::cut(float z, TriangleMesh* upper, TriangleMesh* lower) co
                 _y(facet.vertex[i]) = unscale(polygon->points[i].y);
                 _z(facet.vertex[i]) = z;
             }
+            facet.originalIndex = -1;
             stl_add_facet(&lower->stl, &facet);
         }
     }

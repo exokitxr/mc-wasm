@@ -73,8 +73,9 @@ typedef struct {
   stl_normal normal;
   stl_vertex vertex[3];
   stl_extra  extra;
+  int originalIndex;
 } stl_facet;
-#define SIZEOF_STL_FACET       50
+#define SIZEOF_STL_FACET       54
 
 #ifdef static_assert
 static_assert(offsetof(stl_facet, normal) == 0, "stl_facet.normal has correct offset");
